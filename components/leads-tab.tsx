@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Search, Filter, Edit, Trash2, Phone, Mail, MapPin, Calendar, UserIcon, FileText, Flame, DoorClosed } from "lucide-react"
 import type { Store, User } from "@/lib/firebase/types"
 import { formatDateTime } from "./utils"
+import { id } from "date-fns/locale"
 
 interface LeadsTabProps {
   stores: Store[]
@@ -69,7 +70,7 @@ export function LeadsTab({
   }
 
   const isSuperadmin = currentUser?.role === "superadmin" || currentUser?.role === "salesperson";
-
+// console.log(stores.map(store => store.id && { id: store.id, name: store.tradingName }))
 
   return (
     <div className="space-y-6 w-full">

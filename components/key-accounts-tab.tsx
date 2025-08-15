@@ -15,6 +15,7 @@ import { groupService } from "@/lib/firebase/services/group"
 import type { Store, User as UserType, StoreGroup } from "@/lib/firebase/types"
 import { Avatar, AvatarFallback } from "./ui/avatar"
 import { Timestamp } from "firebase/firestore"
+import { formatDateTimeForDisplay } from "./utils"
 
 interface KeyAccountsTabProps {
   stores: Store[]
@@ -34,40 +35,6 @@ export function KeyAccountsTab({ stores, users, currentUser, onEditStore, onStat
   const [selectedGroup, setSelectedGroup] = useState<StoreGroup | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Helper function to format dates for display (e.g., "Oct 13, 2025")
-  const formatDisplayDate = (date: Timestamp | string | null): string => {
-    if (!date) return "Not set"
-
-    let parsedDate: Date
-
-    if (date instanceof Timestamp) {
-      parsedDate = date.toDate()
-    } else if (typeof date === "string") {
-      if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(date)) {
-        const [month, day, year] = date.split("/").map(Number)
-        parsedDate = new Date(year, month - 1, day)
-      } else if (/^\d{1,2}\s+[A-Za-z]+\s+\d{4}$/.test(date)) {
-        parsedDate = new Date(date)
-      } else {
-        console.warn(`Invalid date format: ${date}`)
-        return "Invalid date"
-      }
-    } else {
-      console.warn(`Invalid date type: ${date}`)
-      return "Invalid date"
-    }
-
-    if (isNaN(parsedDate.getTime())) {
-      console.warn(`Invalid date parsed: ${date}`)
-      return "Invalid date"
-    }
-
-    return parsedDate.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    })
-  }
 
   // Load groups and log user info
   useEffect(() => {
@@ -381,8 +348,8 @@ export function KeyAccountsTab({ stores, users, currentUser, onEditStore, onStat
                   {(store.trainingDate || store.launchDate) && (
                     <div className="pt-2 border-t">
                       <div className="text-sm text-gray-600 space-y-1">
-                        {store.trainingDate && <div>Training: {formatDisplayDate(store.trainingDate)}</div>}
-                        {store.launchDate && <div>Launch: {formatDisplayDate(store.launchDate)}</div>}
+                        {store.trainingDate && <div>Training: {formatDateTimeForDisplay(store.trainingDate)}</div>}
+                        {store.launchDate && <div>Launch: {formatDateTimeForDisplay(store.launchDate)}</div>}
                       </div>
                     </div>
                   )}

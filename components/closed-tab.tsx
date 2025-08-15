@@ -234,7 +234,7 @@ function StoreTable({
           <TableHeader>
             <TableRow>
               <TableHead>Store</TableHead>
-              {!isSuperAdmin && (<TableHead>Lead By</TableHead>)}
+                {isSuperAdmin ? <TableHead>Lead By</TableHead> : null}
               <TableHead>Status</TableHead>
               <TableHead>Location</TableHead>
               <TableHead>Training Date</TableHead>
@@ -250,7 +250,7 @@ function StoreTable({
                   <div className="font-medium">{store.tradingName}</div>
                   <div className="text-sm text-gray-500">{store.streetAddress}</div>
                 </TableCell>
-                {!isSuperAdmin && (
+                {isSuperAdmin ?
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Avatar className="w-6 h-6">
@@ -261,7 +261,7 @@ function StoreTable({
                       <span className="text-sm">{getSalespersonName(store.salespersonId, users)}</span>
                     </div>
                   </TableCell>
-                )}
+                  : null}
                 <TableCell>{getStatusBadge(store)}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1 text-sm">

@@ -175,7 +175,6 @@ export function StoreEditModal({
     if (!formData.streetAddress) newErrors.streetAddress = "Street address is required"
     if (!formData.province) newErrors.province = "Province is required"
     if (!formData.storeType) newErrors.storeType = "Store type is required"
-    if (!formData.storeId) newErrors.storeId = "Store ID is required"
 
     if (!formData.status || !["lead", "cold", "warm"].includes(formData.status)) {
       newErrors.status = "Status must be either 'Lead', 'Cold' or 'Warm'"
@@ -390,7 +389,7 @@ export function StoreEditModal({
         tradingName: formData.tradingName || "",
         streetAddress: formData.streetAddress || "",
         province: formData.province || "",
-        status: isMovingToClosed ? "closed" : formData.status || "warm",
+        status: isMovingToClosed ? "closed" : formData.status || "warm" || "lead" || "cold",
         salespersonId: formData.salespersonId || currentUserId,
         isSetup: formData.isSetup || false,
         setupConfirmed: formData.setupConfirmed || false,
@@ -581,7 +580,7 @@ export function StoreEditModal({
                     {errors.storeType && <p className="text-red-500 text-sm mt-1">{errors.storeType}</p>}
                   </div>
                   <div>
-                    <Label htmlFor="storeId">Store ID *</Label>
+                    <Label htmlFor="storeId">Store ID</Label>
                     <div className="flex items-center gap-2">
                       <Input
                         id="storeId"
@@ -590,7 +589,7 @@ export function StoreEditModal({
                         placeholder="Enter store ID (e.g., PF0001)"
                         className={errors.storeId ? "border-red-500" : ""}
                       />
-                      <Button
+                      {/* <Button
                         type="button"
                         variant="outline"
                         size="sm"
@@ -600,7 +599,7 @@ export function StoreEditModal({
                         }}
                       >
                         Auto
-                      </Button>
+                      </Button> */}
                     </div>
                     {errors.storeId && <p className="text-red-500 text-sm mt-1">{errors.storeId}</p>}
                   </div>
@@ -645,7 +644,7 @@ export function StoreEditModal({
                   {!isMovingToClosed && (
                     <div>
                       <Select
-                        value={formData.status || "cold"}
+                        value={formData.status || "lead"}
                         onValueChange={(value: Store["status"]) => handleInputChange("status", value)}
                       >
                         <SelectTrigger>
