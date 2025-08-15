@@ -37,7 +37,7 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
-  Crown,
+  PenBox,
 } from "lucide-react"
 import { useDashboardData } from "@/components/dashboard-provider"
 import { signOut } from "firebase/auth"
@@ -106,9 +106,9 @@ const navigationItems = [
     roles: ["superadmin", "ops", "media", "salesperson"],
   },
   {
-    title: "Admin",
-    url: "/admin",
-    icon: Crown,
+    title: "Accounts",
+    url: "/accounts",
+    icon: PenBox,
     roles: ["superadmin"],
   },
 ]
