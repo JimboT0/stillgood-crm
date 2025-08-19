@@ -1,0 +1,213 @@
+"use client"
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
+import { Plus, Edit, Trash2, UserIcon, DoorClosed, Flame } from "lucide-react"
+import {
+  ContactsCell,
+  ContractTermsCell,
+  DocumentsCell,
+  LaunchTrainDateCell,
+  ProvinceCell,
+  SalespersonCell,
+  StoreInfoCell,
+  StoreStatusBadge,
+} from "./cells/index"
+import { formatDateTime } from "./utils/date-utils"
+import type { Store, User } from "@/lib/firebase/types"
+import { useLeadFilters } from "@/hooks/use-lead-filters"
+import { SearchInput, StatusFilter, FilterBar, LEAD_STATUS_OPTIONS } from "@/components/shared/filters"
+
+interface LeadsTabProps {
+  stores: Store[]
+  users: User[]
+  currentUser: User | null
+  onAddStore: () => void
+  onEditStore: (store: Store) => void
+  onDeleteStore: (storeId: string) => void
+  onStatusChange: (storeId: string, newStatus: Store["status"]) => void
+  onViewDocument?: (store: Store, documentType: "sla" | "bank") => void
+}
+
+export function LeadsTab({
+  stores,
+  users,
+  currentUser,
+  onViewDocument,
+  onAddStore,
+  onEditStore,
+  onDeleteStore,
+  onStatusChange,
+}: LeadsTabProps) {
+  const {
+    filteredData: filteredStores,
+    filters,
+    setSearchTerm,
+    setStatusFilter,
+    leadStatusCounts,
+    hasActiveFilters,
+    clearFilters,
+  } = useLeadFilters(stores, users)
+
+  const handleDeleteClick = (storeId: string, storeName: string) => {
+    if (window.confirm(`Are you sure you want to delete "${storeName}"? This action cannot be undone.`)) {
+      onDeleteStore(storeId)
+    }
+  }
+
+  const isSuperadmin = currentUser?.role === "superadmin" || currentUser?.role === "salesperson"
+
+  return (
+    <div className="space-y-6 w-full">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">Leads Management</h2>
+          <p className="text-sm text-gray-600">Manage cold and warm leads</p>
+        </div>
+        <Button onClick={onAddStore} className="bg-orange-500 hover:bg-orange-600 w-full sm:w-auto">
+          <Plus className="w-4 h-4 mr-2" />
+          Add Lead
+        </Button>
+      </div>
+
+      <FilterBar>
+        <SearchInput value={filters.searchTerm} onChange={setSearchTerm} placeholder="Search leads..." />
+        <StatusFilter
+          value={filters.statusFilter}
+          onChange={setStatusFilter}
+          options={LEAD_STATUS_OPTIONS}
+          placeholder="Filter by status"
+        />
+        {hasActiveFilters && (
+          <Button variant="outline" onClick={clearFilters} className="w-full sm:w-auto bg-transparent">
+            Clear Filters
+          </Button>
+        )}
+      </FilterBar>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">Total Leads</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gray-900">{leadStatusCounts.total}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">Cold Leads</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{leadStatusCounts.cold}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">Warm Leads</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">{leadStatusCounts.warm}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Leads Table */}
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>All Leads</CardTitle>
+          <CardDescription>Manage your sales pipeline</CardDescription>
+        </CardHeader>
+        <CardContent className="w-full overflow-x-auto">
+          <Table className="w-full">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Store</TableHead>
+                {isSuperadmin && <TableHead>Lead By</TableHead>}
+                <TableHead>Status</TableHead>
+                <TableHead>Contact</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Dates</TableHead>
+                <TableHead>Docs</TableHead>
+                <TableHead>Contract Terms</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredStores.map((store) => (
+                <TableRow key={store.id}>
+                  <StoreInfoCell tradingName={store.tradingName} streetAddress={store.streetAddress} />
+                  <SalespersonCell isSuperadmin={isSuperadmin} salespersonId={store.salespersonId} users={users} />
+                  <StoreStatusBadge status={store.status} isKeyAccount={!!store.isKeyAccount} />
+                  <ContactsCell contactPersons={store.contactPersons ?? []} />
+                  <ProvinceCell province={store.province} />
+                  <LaunchTrainDateCell
+                    launchDate={store.launchDate}
+                    trainingDate={store.trainingDate}
+                    formatDateTime={formatDateTime}
+                  />
+                  <ContractTermsCell contractTerms={store.contractTerms} />
+                  <DocumentsCell store={store} onViewDocument={onViewDocument} />
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      {store.status === "cold" && (
+                        <Button
+                          size="sm"
+                          className="bg-orange-500 hover:bg-orange-600"
+                          onClick={() => onStatusChange(store.id, "warm")}
+                        >
+                          <Flame className="w-3 h-3 mr-1" />
+                          Warm
+                        </Button>
+                      )}
+                      {store.status === "warm" && (
+                        <Button
+                          size="sm"
+                          className="bg-green-500 hover:bg-green-600"
+                          onClick={() => onStatusChange(store.id, "closed")}
+                        >
+                          <DoorClosed className="w-3 h-3 mr-1" />
+                          Close
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 bg-transparent"
+                        onClick={() => handleDeleteClick(store.id, store.tradingName)}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => onEditStore(store)}>
+                        <Edit className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+
+          {filteredStores.length === 0 && (
+            <div className="text-center py-8">
+              <UserIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No leads found</h3>
+              <p className="text-gray-600 mb-4">
+                {hasActiveFilters
+                  ? "Try adjusting your search or filter criteria"
+                  : "Get started by adding your first lead"}
+              </p>
+              {!hasActiveFilters && (
+                <Button onClick={onAddStore} className="bg-orange-500 hover:bg-orange-600">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Your First Lead
+                </Button>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
