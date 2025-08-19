@@ -106,6 +106,8 @@ export function OpsCalendar({
   const filteredStores = useMemo(() => {
     let filtered = stores
 
+    filtered = filtered.filter((store) => store.status === "setup" || store.status === "rollout" || store.status === "completed" || store.status === "closed");
+
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase()
       filtered = filtered.filter(
@@ -167,7 +169,7 @@ export function OpsCalendar({
   }
 
   return (
-    <div className="space-y-6 w-full max-w-full overflow-x-hidden px-4 sm:px-6 md:px-8" role="main">
+    <div className="space-y-6 w-full max-w-full overflow-x-hidden px-1 sm:px-3 md:px-8" role="main">
       {/* Header */}
       <div className="flex flex-col lg:flex-row gap-6">
         <div>

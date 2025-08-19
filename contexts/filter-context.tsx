@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useCallback, useEffect, useState, type ReactNode } from "react"
+import { createContext, useContext, useCallback, useEffect, useState, type ReactNode, Suspense } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import type { FilterState } from "@/hooks/use-filters"
 
@@ -40,7 +40,8 @@ interface FilterProviderProps {
   children: ReactNode
 }
 
-export function FilterProvider({ children }: FilterProviderProps) {
+// Separate component that uses useSearchParams
+function FilterProviderInner({ children }: FilterProviderProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -254,6 +255,15 @@ export function FilterProvider({ children }: FilterProviderProps) {
   }
 
   return <FilterContext.Provider value={value}>{children}</FilterContext.Provider>
+}
+
+// Main provider with Suspense wrapper
+export function FilterProvider({ children }: FilterProviderProps) {
+  return (
+    <Suspense fallback={<div>Loading filters...</div>}>
+      <FilterProviderInner>{children}</FilterProviderInner>
+    </Suspense>
+  )
 }
 
 export function useFilterContext() {

@@ -30,7 +30,7 @@ interface UserRequestsModalProps {
 export default function UserRequestsModal({ isOpen, onOpenChange, userRequests, onViewInvoice }: UserRequestsModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="w-full">
         <DialogHeader>
           <DialogTitle>My Financial Requests</DialogTitle>
         </DialogHeader>

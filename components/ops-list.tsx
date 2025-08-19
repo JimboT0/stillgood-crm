@@ -1,15 +1,17 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, EditCard } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Bell, Calendar, CheckCircle, EditIcon, EyeIcon } from "lucide-react"
+import { Bell, BellIcon, Calendar, CheckCircle, EditIcon, EyeIcon } from "lucide-react"
 import { SearchInput, StatusFilter } from "@/components/shared/filters"
 import { StoreInfoCell, ProvinceCell, StoreStatusBadge, SalespersonCell } from "./cells"
 import { OpsCalendarModal } from "./ops-calendar-modal"
 import type { StoreOpsView, User } from "@/lib/firebase/types"
 import { StoreDetailsModal } from "./store-details-modal"
+import { formatDateTimeForDisplay } from "./utils/date-utils"
+import { addToCalendar } from "./utils/date-utils"
 
 interface OpsListProps {
     stores: StoreOpsView[]
@@ -128,10 +130,10 @@ export function OpsList({
                     <CardDescription>Monitor and manage {title.toLowerCase()}</CardDescription>
                 </CardHeader>
             )}
-            <CardContent className="w-full overflow-x-auto">
-                <div className="block md:hidden space-y-4 p-4">
+            <div className="w-full overflow-x-auto p-4">
+                <div className="block md:hidden space-y-2">
                     {events.length === 0 ? (
-                        <div className="text-center py-8">
+                        <div className="text-center py-2">
                             <CheckCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                             <h3 className="text-lg font-medium text-gray-900 mb-2">No {title.toLowerCase()} found</h3>
                             <p className="text-gray-600">
@@ -140,35 +142,44 @@ export function OpsList({
                         </div>
                     ) : (
                         events.map((event, index) => (
-                            <Card key={`${event.store.id}-${event.eventType}-${index}`} className="p-4 bg-gray-50">
+                            <EditCard key={`${event.store.id}-${event.eventType}-${index}`} className="p-4 bg-gray-50">
                                 <div className="space-y-2">
                                     <div className="flex justify-between items-center">
-                                        <h3 className="font-medium text-sm">{event.store.tradingName || event.store.name}</h3>
+                                        <h3 className="font-medium text-sm">{event.store.tradingName || event.store.tradingName}</h3>
                                         <ProvinceCell province={event.store.province} />
                                     </div>
                                     <div className="text-sm text-gray-600 space-y-1">
                                         <p>
-                                            <strong>Store ID:</strong> {event.store.storeId || "N/A"}
+                                            {event.store.streetAddress || "N/A"}
                                         </p>
-                                        <p>
-                                            <strong>Address:</strong> {event.store.streetAddress || "N/A"}
-                                        </p>
-                                        <p>
-                                            <strong>Event:</strong> {event.eventType === "training" ? "Training" : "Launch"}
-                                        </p>
-                                        <p>
-                                            <strong>Date:</strong>{" "}
-                                            {event.eventDate ? event.eventDate.toLocaleDateString() : "N/A"}
-                                        </p>
+
+                                        <div className="flex flex-row items-center gap-0.5">
+                                            <span
+                                                className={`px-2 py-1 rounded border font-medium text-xs tracking-wide
+                                            ${event.eventType === "training"
+                                                        ? "border-blue-600 text-blue-700 bg-blue-50"
+                                                        : "border-green-600 text-green-700 bg-green-50"
+                                                    }`}
+                                                style={{ letterSpacing: "0.005em" }}
+                                            >
+                                                {event.eventType === "training" ? "training" : "launch"}
+                                            </span>
+                                            <span className="px-1 py-1 rounded border border-gray-300 bg-gray-50 text-gray-800 text-xs font-mono">
+                                                {event.eventDate ? formatDateTimeForDisplay(event.eventDate) : "N/A"}
+                                            </span>
+
+                                            <span className="px-2 py-1.5 rounded border border-gray-400 bg-gray-50 text-gray-800 text-xs font-mono">
+                                                <EyeIcon className="w-3 h-3" onClick={() => setSelectedStore(event.store)} />
+                                            </span>
+                                            <span className="px-2 py-1.5 rounded border border-yellow-400 text-yellow-500 bg-gray-50 text-gray-800 text-xs font-mono">
+                                                <BellIcon className="w-3 h-3" onClick={() => addToCalendar(event.store, event.eventType, event.eventDate)}
+                                                />
+                                            </span>
+                                        </div>
+
+
                                     </div>
                                     <div className="flex gap-2">
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => setSelectedStore(event.store)}
-                                        >
-                                            <EditIcon className="w-4 h-4" />
-                                        </Button>
 
                                         {isSuperadmin && event.store.isSetup && !event.store.setupConfirmed && (
                                             <Button
@@ -183,7 +194,7 @@ export function OpsList({
                                         )}
                                     </div>
                                 </div>
-                            </Card>
+                            </EditCard>
                         ))
                     )}
                     |       </div>
@@ -207,15 +218,17 @@ export function OpsList({
                                 <ProvinceCell province={event.store.province} />
                                 <TableCell>
                                     <span
-                                        className={`px-2 py-1 rounded text-white font-semibold ${event.eventType === "training"
-                                                ? "bg-blue-600"
-                                                : "bg-green-600"
+                                        className={`px-2 py-1 rounded border font-medium text-xs tracking-wide
+                                            ${event.eventType === "training"
+                                                ? "border-blue-600 text-blue-700 bg-blue-50"
+                                                : "border-green-600 text-green-700 bg-green-50"
                                             }`}
+                                        style={{ letterSpacing: "0.05em" }}
                                     >
-                                        {event.eventType === "training" ? "Training" : "Launch"}
+                                        {event.eventType === "training" ? "training" : "launch"}
                                     </span>
-                                    <span className="ml-2 text-gray-700">
-                                        {event.eventDate ? event.eventDate.toLocaleDateString() : "N/A"}
+                                    <span className=" px-2 py-1 rounded border border-gray-300 bg-gray-50 text-gray-800 text-xs font-mono">
+                                        {event.eventDate ? formatDateTimeForDisplay(event.eventDate) : "N/A"}
                                     </span>
                                 </TableCell>
                                 <TableCell>
@@ -230,6 +243,7 @@ export function OpsList({
                                         <Button
                                             size="sm"
                                             variant="outline"
+                                            onClick={() => addToCalendar(event.store, event.eventType, event.eventDate)}
                                         >
                                             <Bell className="w-4 h-4" />
                                         </Button>
@@ -260,12 +274,12 @@ export function OpsList({
                         </p>
                     </div>
                 )}
-            </CardContent>
+            </div>
         </Card>
     )
 
     return (
-        <div className="space-y-6 w-full">
+        <div className="space-y-4 w-full">
 
             <div className="flex flex-col sm:flex-row gap-4">
                 <SearchInput

@@ -4,7 +4,6 @@ import React, { useState, useEffect, useMemo } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { format, isSameDay, startOfDay } from "date-fns";
 import { enUS } from "date-fns/locale";
-import { createEvent } from "ics";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -93,41 +92,6 @@ const addToCalendar = (event: CalendarEvent) => {
   const startDate = jsDate;
   const endDate = new Date(startDate.getTime() + (type === "training" ? 2 : 4) * 60 * 60 * 1000);
 
-  const icsEvent = {
-    start: [
-      startDate.getFullYear(),
-      startDate.getMonth() + 1,
-      startDate.getDate(),
-      startDate.getHours(),
-      startDate.getMinutes(),
-    ],
-    end: [
-      endDate.getFullYear(),
-      endDate.getMonth() + 1,
-      endDate.getDate(),
-      endDate.getHours(),
-      endDate.getMinutes(),
-    ],
-    title: `${type === "training" ? "Training" : "Launch"}: ${store.tradingName}`,
-    description: `Store: ${store.tradingName}\nAddress: ${store.streetAddress}, ${store.province}\nStore ID: ${store.storeId}\nStatus: ${store.status}`,
-    location: `${store.streetAddress}, ${store.province}`,
-  };
-
-  createEvent(icsEvent, (error, value) => {
-    if (error) {
-      console.error("Error creating ICS file:", error);
-      return;
-    }
-    const blob = new Blob([value], { type: "text/calendar" });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${store.tradingName}-${type}.ics`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-  });
 };
 
 const SessionsModal: React.FC<{
