@@ -15,7 +15,7 @@ import { groupService } from "@/lib/firebase/services/group"
 import type { Store, User as UserType, StoreGroup } from "@/lib/firebase/types"
 import { Avatar, AvatarFallback } from "./ui/avatar"
 import { Timestamp } from "firebase/firestore"
-import { formatDateTimeForDisplay } from "./utils/date-utils"
+import { formatDateTimeForDisplay } from "../lib/utils/date-utils"
 
 interface KeyAccountsTabProps {
   stores: Store[]

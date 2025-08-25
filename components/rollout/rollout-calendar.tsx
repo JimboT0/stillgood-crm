@@ -157,30 +157,39 @@ export function RolloutCalendar({
 
     days.push(
       <div
-      key={day}
-      className={`h-20 md:h-24 border border-gray-200 p-1 overflow-hidden ${hasEvents ? "cursor-pointer hover:bg-gray-100" : ""}`}
-      onClick={() => hasEvents && handleDayClick(day)}
-      style={{ overflowY: "auto" }}
+        key={day}
+        className={`h-20 md:h-24 border border-gray-200 p-1 overflow-hidden ${hasEvents ? "cursor-pointer hover:bg-gray-100" : ""}`}
+        onClick={() => hasEvents && handleDayClick(day)}
+        style={{ overflowY: "auto" }}
       >
-      <div className="text-xs md:text-sm font-medium text-gray-900 mb-[2px]">{day}</div>
-      {hasEvents && (
-        <div className="flex flex-col items-center mt-2">
-        <div className="w-6 h-6 flex items-center justify-center rounded-full bg-blue-600 text-white text-xs font-bold mb-1">
-          {Object.values(trainingByProvince).reduce((a, b) => a + b, 0) +
-          Object.values(launchByProvince).reduce((a, b) => a + b, 0)}
-        </div>
-        <div className="text-[10px] text-gray-700 text-center">
-          {[
-          ...new Set([
-            ...Object.keys(trainingByProvince),
-            ...Object.keys(launchByProvince),
-          ]),
-          ].join(", ")}
-        </div>
-        </div>
-      )}
+        <div className="text-xs md:text-sm font-medium text-gray-900 mb-[2px]">{day}</div>
+        {hasEvents && (
+          <div className="flex flex-col items-center mt-2">
+            <div
+              className={`w-6 h-6 flex items-center justify-center rounded-full text-white text-xs font-bold mb-1 ${
+                day === new Date().getDate() &&
+                currentDate.getMonth() === new Date().getMonth() &&
+                currentDate.getFullYear() === new Date().getFullYear()
+                  ? "bg-green-600"
+                  : new Date(currentDate.getFullYear(), currentDate.getMonth(), day) <= new Date()
+                  ? "bg-orange-500"
+                  : "bg-blue-600"
+              }`}
+            >
+              {Object.values(trainingByProvince).reduce((a, b) => a + b, 0) +
+                Object.values(launchByProvince).reduce((a, b) => a + b, 0)}
+            </div>
+            <div className="text-[10px] text-gray-700 text-center">
+              {[
+                ...new Set([
+                  ...Object.keys(trainingByProvince),
+                  ...Object.keys(launchByProvince),
+                ]),
+              ].join(", ")}
+            </div>
+          </div>
+        )}
       </div>
-
     )
   }
 

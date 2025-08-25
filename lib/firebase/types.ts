@@ -24,6 +24,16 @@ export const PROVINCES = [
 
 export type Province = (typeof PROVINCES)[number];
 
+
+export const storeTypes = [
+  { value: "picknpay_franchise", label: "PicknPay Franchise", prefix: "PF" },
+  { value: "picknpay_corporate", label: "PicknPay Corporate", prefix: "PC" },
+  { value: "spar_franchise", label: "Spar Franchise", prefix: "SF" },
+  { value: "spar_corporate", label: "Spar Corporate", prefix: "SC" },
+  { value: "food_lovers_market", label: "Food Lovers Market", prefix: "FL" },
+  { value: "independent", label: "Independent", prefix: "IN" },
+] as const;
+
 export interface ContactPerson {
   name: string;
   phone: string;
@@ -65,14 +75,18 @@ export interface Store {
   id: string;
   tradingName: string;
   streetAddress: string;
-  province: Province;
-  status: "lead" | "cold" | "warm" | "qualified" | "setup" | "rollout" | "completed" | "closed";
+Province: string
+  status: "lead" | "cold" | "warm" | "closed" | "pending setup" | "rollout" | "completed";
   salespersonId: string;
   assignedUserId?: string;
   isSetup?: boolean;
   setupConfirmed?: boolean;
   setupConfirmedBy?: string;
   setupConfirmedAt?: Date;
+  isSocialSetup?: boolean;
+  socialSetupConfirmed?: boolean;
+  socialSetupConfirmedBy?: string;
+  socialSetupConfirmedAt?: Date;
   trainingDate?: Timestamp | null;
   launchDate?: Timestamp | null;
   pushedToRollout?: boolean;
@@ -100,7 +114,7 @@ export interface Store {
   groupId?: string;
   createdAt: Date;
   updatedAt: Date;
-  adminCredentials?: Array<{
+  credentials?: Array<{
     username: string;
     password: string;
     orderusername: string;
@@ -168,7 +182,7 @@ export type StoreOpsView = Omit<
   | "salespersonId"
   | "assignedUserId"
   | "groupId"
-  | "adminCredentials"
+  | "credentials"
 >;
 
 

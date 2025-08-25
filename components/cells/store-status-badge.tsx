@@ -1,19 +1,10 @@
 import type React from "react"
 import { TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Hand, SnowflakeIcon, Flame, Rocket, CheckCircle, Calendar, KeyIcon, Clock } from "lucide-react"
+import { Hand, SnowflakeIcon, Flame, Rocket, CheckCircle, Calendar, KeyIcon, Clock, ThumbsUp } from "lucide-react"
 
 type StoreStatus =
-  | "pending"
-  | "ready"
-  | "pushed"
-  | "lead"
-  | "cold"
-  | "warm"
-  | "closed"
-  | "setup"
-  | "rollout"
-  | "completed"
+  "lead" | "cold" | "warm" | "closed" | "pending setup" | "rollout" | "completed";
 
 interface StoreStatusBadgeProps {
   status: StoreStatus
@@ -26,31 +17,24 @@ export const StoreStatusBadge: React.FC<StoreStatusBadgeProps> = ({ status, isKe
     const iconClass = "w-4 h-4"
 
     switch (status) {
-      case "pushed":
+      case "pending setup":
       case "rollout":
         return {
           className: "bg-purple-50 text-purple-700 border-purple-200",
           icon: <Rocket className={iconClass} />,
-          label: "Rollout",
+          label: "In Rollout",
         }
-      case "ready":
       case "completed":
         return {
           className: "bg-green-50 text-green-700 border-green-200",
           icon: <CheckCircle className={iconClass} />,
           label: status === "completed" ? "Completed" : "Ready",
         }
-      case "pending":
+      case "pending setup":
         return {
           className: "bg-yellow-50 text-yellow-700 border-yellow-200",
           icon: <Clock className={iconClass} />,
-          label: "Pending",
-        }
-      case "setup":
-        return {
-          className: "bg-blue-50 text-blue-700 border-blue-200",
-          icon: <CheckCircle className={iconClass} />,
-          label: "Setup",
+          label: "Pending Setup",
         }
       case "closed":
         return {

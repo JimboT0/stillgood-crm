@@ -20,7 +20,7 @@ export interface DateRange {
 
 // Common status options for different tabs
 export const LEAD_STATUS_OPTIONS: FilterOption[] = [
-  { value: "all", label: "All Leads" },
+  { value: "All", label: "All Leads" },
   { value: "cold", label: "Cold Leads" },
   { value: "warm", label: "Warm Leads" },
   { value: "lead", label: "Hot Leads" },

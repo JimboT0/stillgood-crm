@@ -10,8 +10,8 @@ import { StoreInfoCell, ProvinceCell, StoreStatusBadge, SalespersonCell } from "
 import { OpsCalendarModal } from "./ops-calendar-modal"
 import type { StoreOpsView, User } from "@/lib/firebase/types"
 import { StoreDetailsModal } from "./store-details-modal"
-import { formatDateTimeForDisplay } from "./utils/date-utils"
-import { addToCalendar } from "./utils/date-utils"
+import { formatDateTimeForDisplay } from "../lib/utils/date-utils"
+import { addToCalendar } from "../lib/utils/date-utils"
 
 interface OpsListProps {
     stores: StoreOpsView[]
@@ -182,13 +182,12 @@ export function OpsList({
                                     <div className="flex gap-2">
 
                                         {isSuperadmin && event.store.isSetup && !event.store.setupConfirmed && (
-                                            <Button
+                                       <Button
                                                 size="sm"
-                                                variant="outline"
                                                 onClick={() => onSetupConfirmation(event.store.id)}
-                                                className="bg-green-500 text-white hover:bg-green-600"
+                                                className="bg-white text-white hover:bg-green-600"
                                             >
-                                                <CheckCircle className="w-4 h-4 mr-2" />
+                                                <CheckCircle className="w-4 h-4 mr-2 text-white" />
                                                 Confirm Setup
                                             </Button>
                                         )}
@@ -251,11 +250,10 @@ export function OpsList({
                                         {isSuperadmin && event.store.isSetup && !event.store.setupConfirmed && (
                                             <Button
                                                 size="sm"
-                                                variant="outline"
                                                 onClick={() => onSetupConfirmation(event.store.id)}
-                                                className="bg-green-500 text-white hover:bg-green-600"
+                                                className="bg-white text-white hover:bg-green-600"
                                             >
-                                                <CheckCircle className="w-4 h-4 mr-2" />
+                                                <CheckCircle className="w-4 h-4 mr-2 text-white" />
                                                 Confirm Setup
                                             </Button>
                                         )}

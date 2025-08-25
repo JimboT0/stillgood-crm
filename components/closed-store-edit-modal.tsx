@@ -15,9 +15,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { storeService } from "@/lib/firebase/services/store"
 import { fileService } from "@/lib/firebase/services/file"
 import { groupService } from "@/lib/firebase/services/group"
-import { formatDateTime, formatDateTimeForInput, parseDateTime } from "./utils/date-utils"
+import { formatDateTime, formatDateTimeForInput, parseDateTime } from "../lib/utils/date-utils"
 import { isValidTimestamp } from "@/lib/date-validation"
-import type { Store, ContactPerson, Product, CollectionTimes, StoreGroup, Document } from "@/lib/firebase/types"
+import { type Store, type ContactPerson, type Product, type CollectionTimes, type StoreGroup, type Document, PROVINCES, storeTypes } from "@/lib/firebase/types"
 
 interface StoreEditModalProps {
   store: Store | null
@@ -26,6 +26,7 @@ interface StoreEditModalProps {
   onSave: (store: Store) => void
   isMovingToClosed: boolean
   currentUserId?: string
+  isSuperadmin?: boolean
 }
 
 export function ClosedStoreEditModal({
@@ -35,6 +36,7 @@ export function ClosedStoreEditModal({
   onSave,
   isMovingToClosed,
   currentUserId,
+  isSuperadmin = false,
 }: StoreEditModalProps) {
   const [formData, setFormData] = useState<Partial<Store>>({})
   const [contactPersons, setContactPersons] = useState<ContactPerson[]>([])
@@ -54,26 +56,6 @@ export function ClosedStoreEditModal({
   const [groups, setGroups] = useState<StoreGroup[]>([])
   const [errorDescription, setErrorDescription] = useState<string>("")
 
-  const storeTypes = [
-    { value: "picknpay_franchise", label: "PicknPay Franchise", prefix: "PF" },
-    { value: "picknpay_corporate", label: "PicknPay Corporate", prefix: "PC" },
-    { value: "spar_franchise", label: "Spar Franchise", prefix: "SF" },
-    { value: "spar_corporate", label: "Spar Corporate", prefix: "SC" },
-    { value: "food_lovers_market", label: "Food Lovers Market", prefix: "FL" },
-    { value: "independent", label: "Independent", prefix: "IN" },
-  ]
-
-  const provinces = [
-    "Eastern Cape",
-    "Free State",
-    "Gauteng",
-    "KwaZulu-Natal",
-    "Limpopo",
-    "Mpumalanga",
-    "Northern Cape",
-    "North West",
-    "Western Cape",
-  ] as const
 
   // Load groups
   useEffect(() => {
@@ -133,7 +115,7 @@ export function ClosedStoreEditModal({
         tradingName: "",
         streetAddress: "",
         province: undefined,
-        status: "lead", // Default to "lead" for new stores
+        status: "cold", // Default to "cold" for new stores
         salespersonId: currentUserId || "",
         isKeyStore: false,
         storeType: "",
@@ -434,7 +416,7 @@ export function ClosedStoreEditModal({
         id: store?.id || "",
         tradingName: formData.tradingName || "",
         streetAddress: formData.streetAddress || "",
-        province: formData.province ?? undefined,
+        Province: formData.Province || "",
         status: isMovingToClosed ? "closed" : formData.status || "lead",
         salespersonId: formData.salespersonId || currentUserId,
         isSetup: formData.isSetup || false,
@@ -592,6 +574,10 @@ export function ClosedStoreEditModal({
               <TabsTrigger value="contacts">Contacts</TabsTrigger>
               <TabsTrigger value="products">Products</TabsTrigger>
               <TabsTrigger value="documents">Documents</TabsTrigger>
+              {isSuperadmin && (
+                <TabsTrigger value="superadmin">Superadmin</TabsTrigger>
+              )}
+
             </TabsList>
           </div>
 
@@ -623,7 +609,7 @@ export function ClosedStoreEditModal({
                         <SelectValue placeholder="Select province" />
                       </SelectTrigger>
                       <SelectContent>
-                        {provinces.map((province) => (
+                        {PROVINCES.map((province) => (
                           <SelectItem key={province} value={province}>
                             {province}
                           </SelectItem>
@@ -749,7 +735,7 @@ export function ClosedStoreEditModal({
 
             <EditCard>
               <CardHeader>
-                <CardTitle className="text-lg">Contract Terms</CardTitle>
+                <CardTitle className="text-lg">Contract</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -946,9 +932,9 @@ export function ClosedStoreEditModal({
                 {products.map((product, index) => (
                   <div key={index} className=" rounded-xl p-4 space-y-4 bg-white/80">
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center justify-center w-8 h-8 bg-blue-500 text-white font-bold rounded-full">
+                      <div className="flex items-center justify-center w-8 h-8 bg-blue-500 text-white font-bold rounded-full">
                         {index + 1}
-                        </div>
+                      </div>
                       <Button type="button" variant="outline" size="sm" onClick={() => removeProduct(index)}>
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -1038,12 +1024,12 @@ export function ClosedStoreEditModal({
                       <Label className="text-sm text-gray-600 capitalize text-left pt-4">
                         {period === "mondayFriday"
                           ? "Weekday"
-                          : period === "publicHoliday"
-                            ? "Holiday"
-                            : period === "saturday"
-                              ? "Sat"
-                              : period === "sunday"
-                                ? "Sun"
+                          : period === "saturday"
+                            ? "Sat"
+                            : period === "sunday"
+                              ? "Sun"
+                              : period === "publicHoliday"
+                                ? "Public Holiday"
                                 : period.charAt(0).toUpperCase() + period.slice(1)}
                       </Label>
                     </div>
@@ -1172,6 +1158,70 @@ export function ClosedStoreEditModal({
               </CardContent>
             </EditCard>
           </TabsContent>
+
+          {isSuperadmin && (
+            <TabsContent value="superadmin" className="space-y-6">
+              <EditCard>
+                <CardHeader>
+                  <CardTitle className="text-lg">Copy Store Rollout Info</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div>
+                      <Label>Store Name</Label>
+                      <Input value={formData.tradingName || ""} readOnly />
+                    </div>
+                    <div>
+                      <Label>Street Address</Label>
+                      <Input value={formData.streetAddress || ""} readOnly />
+                    </div>
+                    <div>
+                      <Label>Province</Label>
+                      <Input value={formData.province || ""} readOnly />
+                    </div>
+                    <div>
+                      <Label>Store ID</Label>
+                      <Input value={formData.storeId || ""} readOnly />
+                    </div>
+                    <div>
+                      <Label>Products</Label>
+                      <div className="space-y-2">
+                        {products.length === 0 ? (
+                          <p className="text-gray-500">No products added.</p>
+                        ) : (
+                          products.map((product, idx) => (
+                            <div key={idx} className="border rounded p-2 bg-gray-50">
+                              <div><strong>Name:</strong> {product.name}</div>
+                              <div><strong>Description:</strong> {product.description}</div>
+                              <div><strong>Retail Price:</strong> {product.retailPrice}</div>
+                              <div><strong>Estimated Value:</strong> {product.estimatedValue}</div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    className="mt-4"
+                    onClick={() => {
+                      const info = {
+                        StoreName: formData.tradingName,
+                        StreetAddress: formData.streetAddress,
+                        Province: formData.Province || "",
+
+                        StoreID: formData.storeId,
+                        Products: products,
+                      }
+                      navigator.clipboard.writeText(JSON.stringify(info, null, 2))
+                    }}
+                  >
+                    Copy Info to Clipboard
+                  </Button>
+                </CardContent>
+              </EditCard>
+            </TabsContent>
+          )}
         </Tabs>
 
         <Separator className="my-6" />
@@ -1210,3 +1260,5 @@ export function ClosedStoreEditModal({
     </Dialog>
   )
 }
+
+

@@ -99,7 +99,7 @@ export const userService = {
 
   async create(
     user: Omit<User, "id"> & { password: string },
-    adminCredentials?: { email: string; password: string },
+    credentials?: { email: string; password: string },
   ): Promise<string> {
     try {
       const currentUser = auth.currentUser
@@ -110,7 +110,7 @@ export const userService = {
       }
 
       // If admin credentials not provided, we'll need them for re-authentication
-      if (!adminCredentials) {
+      if (!credentials) {
         throw new Error("Admin credentials required for user creation")
       }
 
@@ -127,7 +127,7 @@ export const userService = {
         await signOut(auth)
 
         // Step 4: Re-authenticate the superadmin
-        await signInWithEmailAndPassword(auth, adminCredentials.email, adminCredentials.password)
+        await signInWithEmailAndPassword(auth, credentials.email, credentials.password)
 
         // Step 5: Create user in Firestore using the Auth UID as document ID
         const userData = {
@@ -151,7 +151,7 @@ export const userService = {
             await userToDelete.delete()
           }
           // Re-authenticate the admin
-          await signInWithEmailAndPassword(auth, adminCredentials.email, adminCredentials.password)
+          await signInWithEmailAndPassword(auth, credentials.email, credentials.password)
         } catch (deleteError) {
           console.error("Failed to delete auth user during rollback:", deleteError)
         }

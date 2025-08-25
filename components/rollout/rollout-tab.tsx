@@ -2,8 +2,8 @@
 
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { RolloutCalendar } from "@/components/rollout/rollout-calendar"
-import { RolloutList } from "@/components/rollout/rollout-list"
+import { RolloutCalendar } from "./rollout-calendar"
+import { RolloutList } from "./rollout-list"
 import { Button } from "@/components/ui/button"
 import { Calendar, List, Menu } from "lucide-react"
 import type { Store, User } from "@/lib/firebase/types"
@@ -14,16 +14,30 @@ interface RolloutTabProps {
   currentUser: User | null
   onToggleSetup: (storeId: string) => Promise<void>
   onSetupConfirmation: (storeId: string) => Promise<void>
+  onToggleSocialSetup: (storeId: string) => Promise<void>
+  updateCredentials: (storeId: string, credentials: Store['credentials']) => Promise<void>
+
 }
 
-export function RolloutTab({ stores, users, currentUser, onToggleSetup, onSetupConfirmation }: RolloutTabProps) {
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase/config";
+
+const updateCredentials = async (storeId: string, credentials: Store['credentials']) => {
+  try {
+    const storeRef = doc(db, "stores", storeId);
+    await updateDoc(storeRef, { credentials });
+  } catch (error) {
+    throw new Error("Failed to update credentials");
+  }
+};
+
+export function RolloutTab({ stores, users, currentUser, onToggleSetup, onSetupConfirmation, onToggleSocialSetup }: RolloutTabProps) {
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list")
 
   const rolloutStores = stores.filter((store) => store.pushedToRollout)
 
   return (
     <div className="space-y-6 w-full">
-
       <div className="px-4 md:px-0">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="hidden md:block">
@@ -50,16 +64,16 @@ export function RolloutTab({ stores, users, currentUser, onToggleSetup, onSetupC
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mt-2">
-          <Card>
-            <CardHeader className="pb-2">
+        <div className=" grid grid-cols-1 md:grid-cols-4 gap-2 mt-2">
+          <Card className="md:block hidden">
+            <CardHeader className=" pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">Total in Rollout</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-purple-600">{rolloutStores.length}</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="md:block hidden">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">Setup Complete</CardTitle>
             </CardHeader>
@@ -67,7 +81,7 @@ export function RolloutTab({ stores, users, currentUser, onToggleSetup, onSetupC
               <div className="text-2xl font-bold text-green-600">{rolloutStores.filter((s) => s.isSetup).length}</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="md:block hidden">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">Confirmed</CardTitle>
             </CardHeader>
@@ -77,7 +91,7 @@ export function RolloutTab({ stores, users, currentUser, onToggleSetup, onSetupC
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="md:block hidden">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">Pending Setup</CardTitle>
             </CardHeader>
@@ -90,13 +104,15 @@ export function RolloutTab({ stores, users, currentUser, onToggleSetup, onSetupC
         {/* View Content */}
         <div className="mt-6">
           {viewMode === "list" ? (
-            <RolloutList
+              <RolloutList
               stores={rolloutStores}
               users={users}
               currentUser={currentUser}
               onToggleSetup={onToggleSetup}
-              onSetupConfirmation={onSetupConfirmation}
-            />
+              onSetupConfirmation={onSetupConfirmation} 
+              onToggleSocialSetup={onToggleSocialSetup}
+              updateCredentials={updateCredentials}
+               />
           ) : (
             <RolloutCalendar
               stores={rolloutStores}

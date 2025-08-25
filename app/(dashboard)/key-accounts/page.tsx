@@ -7,6 +7,7 @@ import { KeyAccountsTab } from "@/components/key-accounts-tab"
 import { ClosedStoreEditModal } from "@/components/closed-store-edit-modal"
 import type { Store } from "@/lib/firebase/types"
 
+
 function KeyAccountsPageContent() {
   const { currentUser, stores, users, handleSaveStore, handleStatusChange } = useDashboardData()
   const [editingStore, setEditingStore] = useState<Store | null>(null)

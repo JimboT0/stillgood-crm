@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Plus, Edit, Trash2, UserIcon, DoorClosed, Flame } from "lucide-react"
+import { Plus, Edit, Trash2, UserIcon, DoorClosed, Flame, Snowflake } from "lucide-react"
 import {
   ContactsCell,
   ContractTermsCell,
@@ -14,7 +14,7 @@ import {
   StoreInfoCell,
   StoreStatusBadge,
 } from "./cells/index"
-import { formatDateTime } from "./utils/date-utils"
+import { formatDateTime } from "../lib/utils/date-utils"
 import type { Store, User } from "@/lib/firebase/types"
 import { useLeadFilters } from "@/hooks/use-lead-filters"
 import { SearchInput, StatusFilter, FilterBar, LEAD_STATUS_OPTIONS } from "@/components/shared/filters"
@@ -45,7 +45,6 @@ export function LeadsTab({
     filters,
     setSearchTerm,
     setStatusFilter,
-    leadStatusCounts,
     hasActiveFilters,
     clearFilters,
   } = useLeadFilters(stores, users)
@@ -55,6 +54,12 @@ export function LeadsTab({
       onDeleteStore(storeId)
     }
   }
+
+  console.log(stores.map((store) => ({
+    id: store.id,
+    tradingName: store.tradingName,
+    status: store.status,
+  })))
 
   const isSuperadmin = currentUser?.role === "superadmin" || currentUser?.role === "salesperson"
 
@@ -86,32 +91,6 @@ export function LeadsTab({
         )}
       </FilterBar>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Total Leads</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900">{leadStatusCounts.total}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Cold Leads</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{leadStatusCounts.cold}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Warm Leads</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{leadStatusCounts.warm}</div>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Leads Table */}
       <Card className="w-full">
@@ -124,13 +103,13 @@ export function LeadsTab({
             <TableHeader>
               <TableRow>
                 <TableHead>Store</TableHead>
-                {isSuperadmin && <TableHead>Lead By</TableHead>}
+                {isSuperadmin ? (<TableHead>Creator</TableHead>) : null}
                 <TableHead>Status</TableHead>
                 <TableHead>Contact</TableHead>
                 <TableHead>Location</TableHead>
                 <TableHead>Dates</TableHead>
                 <TableHead>Docs</TableHead>
-                <TableHead>Contract Terms</TableHead>
+                <TableHead>Contract</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -138,19 +117,38 @@ export function LeadsTab({
               {filteredStores.map((store) => (
                 <TableRow key={store.id}>
                   <StoreInfoCell tradingName={store.tradingName} streetAddress={store.streetAddress} />
-                  <SalespersonCell isSuperadmin={isSuperadmin} salespersonId={store.salespersonId} users={users} />
+                  {isSuperadmin ? <SalespersonCell isSuperadmin={isSuperadmin} salespersonId={store.salespersonId} users={users} /> : null}
                   <StoreStatusBadge status={store.status} isKeyAccount={!!store.isKeyAccount} />
                   <ContactsCell contactPersons={store.contactPersons ?? []} />
                   <ProvinceCell province={store.province} />
                   <LaunchTrainDateCell
                     launchDate={store.launchDate}
                     trainingDate={store.trainingDate}
-                    formatDateTime={formatDateTime}
                   />
-                  <ContractTermsCell contractTerms={store.contractTerms} />
                   <DocumentsCell store={store} onViewDocument={onViewDocument} />
+                  <ContractTermsCell
+                    contractTerms={store.contractTerms}
+                    isKeyAccount={!!store.isKeyAccount}
+                  />
                   <TableCell>
                     <div className="flex items-center gap-1">
+                      {store.status === "lead" && (
+                        <>
+                        <Button
+                          size="sm"
+                          className="bg-orange-500 hover:bg-orange-600"
+                          onClick={() => onStatusChange(store.id, "warm")}
+                        >
+                          <Flame className="w-3 h-3 mx-[2px]" />
+                        </Button><Button
+                          size="sm"
+                          className="bg-blue-500 hover:bg-blue-600"
+                          onClick={() => onStatusChange(store.id, "warm")}
+                        >
+                            <Snowflake className="w-3 h-3 mx-[2px]" />
+                          </Button>
+                          </>
+                      )}
                       {store.status === "cold" && (
                         <Button
                           size="sm"

@@ -12,7 +12,7 @@ import {
 } from "firebase/firestore"
 import { db } from "../config"
 import type { Store } from "../types"
-import { safeDateToTimestamp } from "../../utils" // or wherever you put the helper
+import { safeDateToTimestamp } from "../../utils"
 import { parseFirestoreDate } from "@/lib/date-validation"
 
 // Helper function to remove undefined values

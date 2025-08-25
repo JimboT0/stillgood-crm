@@ -170,6 +170,20 @@ export const formatDateTime = (date: unknown, fallback: string = DATE_FALLBACKS.
   if (!date) return fallback
   return formatDate(date, DATE_FORMATS.DISPLAY, DATE_FALLBACKS.INVALID)
 }
+// export function formatDateTime(date: Date | any): string {
+//   if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+//     console.warn("Invalid date in formatDateTime:", date);
+//     return "Invalid Date";
+//   }
+//   return date.toLocaleString("en-ZA", {
+//     year: "numeric",
+//     month: "short",
+//     day: "2-digit",
+//     hour: "2-digit",
+//     minute: "2-digit",
+//     timeZone: "Africa/Johannesburg", // SAST
+//   });
+// }
 
 /**
  * Format date for display without time (DD/MM/YYYY)
@@ -340,8 +354,14 @@ export const addToCalendar = (store: any, eventType: "training" | "launch") => {
       startDate.getDate(),
       startDate.getHours(),
       startDate.getMinutes(),
-    ],
-    end: [endDate.getFullYear(), endDate.getMonth() + 1, endDate.getDate(), endDate.getHours(), endDate.getMinutes()],
+    ] as [number, number, number, number, number],
+    end: [
+      endDate.getFullYear(),
+      endDate.getMonth() + 1,
+      endDate.getDate(),
+      endDate.getHours(),
+      endDate.getMinutes(),
+    ] as [number, number, number, number, number],
     title: `${eventType === "training" ? "Training" : "Launch"}: ${store.tradingName}`,
     description: `Store: ${store.tradingName}\nAddress: ${store.streetAddress}, ${store.province}\nStore ID: ${store.storeId}\nStatus: ${store.status}`,
     location: `${store.streetAddress}, ${store.province}`,
@@ -364,23 +384,29 @@ export const addToCalendar = (store: any, eventType: "training" | "launch") => {
   })
 }
 
-export const ALL_PROVINCES = [
-  "Eastern Cape",
-  "Free State",
-  "Gauteng",
-  "KwaZulu-Natal",
-  "Limpopo",
-  "Mpumalanga",
-  "Northern Cape",
-  "North West",
-  "Western Cape",
-]
 
-export const STORE_TYPES = [
-  { value: "picknpay_franchise", label: "PicknPay Franchise", prefix: "PF" },
-  { value: "picknpay_corporate", label: "PicknPay Corporate", prefix: "PC" },
-  { value: "spar_franchise", label: "Spar Franchise", prefix: "SF" },
-  { value: "spar_corporate", label: "Spar Corporate", prefix: "SC" },
-  { value: "food_lovers_market", label: "Food Lovers Market", prefix: "FL" },
-  { value: "independent", label: "Independent", prefix: "IN" },
-]
+// date-utils.ts
+export function convertTimestampToDate(timestamp: any): Date {
+  if (!timestamp) {
+    console.warn("Timestamp is null or undefined, returning current date");
+    return new Date();
+  }
+  if (timestamp.toDate && typeof timestamp.toDate === "function") {
+    return timestamp.toDate();
+  }
+  if (typeof timestamp === "object" && "seconds" in timestamp && "nanoseconds" in timestamp) {
+    return new Date(timestamp.seconds * 1000 + timestamp.nanoseconds / 1000000);
+  }
+  if (timestamp instanceof Date) {
+    return timestamp;
+  }
+  if (typeof timestamp === "string") {
+    const date = new Date(timestamp);
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+  console.warn("Invalid timestamp format:", timestamp);
+  return new Date();
+}
+

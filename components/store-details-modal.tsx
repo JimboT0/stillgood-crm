@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Building, MapPin, Calendar, Phone, Mail, UserIcon, CheckCircle, Clock, FileText, Rocket } from "lucide-react"
 import type { Store, User } from "@/lib/firebase/types"
 // import { Timestamp } from "firebase/firestore"
-import { formatDateTimeForDisplay, getSalespersonInitials, getSalespersonName } from "./utils/date-utils"
+import { formatDateTimeForDisplay, getSalespersonInitials, getSalespersonName } from "../lib/utils/date-utils"
 
 interface StoreDetailsModalProps {
   store: Store | null
@@ -31,7 +31,7 @@ export function StoreDetailsModal({
 }: StoreDetailsModalProps) {
   if (!store) return null
 
-    const isSuperadmin = currentUser?.role === "superadmin"
+  const isSuperadmin = currentUser?.role === "superadmin"
 
 
   const getStatusBadge = () => {
@@ -83,9 +83,10 @@ export function StoreDetailsModal({
               {store.isSetup && !store.setupConfirmed && currentUser?.role === "superadmin" && (
                 <Button
                   size="sm"
-                  className="bg-green-500 hover:bg-green-600"
                   onClick={() => onSetupConfirmation(store.id)}
+                  className="bg-white text-white hover:bg-green-600"
                 >
+                  <CheckCircle className="w-4 h-4 mr-2 text-white" />
                   Confirm Setup
                 </Button>
               )}
@@ -231,7 +232,7 @@ export function StoreDetailsModal({
           {store.contractTerms && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Contract Terms</CardTitle>
+                <CardTitle className="text-lg">Contract</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">

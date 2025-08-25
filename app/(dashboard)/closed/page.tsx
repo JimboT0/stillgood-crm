@@ -4,7 +4,7 @@ import { ClosedTab } from "@/components/closed-tab"
 import { useState } from "react"
 import type { Store } from "@/lib/firebase/types"
 import { DocumentViewerModal } from "@/components/document-viewer-modal"
-import { formatDateTime } from "@/components/utils/date-utils"
+import { formatDateTime } from "@/lib/utils/date-utils"
 import { parseCustomDate } from "@/lib/date-validation"
 
 export default function ClosedPage() {
@@ -27,13 +27,13 @@ export default function ClosedPage() {
     setSelectedStore(store)
   }
 
-  async function handlePushStoreToRollout(store: Store, trainingDate?: Date, launchDate?: Date) {
-    try {
-      // Check store.id
-      if (!store?.id || typeof store.id !== "string" || !store.id.trim()) {
-        console.error("Invalid store ID:", store?.id)
-        alert("Failed to push to rollout: Invalid store ID.")
-        return
+async function handlePushStoreToRollout(store: Store, trainingDate?: Date, launchDate?: Date) {
+  try {
+    // Check store.id
+    if (!store?.id || typeof store.id !== "string" || !store.id.trim()) {
+      console.error("Invalid store ID:", store?.id)
+      alert("Failed to push to rollout: Invalid store ID.")
+      return
       }
 
       let finalTrainingDate: Date | null = null
@@ -145,11 +145,11 @@ export default function ClosedPage() {
         onStoreClick={handleStoreClick}
         onViewDocument={handleViewDocument}
         onSetupConfirmation={handleSetupConfirmation}
-        onPushToRollout={handlePushStoreToRollout}
+        onPushToRollout={handlePushStoreToRollout} // This is correct
         onMarkAsError={handleMarkAsError}
         getSalespersonName={(salespersonId: string): string => {
-          const user = users.find((user) => user.id === salespersonId)
-          return user ? user.name : "Unknown User"
+          const user = users.find((user) => user.id === salespersonId);
+          return user ? user.name : "Unknown User";
         }}
       />
       <DocumentViewerModal

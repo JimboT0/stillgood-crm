@@ -1,96 +1,117 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { StoreDetailsModal } from "@/components/store-details-modal"
-import { Search, Filter, Calendar, MapPin, CheckCircle, Clock, Eye, CheckCircle2Icon } from "lucide-react"
-import type { Store, User } from "@/lib/firebase/types"
-import { Timestamp } from "firebase/firestore"
-import { formatDateTime } from "../utils/date-utils"
-import { ProvinceCell } from "../cells/province-cell"
-import { LaunchTrainDateCell, SalespersonCell, StoreInfoCell } from "../cells"
+import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { StoreDetailModal } from "./store-detail-modal";
+import { Search, Filter, CheckCircle, Eye, Share, X, CheckCheck, Share2Icon, CheckSquare } from "lucide-react";
+import type { Store, User } from "@/lib/firebase/types";
+import { Timestamp } from "firebase/firestore";
+import { formatDateTime } from "@/lib/utils/date-utils";
+import { ProvinceCell } from "@/components/cells/province-cell";
+import { LaunchTrainDateCell, SalespersonCell, StoreInfoCell } from "@/components/cells";
+import toast, { Toaster } from "react-hot-toast";
+import { StoreDetailsModal } from "../store-details-modal";
 
 interface RolloutListProps {
-  stores: Store[]
-  users: User[]
-  currentUser: User | null
-  onToggleSetup: (storeId: string) => Promise<void>
-  onSetupConfirmation: (storeId: string) => Promise<void>
+  stores: Store[];
+  users: User[];
+  currentUser: User | null;
+  onToggleSetup: (storeId: string) => Promise<void>;
+  onSetupConfirmation: (storeId: string) => Promise<void>;
+  onToggleSocialSetup: (storeId: string) => Promise<void>;
+  updateCredentials: (storeId: string, credentials: Store['credentials']) => Promise<void>;
 }
 
-export function RolloutList({ stores, users, currentUser, onToggleSetup, onSetupConfirmation }: RolloutListProps) {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "setup" | "confirmed">("all")
-  const [selectedStore, setSelectedStore] = useState<Store | null>(null)
-  const isSuperadmin = currentUser?.role === "superadmin"
+export function RolloutList({ stores, users, currentUser, onToggleSetup, onSetupConfirmation, onToggleSocialSetup, updateCredentials }: RolloutListProps) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "setup" | "confirmed">("all");
+  const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+  const [modalMode, setModalMode] = useState<"share" | "confirmSetup">("share");
+  const isSuperadmin = currentUser?.role === "superadmin";
+  const isMedia = currentUser?.role === "media";
+  const [showTables, setShowTables] = useState(false);
 
-  // Get current date for comparison
-  const currentDate = new Date()
+  const currentDate = new Date();
 
-  // Filter and sort stores
   const filteredStores = stores.filter((store) => {
+    if (store.status === "closed") {
+      return true;
+    }
+
     const matchesSearch =
       store.tradingName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       store.streetAddress.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      store.province.toLowerCase().includes(searchTerm.toLowerCase())
+      store.province.toLowerCase().includes(searchTerm.toLowerCase());
 
-    let matchesStatus = true
-    if (statusFilter === "pending") matchesStatus = !store.isSetup
-    else if (statusFilter === "setup") matchesStatus = store.isSetup && !store.setupConfirmed
-    else if (statusFilter === "confirmed") matchesStatus = store.setupConfirmed
+    let matchesStatus = true;
+    if (statusFilter === "pending") matchesStatus = !store.isSetup;
+    else if (statusFilter === "setup") matchesStatus = !!store.isSetup && !store.setupConfirmed;
+    else if (statusFilter === "confirmed") matchesStatus = !!store.setupConfirmed;
 
-    return matchesSearch && matchesStatus
-  })
+    return matchesSearch && matchesStatus;
+  });
 
-  // Separate stores into upcoming and past based on launchDate
   const upcomingStores = filteredStores
     .filter((store) => {
-      const launchDate = store.launchDate instanceof Timestamp ? store.launchDate.toDate() : new Date(store.launchDate)
-      return launchDate >= currentDate
+      const launchDate = store.launchDate instanceof Timestamp ? store.launchDate.toDate() : new Date(store.launchDate);
+      return launchDate >= currentDate;
     })
     .sort((a, b) => {
-      const dateA = a.launchDate instanceof Timestamp ? a.launchDate.toDate() : new Date(a.launchDate)
-      const dateB = b.launchDate instanceof Timestamp ? b.launchDate.toDate() : new Date(b.launchDate)
-      return dateA.getTime() - dateB.getTime() // Ascending order (earliest first)
-    })
+      const dateA = a.launchDate instanceof Timestamp ? a.launchDate.toDate() : new Date(a.launchDate);
+      const dateB = b.launchDate instanceof Timestamp ? b.launchDate.toDate() : new Date(b.launchDate);
+      return dateA.getTime() - dateB.getTime();
+    });
 
   const pastStores = filteredStores
     .filter((store) => {
-      const launchDate = store.launchDate instanceof Timestamp ? store.launchDate.toDate() : new Date(store.launchDate)
-      return launchDate <= currentDate
+      const launchDate = store.launchDate instanceof Timestamp ? store.launchDate.toDate() : new Date(store.launchDate);
+      return launchDate <= currentDate;
     })
     .sort((a, b) => {
-      const dateA = a.launchDate instanceof Timestamp ? a.launchDate.toDate() : new Date(a.launchDate)
-      const dateB = b.launchDate instanceof Timestamp ? b.launchDate.toDate() : new Date(b.launchDate)
-      return dateA.getTime() - dateB.getTime() // Ascending order (earliest first)
-    })
+      const dateA = a.launchDate instanceof Timestamp ? a.launchDate.toDate() : new Date(a.launchDate);
+      const dateB = b.launchDate instanceof Timestamp ? b.launchDate.toDate() : new Date(b.launchDate);
+      return dateA.getTime() - dateB.getTime();
+    });
 
-  const getStatusBadge = (store: Store) => {
-    if (store.setupConfirmed) {
-      return (
-        <Badge className="bg-white text-green-400">
-          <CheckCircle size={32} />
-        </Badge>
-      )
-    } else if (store.isSetup) {
-      return (
-        <Badge className="bg-white text-blue-500">
-          <CheckCircle size={32} />
-        </Badge>
-      )
-    } else {
-      return (
-        <Badge className="bg-white text-gray-500">
-          <Clock size={32} />
-        </Badge>
-      )
+  const handleToggleSocialSetup = async (storeId: string, tradingName: string, isSocialSetup: boolean) => {
+    if (isSocialSetup) {
+      toast.error('Social setup already confirmed and cannot be reverted.', {
+        style: {
+          background: '#fff',
+          color: '#111827',
+          border: '1px solid #f97316',
+        },
+      });
+      return;
     }
-  }
+    try {
+      await onToggleSocialSetup(storeId);
+      toast.success(`"${tradingName} setup confirmed!"`, {
+        style: {
+          background: '#fff',
+          color: '#111827',
+          border: '1px solid #f97316',
+        },
+      });
+    } catch (error) {
+      toast.error('Failed to confirm social setup', {
+        style: {
+          background: '#fff',
+          color: '#111827',
+          border: '1px solid #f97316',
+        },
+      });
+    }
+  };
+
+  const handleOpenConfirmSetupModal = (store: Store) => {
+    setSelectedStore(store);
+    setModalMode("confirmSetup");
+  };
 
   const renderStoreTable = (stores: Store[], title: string) => (
     <Card className="w-full mt-6">
@@ -103,10 +124,11 @@ export function RolloutList({ stores, users, currentUser, onToggleSetup, onSetup
           <TableHeader>
             <TableRow>
               <TableHead>Store</TableHead>
-              {isSuperadmin && <TableHead></TableHead>}
+              {isSuperadmin && <TableHead>Salesperson</TableHead>}
               <TableHead>Location</TableHead>
               <TableHead>Dates</TableHead>
-              <TableHead>Setup</TableHead>
+              <TableHead>Socials</TableHead>
+              <TableHead>Store</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -125,21 +147,59 @@ export function RolloutList({ stores, users, currentUser, onToggleSetup, onSetup
                   trainingDate={store.trainingDate}
                   formatDateTime={formatDateTime}
                 />
-                <TableCell>{getStatusBadge(store)}</TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={() => setSelectedStore(store)}>
-                      <Eye size={32} />
+                  {(isSuperadmin || isMedia) ? (
+                    <Input
+                      type="checkbox"
+                      checked={!!store.isSocialSetup}
+                      onChange={() => handleToggleSocialSetup(store.id, store.tradingName, !!store.isSocialSetup)}
+                      disabled={store.isSocialSetup}
+                      className="w-5 h-5 accent-green-500 cursor-pointer disabled:opacity-60"
+                      aria-label="Social Setup Confirmed"
+                    />
+                  ) : (
+                    <span className="text-sm text-gray-500">
+                      {store.setupConfirmed ? <CheckCheck className='text-green-500' size={16} /> : <X className='text-red-500' size={16} />}
+                    </span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {isSuperadmin ? (
+                    <Input
+                      type="checkbox"
+                      checked={!!store.setupConfirmed}
+                      onClick={() => handleOpenConfirmSetupModal(store)}
+                      disabled={!store.isSocialSetup }
+                      className="w-5 h-5 accent-green-500 cursor-pointer disabled:opacity-60 "
+                    />
+                  ) : (
+                    <span className="text-sm text-gray-500">{store.setupConfirmed ? <CheckCheck className='text-green-500' size={16} /> : <X className='text-red-500' size={16} />}</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-row items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedStore(store);
+                        setModalMode("share"); // Ensure StoreDetailsModal is used
+                      }}
+                      className="text-gray-900 hover:text-blue-600"
+                    >
+                      <Eye size={16} />
                     </Button>
-                    {store.isSetup && !store.setupConfirmed && currentUser?.role === "superadmin" && (
-                      <Button
-                        size="sm"
-                        className="text-green-400 bg-green-400"
-                        onClick={() => onSetupConfirmation(store.id)}
-                      >
-                        <CheckCircle2Icon className="w-4 h-4" /> Confirmed
-                      </Button>
-                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedStore(store);
+                        setModalMode("confirmSetup"); // Ensure StoreDetailModal is used
+                      }}
+                      className="text-gray-500 hover:text-blue-600"
+                    >
+                      <Share size={16} />
+                    </Button>
                   </div>
                 </TableCell>
               </TableRow>
@@ -159,11 +219,11 @@ export function RolloutList({ stores, users, currentUser, onToggleSetup, onSetup
         )}
       </CardContent>
     </Card>
-  )
+  );
 
   return (
     <div className="space-y-6">
-      {/* Filters */}
+      <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -191,21 +251,46 @@ export function RolloutList({ stores, users, currentUser, onToggleSetup, onSetup
         </Select>
       </div>
 
-      {/* Upcoming Stores */}
       {renderStoreTable(upcomingStores, "Upcoming Stores")}
 
-      {/* Past Stores */}
-      {renderStoreTable(pastStores, "Past Stores")}
+      <Button
+        variant="default"
+        onClick={() => setShowTables((prev) => !prev)}
+        className="mt-4"
+      >
+        {showTables ? "Hide Past Stores" : "Open Past Stores"}
+      </Button>
 
-      <StoreDetailsModal
-        store={selectedStore}
-        isOpen={!!selectedStore}
-        onClose={() => setSelectedStore(null)}
-        users={users}
-        currentUser={currentUser}
-        onToggleSetup={onToggleSetup}
-        onSetupConfirmation={onSetupConfirmation}
-      />
+      {showTables && (
+        <>
+          {renderStoreTable(pastStores, "Past Stores")}
+        </>
+      )}
+
+      {selectedStore && modalMode === "share" && (
+        <StoreDetailsModal
+          store={selectedStore}
+          isOpen={true}
+          onClose={() => setSelectedStore(null)}
+          users={users}
+          currentUser={currentUser}
+          onToggleSetup={onToggleSetup}
+          onSetupConfirmation={onSetupConfirmation}
+        />
+      )}
+      {selectedStore && modalMode === "confirmSetup" && (
+        <StoreDetailModal
+          store={selectedStore}
+          isOpen={true}
+          onClose={() => setSelectedStore(null)}
+          users={users}
+          currentUser={currentUser}
+          onToggleSetup={onToggleSetup}
+          onSetupConfirmation={onSetupConfirmation}
+          updateCredentials={updateCredentials}
+          mode={modalMode}
+        />
+      )}
     </div>
-  )
+  );
 }

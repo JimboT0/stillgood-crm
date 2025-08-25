@@ -40,12 +40,15 @@ import {
   PenBox,
   DollarSignIcon,
   HandCoins,
+  Superscript,
+  PercentDiamond,
+  DeleteIcon,
 } from "lucide-react"
 import { useDashboardData } from "@/components/dashboard/dashboard-provider"
 import { signOut } from "firebase/auth"
 import { auth } from "@/lib/firebase/config"
 import { useRouter } from "next/navigation"
-import Farting from "../icons/fart"
+
 
 const navigationItems = [
   {
@@ -121,7 +124,7 @@ const navigationItems = [
   {
     title: "0 Comm",
     url: "/commissions",
-    icon: Farting,
+    icon: PercentDiamond,
     roles: ["superadmin"],
   },
     {
@@ -130,6 +133,12 @@ const navigationItems = [
     icon: HandCoins,
     roles: ["superadmin", "operations", "media", "salesperson"],
     getCount: (counts: Record<string, number>) => counts.refunds,
+  },
+      {
+    title: "SuperLeads",
+    url: "/superleads",
+    icon: Superscript,
+    roles: ["superadmin"],
   },
   
 ]
@@ -187,7 +196,7 @@ export function DashboardSidebar() {
             <SidebarMenu>
               {filteredItems.map((item) => {
                 const isActive = pathname === item.url
-                const count = counts ? item.getCount(counts) : undefined
+                const count = counts && typeof item.getCount === "function" ? item.getCount(counts) : undefined
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={isActive} tooltip={isCollapsed ? item.title : undefined}>

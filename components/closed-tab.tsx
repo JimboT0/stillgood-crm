@@ -1,9 +1,9 @@
-"use client"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
-import { CheckCircle, Rocket, EditIcon } from "lucide-react"
-import { ClosedStoreEditModal } from "./closed-store-edit-modal"
+"use client";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { CheckCircle, Rocket, EditIcon, Check } from "lucide-react";
+import { ClosedStoreEditModal } from "./closed-store-edit-modal";
 import {
   DocumentsCell,
   LaunchTrainDateCell,
@@ -11,31 +11,36 @@ import {
   SalespersonCell,
   StoreInfoCell,
   StoreStatusBadge,
-} from "./cells"
-import type { Store, User } from "@/lib/firebase/types"
-import { useClosedFilters } from "@/hooks/use-closed-filters"
-import { SearchInput, StatusFilter, CLOSED_STATUS_OPTIONS, AdvancedFilterBar } from "@/components/shared/filters"
-import { useState } from "react"
+} from "./cells";
+import type { Store, User } from "@/lib/firebase/types";
+import { useClosedFilters } from "@/hooks/use-closed-filters";
+import { SearchInput, StatusFilter, CLOSED_STATUS_OPTIONS, AdvancedFilterBar } from "@/components/shared/filters";
+import { useState } from "react";
 
 interface ClosedTabProps {
-  stores: Store[]
-  users: User[]
-  currentUser: User | null
-  onViewDocument: (store: Store, documentType: "sla" | "bank") => void
-  onSetupConfirmation: (storeId: string) => void
-  onPushToRollout: (store: Store) => void
-  onMarkAsError: (storeId: string, errorDescription: string) => void
+  stores: Store[];
+  users: User[];
+  currentUser: User | null;
+  onViewDocument: (store: Store, documentType: "sla" | "bank") => void;
+  onSetupConfirmation: (storeId: string) => void;
+  onPushToRollout: (store: Store) => void; // Updated prop name
 }
 
-const getStoreStatus = (store: Store): "pending" | "ready" | "pushed" => {
-  if (store.pushedToRollout) return "pushed"
-  if (store.trainingDate && store.launchDate) return "ready"
-  return "pending"
-}
+const getStoreStatus = (store: Store): "closed" | "pending setup" | "rollout" => {
+  if (store.status === "rollout" || store.pushedToRollout) return "rollout";
+  if (store.status === "pending setup") return "pending setup";
+  if (store.status === "closed") return "closed";
+  return "pending setup";
+};
 
-export function ClosedTab({ stores, users, currentUser, onViewDocument, onPushToRollout }: ClosedTabProps) {
-  const [selectedStore, setSelectedStore] = useState<Store | null>(null)
-
+export function ClosedTab({
+  stores,
+  users,
+  currentUser,
+  onViewDocument,
+  onSetupConfirmation,
+  onPushToRollout,
+}: ClosedTabProps) {
   const {
     filteredData: filteredStores,
     filters,
@@ -44,35 +49,33 @@ export function ClosedTab({ stores, users, currentUser, onViewDocument, onPushTo
     closedStatusCounts,
     hasActiveFilters,
     clearFilters,
-  } = useClosedFilters(stores, users)
+  } = useClosedFilters(stores, users);
+  const [selectedStore, setSelectedStore] = useState<Store | null>(null);
 
   const handleSaveStore = async (store: Store) => {
     try {
-      console.log(`Updating store ${store.id}`)
-      setSelectedStore(store)
+      setSelectedStore(store);
     } catch (error) {
-      console.error("Failed to update store:", error)
+      console.error("Failed to update store:", error);
     }
-  }
+  };
+
+  const handlePushToPendingSetup = (store: Store) => {
+    onPushToRollout({ ...store, status: "rollout", pushedToRollout: true });
+    onSetupConfirmation(store.id);
+  };
 
   const handleLoadPreset = (presetFilters: any) => {
     Object.entries(presetFilters).forEach(([key, value]) => {
-      if (key === "searchTerm") setSearchTerm(value as string)
-      else if (key === "statusFilter") setStatusFilter(value as string)
-    })
-  }
+      if (key === "searchTerm") setSearchTerm(value as string);
+      else if (key === "statusFilter") setStatusFilter(value as string);
+    });
+  };
 
-  const isSuperadmin = currentUser?.role === "superadmin"
+  const isSuperadmin = currentUser?.role === "superadmin";
 
   return (
     <div className="space-y-6 w-full">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">Closed Deals</h2>
-          <p className="text-sm text-gray-600">Manage closed deals and prepare for rollout</p>
-        </div>
-      </div>
-
       <AdvancedFilterBar
         filters={filters}
         onLoadPreset={handleLoadPreset}
@@ -83,45 +86,13 @@ export function ClosedTab({ stores, users, currentUser, onViewDocument, onPushTo
         <StatusFilter
           value={filters.statusFilter}
           onChange={setStatusFilter}
-          options={CLOSED_STATUS_OPTIONS}
+          options={[
+            ...CLOSED_STATUS_OPTIONS,
+            { value: "pendingSetup", label: "Pending Setup" },
+          ]}
           placeholder="Filter by status"
         />
       </AdvancedFilterBar>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Total Closed</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900">{closedStatusCounts.total}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Pending Setup</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{closedStatusCounts.pending}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Ready for Rollout</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{closedStatusCounts.ready}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">In Rollout</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{closedStatusCounts.pushed}</div>
-          </CardContent>
-        </Card>
-      </div>
 
       <Card className="w-full">
         <CardHeader>
@@ -133,7 +104,7 @@ export function ClosedTab({ stores, users, currentUser, onViewDocument, onPushTo
             <TableHeader>
               <TableRow>
                 <TableHead>Store</TableHead>
-                {isSuperadmin && <TableHead>Lead By</TableHead>}
+                {isSuperadmin && <TableHead>Creator</TableHead>}
                 <TableHead>Status</TableHead>
                 <TableHead>Location</TableHead>
                 <TableHead>Dates</TableHead>
@@ -142,41 +113,53 @@ export function ClosedTab({ stores, users, currentUser, onViewDocument, onPushTo
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredStores.map((store) => (
-                <TableRow key={store.id}>
-                  <StoreInfoCell tradingName={store.tradingName} streetAddress={store.streetAddress} />
-                  <SalespersonCell isSuperadmin={isSuperadmin} salespersonId={store.salespersonId} users={users} />
-                  <StoreStatusBadge status={getStoreStatus(store)} isKeyAccount={!!store.isKeyAccount} />
-                  <ProvinceCell province={store.province} />
-                  <LaunchTrainDateCell launchDate={store.launchDate} trainingDate={store.trainingDate} />
-                  <DocumentsCell store={store} onViewDocument={onViewDocument} />
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {!store.pushedToRollout && store.trainingDate && store.launchDate && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            console.log("Launching rollout for store:", store.id)
-                            onPushToRollout(store)
-                          }}
-                          className="bg-purple-500 text-white hover:bg-purple-600"
-                        >
-                          <Rocket className="w-4 h-4" />
+              {filteredStores.map((store) => {
+                const status = getStoreStatus(store);
+                return (
+                  <TableRow key={store.id}>
+                    <StoreInfoCell tradingName={store.tradingName} streetAddress={store.streetAddress} />
+                    <SalespersonCell isSuperadmin={isSuperadmin} salespersonId={store.salespersonId} users={users} />
+                    <StoreStatusBadge status={status} isKeyAccount={!!store.isKeyAccount} />
+                    <ProvinceCell province={store.province} />
+                    <LaunchTrainDateCell launchDate={store.launchDate} trainingDate={store.trainingDate} />
+                    <DocumentsCell store={store} onViewDocument={onViewDocument} />
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {status === "closed" && isSuperadmin && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handlePushToPendingSetup(store)}
+                            className="bg-purple-500 text-white hover:bg-purple-600"
+                          >
+                            <Rocket className="w-4 h-4" />
+                            Rollout!
+                          </Button>
+                        )}
+                        {status === "pending setup" && isSuperadmin && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => onSetupConfirmation(store.id)} // Simplified to use onSetupConfirmation directly
+                            className="bg-yellow-500 text-white hover:bg-yellow-600"
+                          >
+                            <Check className="w-4 h-4" />
+                            Confirm Setup
+                          </Button>
+                        )}
+                        {status === "rollout" && (
+                          <Button size="sm" variant="outline" className="bg-green-500 text-white" disabled>
+                            <CheckCircle className="w-4 h-4" />
+                          </Button>
+                        )}
+                        <Button size="sm" variant="outline" onClick={() => setSelectedStore(store)}>
+                          <EditIcon className="w-4 h-4" />
                         </Button>
-                      )}
-                      {store.pushedToRollout && (
-                        <Button size="sm" variant="outline" className="bg-green-500 text-white" disabled>
-                          <CheckCircle className="w-4 h-4" />
-                        </Button>
-                      )}
-                      <Button size="sm" variant="outline" onClick={() => setSelectedStore(store)}>
-                        <EditIcon className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
           {filteredStores.length === 0 && (
@@ -202,5 +185,5 @@ export function ClosedTab({ stores, users, currentUser, onViewDocument, onPushTo
         currentUserId={currentUser?.id}
       />
     </div>
-  )
+  );
 }

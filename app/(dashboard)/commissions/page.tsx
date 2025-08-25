@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ExternalLink } from "lucide-react"
 import { storeService } from "@/lib/firebase/services/store"
-import { formatDateTime } from "@/components/utils/date-utils"
+import { formatDateTime } from "@/lib/utils/date-utils"
 import type { Store } from "@/lib/firebase/types"
 import { Label } from "@/components/ui/label"
 

@@ -9,13 +9,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { CalendarIcon, List, MapPin, Bell } from "lucide-react";
+import { CalendarIcon, List, MapPin, Bell, X } from "lucide-react";
 import { Timestamp } from "firebase/firestore";
 import { auth } from "@/lib/firebase/config";
 import { storeService } from "@/lib/firebase/services/store";
 import { userService } from "@/lib/firebase/services/user";
 import type { User, StoreOpsView } from "@/lib/firebase/types";
-import { formatDateTime } from "./utils/date-utils";
+import {formatDateTime} from "../lib/utils/date-utils";
+import { storeTypes } from "@/lib/firebase/types";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -176,15 +177,6 @@ export function OpsCalendarModal({ store, isOpen, onClose, eventType }: StoreEdi
         sunday: { from: "", to: "" },
         publicHoliday: { from: "", to: "" },
     };
-
-    const storeTypes = [
-        { value: "picknpay_franchise", label: "PicknPay Franchise", prefix: "PF" },
-        { value: "picknpay_corporate", label: "PicknPay Corporate", prefix: "PC" },
-        { value: "spar_franchise", label: "Spar Franchise", prefix: "SF" },
-        { value: "spar_corporate", label: "Spar Corporate", prefix: "SC" },
-        { value: "food_lovers_market", label: "Food Lovers Market", prefix: "FL" },
-        { value: "independent", label: "Independent", prefix: "IN" },
-    ];
 
     const selectedEventType = eventType || (store.trainingDate ? "training" : "launch");
 

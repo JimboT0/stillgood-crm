@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Plus, Minus, Edit, Package, TrendingUp, TrendingDown, Clock, AlertTriangle, Search } from "lucide-react";
+import { Plus, Minus, Edit, Package, TrendingUp, TrendingDown, Clock, AlertTriangle, Search, RefreshCw, Book, ThumbsUp } from "lucide-react";
 import { bagService } from "@/lib/firebase/services/bag";
 import { BagAdditionModal } from "@/components/bag-addition-modal";
 import { BagRemovalModal } from "@/components/bag-removal-modal";
@@ -16,8 +16,7 @@ import { InventoryEditModal } from "@/components/inventory-edit-modal";
 import { useDashboardData } from "@/components/dashboard/dashboard-provider";
 import type { BagInventory, BagLog, Province } from "@/lib/firebase/types";
 import { PROVINCES } from "@/lib/firebase/types";
-import { formatDateTime } from "@/components/utils/date-utils";
-import { auth } from "@/lib/firebase";
+import { formatDateTime } from "@/lib/utils/date-utils";
 
 export default function BagsPage() {
   const { currentUser } = useDashboardData();
@@ -34,7 +33,6 @@ export default function BagsPage() {
   const [changeTypeFilter, setChangeTypeFilter] = useState("all");
   const [timeFilter, setTimeFilter] = useState<string>("all");
 
-
   const isSuperadmin = currentUser?.role === "superadmin";
 
   useEffect(() => {
@@ -45,7 +43,6 @@ export default function BagsPage() {
     setIsLoading(true);
     try {
       const [inventoryData, logsData] = await Promise.all([bagService.getAllInventory(), bagService.getAllLogs()]);
-      console.log("Logs data:", logsData); // Debug: Inspect log.createdAt format
       setInventory(inventoryData);
       setLogs(logsData);
     } catch (err: any) {
@@ -55,23 +52,24 @@ export default function BagsPage() {
     }
   };
 
-  const handleAddBags = async (province: Province, bagsToAdd: number, source: string, notes?: string) => {
+  const handleAddBags = async (Province: Province, bagsToAdd: number, source: string, notes?: string) => {
     if (!currentUser) throw new Error("User not authenticated");
-    await bagService.addBags(province, bagsToAdd, source, notes || "", currentUser.id, currentUser.name);
+    await bagService.addBags(Province, bagsToAdd, source, notes || "", currentUser.id, currentUser.name);
     await loadData();
   };
 
-  const handleRemoveBags = async (province: Province, bagsToRemove: number, destination: string, notes?: string) => {
+  const handleRemoveBags = async (Province: Province, bagsToRemove: number, destination: string, notes?: string) => {
     if (!currentUser) throw new Error("User not authenticated");
-    await bagService.removeBags(province, bagsToRemove, destination, notes || "", currentUser.id, currentUser.name);
+    await bagService.removeBags(Province, bagsToRemove, destination, notes || "", currentUser.id, currentUser.name);
     await loadData();
   };
 
-  const handleUpdateInventory = async (province: Province, totalBags: number) => {
+  const handleUpdateInventory = async (Province: Province, totalBags: number) => {
     if (!currentUser) throw new Error("User not authenticated");
-    await bagService.updateInventory(province, totalBags, currentUser.id, currentUser.name);
+    await bagService.updateInventory(Province, totalBags, currentUser.id, currentUser.name);
     await loadData();
   };
+
 
   // Calculate stats
   const totalBags = inventory.reduce((sum, inv) => sum + inv.totalBags, 0);
@@ -85,28 +83,18 @@ export default function BagsPage() {
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
   const recentChanges = logs.filter((log) => {
-    let logDate: Date;
-    if (typeof log.createdAt === "object" && "seconds" in log.createdAt) {
-      logDate = new Date(log.createdAt.seconds * 1000 + log.createdAt.nanoseconds / 1000000);
-    } else if (typeof log.createdAt === "string") {
-      logDate = new Date(log.createdAt);
-    } else if (log.createdAt instanceof Date) {
-      logDate = log.createdAt;
-    } else {
-      return false;
-    }
+    const logDate = new Date(log.createdAt);
     return logDate >= yesterday;
   }).length;
-
   const lowStockProvinces = inventory.filter((inv) => inv.totalBags < 100).length;
 
   // Create stock map for removal modal
   const availableStock = inventory.reduce(
     (acc, inv) => {
-      acc[inv.province] = inv.totalBags;
+      acc[inv.Province] = inv.totalBags;
       return acc;
     },
-    {} as { [province: string]: number },
+    {} as { [Province: string]: number },
   );
 
   // Filter logs
@@ -116,25 +104,15 @@ export default function BagsPage() {
       (log.source?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
       log.removedByName.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesProvince = provinceFilter === "all" || log.province === provinceFilter;
-    const matchesChangeType = changeTypeFilter === "all" || log.changeType === changeTypeFilter;
+    const matchesProvince =
+      provinceFilter === "all" || log.province === provinceFilter;
 
-    // Time filter logic
+    const matchesChangeType =
+      changeTypeFilter === "all" || log.changeType === changeTypeFilter;
+
+    const logDate = new Date(log.createdAt);
     let matchesTime = true;
-    const now = new Date("2025-08-14T21:15:00+02:00"); // Current date in SAST
-    let logDate: Date;
-
-    if (typeof log.createdAt === "object" && "seconds" in log.createdAt) {
-      logDate = new Date(log.createdAt.seconds * 1000 + log.createdAt.nanoseconds / 1000000);
-    } else if (typeof log.createdAt === "string") {
-      logDate = new Date(log.createdAt);
-    } else if (log.createdAt instanceof Date) {
-      logDate = log.createdAt;
-    } else {
-      console.error("Invalid log.createdAt:", log.createdAt);
-      return false;
-    }
-
+    const now = new Date();
     if (timeFilter === "past-month") {
       const pastMonth = new Date(now);
       pastMonth.setDate(now.getDate() - 30);
@@ -148,7 +126,7 @@ export default function BagsPage() {
     return matchesSearch && matchesProvince && matchesChangeType && matchesTime;
   });
 
-  // Get provinces to display - for superadmin show all, for others show only provinces with inventory
+  // Get provinces to display
   const provincesToShow = isSuperadmin
     ? PROVINCES
     : PROVINCES.filter((province) => inventory.some((inv) => inv.province === province && inv.totalBags > 0));
@@ -168,7 +146,6 @@ export default function BagsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Bag Management</h1>
@@ -176,10 +153,12 @@ export default function BagsPage() {
         </div>
         <div className="flex flex-col gap-2">
           {isSuperadmin ? (
-            <Button onClick={() => setIsAddModalOpen(true)} className="bg-green-600 hover:bg-green-700">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Bags
-            </Button>
+            <>
+              <Button onClick={() => setIsAddModalOpen(true)} className="bg-green-600 hover:bg-green-700">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Bags
+              </Button>
+            </>
           ) : null}
           <Button
             onClick={() => setIsRemoveModalOpen(true)}
@@ -193,14 +172,13 @@ export default function BagsPage() {
       </div>
 
       {error && (
-        <Alert variant="destructive">
+        <Alert variant={error.includes("Successfully") ? "default" : "destructive"}>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      {/* <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Bags</CardTitle>
@@ -232,7 +210,7 @@ export default function BagsPage() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row the items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Recent Changes</CardTitle>
             <Clock className="h-4 w-4 text-orange-500" />
           </CardHeader>
@@ -243,18 +221,17 @@ export default function BagsPage() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space đời-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Low Stock Alerts</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-yellow-500" />
+            <AlertTriangle className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-600">{lowStockProvinces}</div>
-            <p className="text-xs text-gray-500">{"< 100 bags"}</p>
+            <p className="text-xs text-gray-500">{"< 2000 bags"}</p>
           </CardContent>
         </Card>
-      </div>
+      </div> */}
 
-      {/* Current Inventory */}
       <Card>
         <CardHeader>
           <CardTitle>Current Inventory by Province</CardTitle>
@@ -265,43 +242,56 @@ export default function BagsPage() {
             {provincesToShow.map((province) => {
               const inv = inventory.find((i) => i.province === province);
               const bags = inv?.totalBags || 0;
-              const isLowStock = bags < 100;
 
-              // For non-superadmin users, skip provinces with 0 bags
+
+              const isLowStock = bags < 2000 && bags > 0;
+              const isCriticalStock = bags < 1000 && bags > 0;
+              const isNoStock = bags === 0;
+
               if (!isSuperadmin && bags === 0) {
                 return null;
               }
 
               return (
-                <div key={province} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
+                <div key={province} className={`flex items-center justify-between p-3 border rounded-lg ${isCriticalStock ? "border-red-400 bg-red-50" : isLowStock ? "border-yellow-300 bg-yellow-50" : isNoStock ? "border-grey-300 bg-grey-50" : "border-green-200 bg-green-50"} `}>
+                  
+
+                  <div className="text-sm text-gray-600">
                     <h4 className="font-medium">{province}</h4>
-                    <p className={`text-sm ${isLowStock ? "text-yellow-600" : "text-gray-600"}`}>
-                      {bags.toLocaleString()} bags
-                      {isLowStock && bags > 0 && " (Low Stock)"}
+                    <p>
+                      {bags} bags
                     </p>
                   </div>
-                  {isSuperadmin && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedInventory(
-                          inv || {
-                            id: "",
-                            province,
-                            totalBags: 0,
-                            lastUpdated: new Date(),
-                            updatedBy: "",
-                            updatedByName: "",
-                          },
-                        );
-                        setIsEditModalOpen(true);
-                      }}
-                    >
-                      <Edit className="w-3 h-3" />
-                    </Button>
-                  )}
+                  <div className="flex flex-row items-center gap-2">
+                    {isCriticalStock
+                      ? <span className="text-red-600"> <AlertTriangle className="h-4 w-4" /></span>
+                      : isLowStock
+                        ? <span className="text-yellow-600"> <Clock className="h-4 w-4" /></span>
+                        : isNoStock ? <span className="text-gray-400"> <Book className="h-4 w-4" /></span>
+                          : <span className="text-green-500"> <ThumbsUp className="h-4 w-4" /></span>
+                    }
+                    {isSuperadmin && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedInventory(
+                            inv || {
+                              id: "",
+                              province,
+                              totalBags: 0,
+                              lastUpdated: new Date(),
+                              updatedBy: "",
+                              updatedByName: "",
+                            },
+                          );
+                          setIsEditModalOpen(true);
+                        }}
+                      >
+                        <Edit className="w-3 h-3" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -309,7 +299,6 @@ export default function BagsPage() {
         </CardContent>
       </Card>
 
-      {/* Change History */}
       <Card>
         <CardHeader>
           <CardTitle>Change History</CardTitle>
@@ -414,7 +403,6 @@ export default function BagsPage() {
         </CardContent>
       </Card>
 
-      {/* Modals */}
       <BagAdditionModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onAdd={handleAddBags} />
       <BagRemovalModal
         isOpen={isRemoveModalOpen}

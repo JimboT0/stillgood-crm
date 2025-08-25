@@ -1,13 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { useDashboardData } from "@/components/dashboard/dashboard-provider"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle } from "lucide-react"
-import { formatDateTime } from "@/components/utils/date-utils"
+import { formatDateTime } from "@/lib/utils/date-utils"
 import { LaunchTrainDateCell, ProvinceCell, SalespersonCell } from "@/components/cells"
 import StoreFilters from "@/components/filters/store-filter"
 
@@ -59,7 +58,7 @@ export default function CompletedPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Store</TableHead>
-                <TableHead></TableHead>
+                {isSuperAdmin ? <TableHead>Creator</TableHead> : null}
                 <TableHead>Location</TableHead>
                 <TableHead>Setup Date</TableHead>
                 <TableHead>Status</TableHead>
@@ -72,11 +71,11 @@ export default function CompletedPage() {
                     <div className="font-medium">{store.tradingName}</div>
                     <div className="text-sm text-gray-500">{store.streetAddress}</div>
                   </TableCell>
-                  <SalespersonCell
+                  {isSuperAdmin ? <SalespersonCell
                     isSuperadmin={isSuperAdmin}
                     salespersonId={store.salespersonId}
                     users={users}
-                  />
+                  /> :null}
                   <ProvinceCell province={store.province} />
                   <LaunchTrainDateCell
                     launchDate={store.launchDate}
