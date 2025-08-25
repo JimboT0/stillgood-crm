@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { SuperLeadsTab } from "@/components/super-leads-tab";
-import { StoreEditModal } from "@/components/store-edit-modal";
-import { DocumentViewerModal } from "@/components/document-viewer-modal";
+import { DocumentViewerModal } from "@/components/modals/document-viewer-modal";
 import { useDashboardData } from "@/components/dashboard/dashboard-provider";
 import type { Store } from "@/lib/firebase/types";
+import { SuperStoreEditModal } from "@/components/modals/super-store-edit-modal";
 
 function SuperLeadsPageContent() {
   const { currentUser, stores, users, handleSaveStore, handleDeleteStore, handleStatusChange, handleToggleSetup, handleSetupConfirmation, handleUpdateCredentials } = useDashboardData();
@@ -66,7 +66,7 @@ function SuperLeadsPageContent() {
         currentUser={currentUser}
       />
 
-      <StoreEditModal
+      <SuperStoreEditModal
         store={editingStore}
         isOpen={!!editingStore}
         onClose={() => {

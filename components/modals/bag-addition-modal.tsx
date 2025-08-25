@@ -11,13 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Plus, AlertTriangle } from "lucide-react"
-import type { Province } from "@/lib/firebase/types"
+import type { province } from "@/lib/firebase/types"
 import { PROVINCES } from "@/lib/firebase/types"
 
 interface BagAdditionModalProps {
   isOpen: boolean
   onClose: () => void
-  onAdd: (province: Province, bags: number, source: string, notes?: string) => Promise<void>
+  onAdd: (province: province, bags: number, source: string, notes?: string) => Promise<void>
 }
 
 const SOURCE_OPTIONS = [
@@ -29,7 +29,7 @@ const SOURCE_OPTIONS = [
 ]
 
 export function BagAdditionModal({ isOpen, onClose, onAdd }: BagAdditionModalProps) {
-  const [province, setProvince] = useState<Province | "">("")
+  const [province, setProvince] = useState<province | "">("")
   const [bags, setBags] = useState("")
   const [source, setSource] = useState("")
   const [customSource, setCustomSource] = useState("")
@@ -52,7 +52,7 @@ export function BagAdditionModal({ isOpen, onClose, onAdd }: BagAdditionModalPro
 
     try {
       const finalSource = source === "Other" ? customSource : source
-      await onAdd(province as Province, bagsNumber, finalSource, notes)
+      await onAdd(province as province, bagsNumber, finalSource, notes)
       handleClose()
     } catch (err: any) {
       setError(err.message || "Failed to add bags")
@@ -91,7 +91,7 @@ export function BagAdditionModal({ isOpen, onClose, onAdd }: BagAdditionModalPro
 
           <div className="space-y-2">
             <Label htmlFor="province">Province</Label>
-            <Select value={province} onValueChange={(value) => setProvince(value as Province)}>
+            <Select value={province} onValueChange={(value) => setProvince(value as province)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select province" />
               </SelectTrigger>

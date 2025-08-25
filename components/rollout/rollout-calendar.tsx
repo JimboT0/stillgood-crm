@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { StoreDetailsModal } from "@/components/store-details-modal"
+import { StoreDetailsModal } from "@/components/modals/store-details-modal"
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react"
 import type { Store, User } from "@/lib/firebase/types"
 import { Timestamp } from "firebase/firestore"

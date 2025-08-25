@@ -11,10 +11,10 @@ import { storeService } from "@/lib/firebase/services/store"
 import { userService } from "@/lib/firebase/services/user"
 import { auth } from "@/lib/firebase/config"
 import type { User, StoreOpsView } from "@/lib/firebase/types"
-import { OpsCalendarModal } from "./ops-calendar-modal"
+import { OpsCalendarModal } from "./modals/ops-calendar-modal"
 import { RolloutCalendar } from "@/components/rollout/rollout-calendar"
 import { OpsList } from "./ops-list"
-import { StoreDetailsModal } from "./store-details-modal"
+import { StoreDetailsModal } from "./modals/store-details-modal"
 
 interface OpsCalendarProps {
   stores?: StoreOpsView[]

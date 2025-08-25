@@ -99,7 +99,7 @@ export function SuperLeadsTab({
     }))
 
     // Province options
-    const provinceOptions = Array.from(new Set(stores.map((s) => s.Province))).map((province) => ({
+    const provinceOptions = Array.from(new Set(stores.map((s) => s.province))).map((province) => ({
         value: province,
         label: province,
     }))
@@ -132,7 +132,7 @@ export function SuperLeadsTab({
             !filters.salespersonFilter || filters.salespersonFilter === "All" || store.salespersonId === filters.salespersonFilter
 
         const matchesProvince =
-            !filters.provinceFilter || filters.provinceFilter === "All" || store.Province === filters.provinceFilter
+            !filters.provinceFilter || filters.provinceFilter === "All" || store.province === filters.provinceFilter
 
         return matchesSearch && matchesStatus && matchesSalesperson && matchesProvince
     })
@@ -240,7 +240,7 @@ export function SuperLeadsTab({
                                     {columnVisibility.Contact && (
                                         <ContactsCell contactPersons={store.contactPersons ?? []} />
                                     )}
-                                    {columnVisibility.Location && <ProvinceCell province={store.Province} />}
+                                    {columnVisibility.Location && <ProvinceCell province={store.province} />}
                                     {columnVisibility.Dates && (
                                         <LaunchTrainDateCell
                                             launchDate={store.launchDate}

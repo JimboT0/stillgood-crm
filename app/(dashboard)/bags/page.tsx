@@ -10,11 +10,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Plus, Minus, Edit, Package, TrendingUp, TrendingDown, Clock, AlertTriangle, Search, RefreshCw, Book, ThumbsUp } from "lucide-react";
 import { bagService } from "@/lib/firebase/services/bag";
-import { BagAdditionModal } from "@/components/bag-addition-modal";
-import { BagRemovalModal } from "@/components/bag-removal-modal";
-import { InventoryEditModal } from "@/components/inventory-edit-modal";
+import { BagAdditionModal } from "@/components/modals/bag-addition-modal";
+import { BagRemovalModal } from "@/components/modals/bag-removal-modal";
+import { InventoryEditModal } from "@/components/modals/inventory-edit-modal";
 import { useDashboardData } from "@/components/dashboard/dashboard-provider";
-import type { BagInventory, BagLog, Province } from "@/lib/firebase/types";
+import type { BagInventory, BagLog, province } from "@/lib/firebase/types";
 import { PROVINCES } from "@/lib/firebase/types";
 import { formatDateTime } from "@/lib/utils/date-utils";
 
@@ -52,21 +52,21 @@ export default function BagsPage() {
     }
   };
 
-  const handleAddBags = async (Province: Province, bagsToAdd: number, source: string, notes?: string) => {
+  const handleAddBags = async (province: province, bagsToAdd: number, source: string, notes?: string) => {
     if (!currentUser) throw new Error("User not authenticated");
-    await bagService.addBags(Province, bagsToAdd, source, notes || "", currentUser.id, currentUser.name);
+    await bagService.addBags(province, bagsToAdd, source, notes || "", currentUser.id, currentUser.name);
     await loadData();
   };
 
-  const handleRemoveBags = async (Province: Province, bagsToRemove: number, destination: string, notes?: string) => {
+  const handleRemoveBags = async (province: province, bagsToRemove: number, destination: string, notes?: string) => {
     if (!currentUser) throw new Error("User not authenticated");
-    await bagService.removeBags(Province, bagsToRemove, destination, notes || "", currentUser.id, currentUser.name);
+    await bagService.removeBags(province, bagsToRemove, destination, notes || "", currentUser.id, currentUser.name);
     await loadData();
   };
 
-  const handleUpdateInventory = async (Province: Province, totalBags: number) => {
+  const handleUpdateInventory = async (province: province, totalBags: number) => {
     if (!currentUser) throw new Error("User not authenticated");
-    await bagService.updateInventory(Province, totalBags, currentUser.id, currentUser.name);
+    await bagService.updateInventory(province, totalBags, currentUser.id, currentUser.name);
     await loadData();
   };
 
@@ -91,10 +91,10 @@ export default function BagsPage() {
   // Create stock map for removal modal
   const availableStock = inventory.reduce(
     (acc, inv) => {
-      acc[inv.Province] = inv.totalBags;
+      acc[inv.province] = inv.totalBags;
       return acc;
     },
-    {} as { [Province: string]: number },
+    {} as { [province: string]: number },
   );
 
   // Filter logs

@@ -15,13 +15,13 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { storeService } from "@/lib/firebase/services/store"
 import { fileService } from "@/lib/firebase/services/file"
 import { groupService } from "@/lib/firebase/services/group"
-import { formatDateTime, formatDateTimeForInput, parseDateTime } from "../lib/utils/date-utils"
+import { formatDateTime, formatDateTimeForInput, parseDateTime } from "../../lib/utils/date-utils"
 import { isValidTimestamp } from "@/lib/date-validation"
 import type { Store, ContactPerson, Product, CollectionTimes, StoreGroup, Document } from "@/lib/firebase/types"
 import { PROVINCES, storeTypes } from "@/lib/firebase/types"
-import {bagPresets} from "../lib/data/bag-presets"
+import {bagPresets} from "../../lib/data/bag-presets"
 
-interface StoreEditModalProps {
+interface SuperStoreEditModalProps {
   store: Store | null
   isOpen: boolean
   onClose: () => void
@@ -30,14 +30,14 @@ interface StoreEditModalProps {
   currentUserId?: string
 }
 
-export function StoreEditModal({
+export function SuperStoreEditModal({
   store,
   isOpen,
   onClose,
   onSave,
   isMovingToClosed,
   currentUserId,
-}: StoreEditModalProps) {
+}: SuperStoreEditModalProps) {
   const [formData, setFormData] = useState<Partial<Store>>({})
   const [contactPersons, setContactPersons] = useState<ContactPerson[]>([])
   const [products, setProducts] = useState<Product[]>([])
@@ -113,7 +113,7 @@ export function StoreEditModal({
       setFormData({
         tradingName: "",
         streetAddress: "",
-        province: undefined,
+        Province: undefined,
         status: "cold", // Default to "cold" for new stores
         salespersonId: currentUserId || "",
         isKeyStore: false,
@@ -422,7 +422,7 @@ export function StoreEditModal({
         id: store?.id || "",
         tradingName: formData.tradingName || "",
         streetAddress: formData.streetAddress || "",
-        Province: formData.Province || "",
+        province: formData.province || "",
         status: isMovingToClosed ? "closed" : formData.status || "lead",
         salespersonId: formData.salespersonId || currentUserId,
         isSetup: formData.isSetup || false,

@@ -14,7 +14,6 @@ import {
   StoreInfoCell,
   StoreStatusBadge,
 } from "./cells/index"
-import { formatDateTime } from "../lib/utils/date-utils"
 import type { Store, User } from "@/lib/firebase/types"
 import { useLeadFilters } from "@/hooks/use-lead-filters"
 import { SearchInput, StatusFilter, FilterBar, LEAD_STATUS_OPTIONS } from "@/components/shared/filters"

@@ -9,12 +9,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Edit, AlertTriangle, Info } from "lucide-react"
-import type { BagInventory, Province } from "@/lib/firebase/types"
+import type { BagInventory, province } from "@/lib/firebase/types"
 
 interface InventoryEditModalProps {
   isOpen: boolean
   onClose: () => void
-  onUpdate: (province: Province, totalBags: number) => Promise<void>
+  onUpdate: (province: province, totalBags: number) => Promise<void>
   inventory: BagInventory | null
 }
 
@@ -43,7 +43,7 @@ export function InventoryEditModal({ isOpen, onClose, onUpdate, inventory }: Inv
     setError(null)
 
     try {
-      await onUpdate(inventory.province as Province, bagsNumber)
+      await onUpdate(inventory.province as province, bagsNumber)
       handleClose()
     } catch (err: any) {
       setError(err.message || "Failed to update inventory")

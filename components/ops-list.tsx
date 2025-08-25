@@ -7,11 +7,11 @@ import { Button } from "@/components/ui/button"
 import { Bell, BellIcon, Calendar, CheckCircle, EditIcon, EyeIcon } from "lucide-react"
 import { SearchInput, StatusFilter } from "@/components/shared/filters"
 import { StoreInfoCell, ProvinceCell, StoreStatusBadge, SalespersonCell } from "./cells"
-import { OpsCalendarModal } from "./ops-calendar-modal"
+import { OpsCalendarModal } from "./modals/ops-calendar-modal"
 import type { StoreOpsView, User } from "@/lib/firebase/types"
-import { StoreDetailsModal } from "./store-details-modal"
-import { formatDateTimeForDisplay } from "../lib/utils/date-utils"
-import { addToCalendar } from "../lib/utils/date-utils"
+import { StoreDetailsModal } from "./modals/store-details-modal"
+import { formatDateTimeForDisplay } from "@/lib/utils/date-formatter"
+
 
 interface OpsListProps {
     stores: StoreOpsView[]
@@ -211,7 +211,7 @@ export function OpsList({
                         {events.map((event, index) => (
                             <TableRow key={`${event.store.id}-${event.eventType}-${index}`}>
                                 <StoreInfoCell
-                                    tradingName={event.store.tradingName || event.store.name || ""}
+                                    tradingName={event.store.tradingName || event.store.tradingName || ""}
                                     streetAddress={event.store.streetAddress || ""}
                                 />
                                 <ProvinceCell province={event.store.province} />

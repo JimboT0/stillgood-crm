@@ -41,20 +41,20 @@ export function StoreDetailModal({
   const isSuperadmin = currentUser?.role === "superadmin";
   const isAuthenticated = !!currentUser;
 
-useEffect(() => {
-  console.log("Store creds:", store?.credentials);
-  if (isSuperadmin && store?.credentials?.[0]) {
-    const cred = store.credentials[0];
-    setCredentials({
-      username: cred.username || "",
-      password: cred.password || "",
-      bagusername: cred.bagusername || "",
-      bagpassword: cred.bagpassword || "",
-      orderusername: cred.orderusername || "",
-      orderpassword: cred.orderpassword || "",
-    });
-  }
-}, [isSuperadmin, store]);
+  useEffect(() => {
+    console.log("Store creds:", store?.credentials);
+    if (isSuperadmin && store?.credentials?.[0]) {
+      const cred = store.credentials[0];
+      setCredentials({
+        username: cred.username || "",
+        password: cred.password || "",
+        bagusername: cred.bagusername || "",
+        bagpassword: cred.bagpassword || "",
+        orderusername: cred.orderusername || "",
+        orderpassword: cred.orderpassword || "",
+      });
+    }
+  }, [isSuperadmin, store]);
 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -152,7 +152,12 @@ useEffect(() => {
   const handleCopyCredentials = () => {
     if (!store || !store.credentials?.[0]) return;
     const cred = store.credentials[0];
-    const credentialsMessage = `Login to admin.stillgood.co.za\n\nBagAdminUsername: ${cred.bagusername}\nBagAdminPassword: ${cred.bagpassword}\nOrderUsername: ${cred.orderusername}\nOrderPassword: ${cred.orderpassword}`;
+    const credentialsMessage =
+      `Login to admin.stillgood.co.za\n\n
+    Load Bags\n
+    BagAdminUsername: ${cred.bagusername}\nBagAdminPassword: ${cred.bagpassword}\n
+    Check Orders\n
+    OrderUsername: ${cred.orderusername}\nOrderPassword: ${cred.orderpassword}`;
     navigator.clipboard.writeText(credentialsMessage);
     toast.success("Credentials copied to clipboard", {
       style: {
@@ -256,10 +261,13 @@ useEffect(() => {
                 ) : (
                   <div className="space-y-4">
                     <pre className="bg-gray-100 p-4 rounded-md text-sm whitespace-pre-wrap">
-                      {`Login to admin.stillgood.co.za
+                      {`Login to admin.stillgood.co.za\n
 
+Load Bags\n
 BagAdminUsername: ${store.credentials[0].bagusername ?? "UNDEFINED"}
 BagAdminPassword: ${store.credentials[0].bagpassword ?? "UNDEFINED"}
+
+Check Orders\n
 OrderUsername: ${store.credentials[0].orderusername ?? "UNDEFINED"}
 OrderPassword: ${store.credentials[0].orderpassword ?? "UNDEFINED"}`}
                     </pre>

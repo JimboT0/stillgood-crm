@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Building, MapPin, Calendar, Phone, Mail, UserIcon, CheckCircle, Clock, FileText, Rocket } from "lucide-react"
 import type { Store, User } from "@/lib/firebase/types"
 // import { Timestamp } from "firebase/firestore"
-import { formatDateTimeForDisplay, getSalespersonInitials, getSalespersonName } from "../lib/utils/date-utils"
+import { formatDateTimeForDisplay, getSalespersonInitials, getSalespersonName } from "../../lib/utils/date-utils"
 
 interface StoreDetailsModalProps {
   store: Store | null

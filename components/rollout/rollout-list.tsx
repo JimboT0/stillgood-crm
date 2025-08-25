@@ -14,7 +14,7 @@ import { formatDateTime } from "@/lib/utils/date-utils";
 import { ProvinceCell } from "@/components/cells/province-cell";
 import { LaunchTrainDateCell, SalespersonCell, StoreInfoCell } from "@/components/cells";
 import toast, { Toaster } from "react-hot-toast";
-import { StoreDetailsModal } from "../store-details-modal";
+import { StoreDetailsModal } from "../modals/store-details-modal";
 
 interface RolloutListProps {
   stores: Store[];
@@ -148,30 +148,53 @@ export function RolloutList({ stores, users, currentUser, onToggleSetup, onSetup
                   formatDateTime={formatDateTime}
                 />
                 <TableCell>
-                  {(isSuperadmin || isMedia) ? (
-                    <Input
+                    <div className="flex items-center">
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
                       type="checkbox"
                       checked={!!store.isSocialSetup}
                       onChange={() => handleToggleSocialSetup(store.id, store.tradingName, !!store.isSocialSetup)}
-                      disabled={store.isSocialSetup}
-                      className="w-5 h-5 accent-green-500 cursor-pointer disabled:opacity-60"
+                      disabled={store.isSocialSetup || (!isSuperadmin && !isMedia)}
+                      className="sr-only peer"
                       aria-label="Social Setup Confirmed"
-                    />
-                  ) : (
-                    <span className="text-sm text-gray-500">
-                      {store.setupConfirmed ? <CheckCheck className='text-green-500' size={16} /> : <X className='text-red-500' size={16} />}
-                    </span>
-                  )}
+                      />
+                      <div
+                      className={`w-11 h-6 rounded-full transition-colors duration-200
+                        ${!!store.isSocialSetup ? "bg-green-500" : "bg-red-500"}
+                        ${store.isSocialSetup ? "opacity-60" : ""}
+                        peer-disabled:opacity-60`}
+                      ></div>
+                      <div
+                      className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform duration-200
+                        ${!!store.isSocialSetup ? "translate-x-5" : ""}
+                        peer-disabled:opacity-60`}
+                      ></div>
+                    </label>
+                    </div>
                 </TableCell>
                 <TableCell>
                   {isSuperadmin ? (
-                    <Input
-                      type="checkbox"
-                      checked={!!store.setupConfirmed}
-                      onClick={() => handleOpenConfirmSetupModal(store)}
-                      disabled={!store.isSocialSetup }
-                      className="w-5 h-5 accent-green-500 cursor-pointer disabled:opacity-60 "
-                    />
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={!!store.setupConfirmed}
+                          onChange={() => isSuperadmin && handleOpenConfirmSetupModal(store)}
+                          disabled={!store.isSocialSetup || !isSuperadmin}
+                          className="sr-only peer"
+                          aria-label="Setup Confirmed"
+                        />
+                        <div
+                          className={`w-11 h-6 rounded-full transition-colors duration-200
+                            ${!!store.setupConfirmed ? "bg-green-500" : "bg-red-500"}
+                            ${!store.isSocialSetup || !isSuperadmin ? "opacity-60" : ""}
+                            peer-disabled:opacity-60`}
+                        ></div>
+                        <div
+                          className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform duration-200
+                            ${!!store.setupConfirmed ? "translate-x-5" : ""}
+                            peer-disabled:opacity-60`}
+                        ></div>
+                      </label>
                   ) : (
                     <span className="text-sm text-gray-500">{store.setupConfirmed ? <CheckCheck className='text-green-500' size={16} /> : <X className='text-red-500' size={16} />}</span>
                   )}

@@ -3,7 +3,7 @@ import { useDashboardData } from "@/components/dashboard/dashboard-provider"
 import { ClosedTab } from "@/components/closed-tab"
 import { useState } from "react"
 import type { Store } from "@/lib/firebase/types"
-import { DocumentViewerModal } from "@/components/document-viewer-modal"
+import { DocumentViewerModal } from "@/components/modals/document-viewer-modal"
 import { formatDateTime } from "@/lib/utils/date-utils"
 import { parseCustomDate } from "@/lib/date-validation"
 

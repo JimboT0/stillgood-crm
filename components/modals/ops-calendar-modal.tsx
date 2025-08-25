@@ -15,12 +15,12 @@ import { auth } from "@/lib/firebase/config";
 import { storeService } from "@/lib/firebase/services/store";
 import { userService } from "@/lib/firebase/services/user";
 import type { User, StoreOpsView } from "@/lib/firebase/types";
-import {formatDateTime} from "../lib/utils/date-utils";
+import {formatDateTime} from "../../lib/utils/date-utils";
 import { storeTypes } from "@/lib/firebase/types";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { Table, TableBody, TableCell, TableHeader, TableRow } from "./ui/table";
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "../ui/table";
 
 interface ContactPerson {
     name: string;

@@ -11,12 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Minus, AlertTriangle } from "lucide-react"
-import type { Province } from "@/lib/firebase/types"
+import type { province } from "@/lib/firebase/types"
 
 interface BagRemovalModalProps {
   isOpen: boolean
   onClose: () => void
-  onRemove: (province: Province, bags: number, destination: string, notes?: string) => Promise<void>
+  onRemove: (province: province, bags: number, destination: string, notes?: string) => Promise<void>
   availableStock: { [province: string]: number }
 }
 
@@ -29,7 +29,7 @@ const DESTINATION_OPTIONS = [
 ]
 
 export function BagRemovalModal({ isOpen, onClose, onRemove, availableStock }: BagRemovalModalProps) {
-  const [province, setProvince] = useState<Province | "">("")
+  const [province, setProvince] = useState<province | "">("")
   const [bags, setBags] = useState("")
   const [destination, setDestination] = useState("")
   const [customDestination, setCustomDestination] = useState("")
@@ -60,7 +60,7 @@ export function BagRemovalModal({ isOpen, onClose, onRemove, availableStock }: B
 
     try {
       const finalDestination = destination === "Other" ? customDestination : destination
-      await onRemove(province as Province, bagsNumber, finalDestination, notes)
+      await onRemove(province as province, bagsNumber, finalDestination, notes)
       handleClose()
     } catch (err: any) {
       setError(err.message || "Failed to remove bags")
@@ -99,7 +99,7 @@ export function BagRemovalModal({ isOpen, onClose, onRemove, availableStock }: B
 
           <div className="space-y-2">
             <Label htmlFor="province">Province</Label>
-            <Select value={province} onValueChange={(value) => setProvince(value as Province)}>
+            <Select value={province} onValueChange={(value) => setProvince(value as province)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select province" />
               </SelectTrigger>

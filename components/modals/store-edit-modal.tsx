@@ -10,14 +10,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { EditCard, Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Plus, Trash2, Upload, FileText, Users, X, AlertCircle } from "lucide-react"
+import { Plus, Trash2, Upload, FileText, Users, X, AlertCircle, FastForward } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { storeService } from "@/lib/firebase/services/store"
 import { fileService } from "@/lib/firebase/services/file"
 import { groupService } from "@/lib/firebase/services/group"
-import { formatDateTime, formatDateTimeForInput, parseDateTime } from "../lib/utils/date-utils"
+import { formatDateTime, formatDateTimeForInput, parseDateTime } from "../../lib/utils/date-utils"
 import { isValidTimestamp } from "@/lib/date-validation"
-import { type Store, type ContactPerson, type Product, type CollectionTimes, type StoreGroup, type Document, PROVINCES, storeTypes } from "@/lib/firebase/types"
+import type { Store, ContactPerson, Product, CollectionTimes, StoreGroup, Document } from "@/lib/firebase/types"
+import { PROVINCES, storeTypes } from "@/lib/firebase/types"
+import {bagPresets} from "../../lib/data/bag-presets"
 
 interface StoreEditModalProps {
   store: Store | null
@@ -26,17 +28,15 @@ interface StoreEditModalProps {
   onSave: (store: Store) => void
   isMovingToClosed: boolean
   currentUserId?: string
-  isSuperadmin?: boolean
 }
 
-export function ClosedStoreEditModal({
+export function StoreEditModal({
   store,
   isOpen,
   onClose,
   onSave,
   isMovingToClosed,
   currentUserId,
-  isSuperadmin = false,
 }: StoreEditModalProps) {
   const [formData, setFormData] = useState<Partial<Store>>({})
   const [contactPersons, setContactPersons] = useState<ContactPerson[]>([])
@@ -55,7 +55,6 @@ export function ClosedStoreEditModal({
   const [autoAssignStoreId, setAutoAssignStoreId] = useState(true)
   const [groups, setGroups] = useState<StoreGroup[]>([])
   const [errorDescription, setErrorDescription] = useState<string>("")
-
 
   // Load groups
   useEffect(() => {
@@ -114,7 +113,7 @@ export function ClosedStoreEditModal({
       setFormData({
         tradingName: "",
         streetAddress: "",
-        province: undefined,
+        Province: undefined,
         status: "cold", // Default to "cold" for new stores
         salespersonId: currentUserId || "",
         isKeyStore: false,
@@ -160,6 +159,13 @@ export function ClosedStoreEditModal({
     if (!formData.streetAddress) newErrors.streetAddress = "Street address is required"
     if (!formData.province) newErrors.province = "Province is required"
     if (!formData.storeType) newErrors.storeType = "Store type is required"
+
+    // Validate status only if isMovingToClosed is true and status is "closed"
+    if (isMovingToClosed && formData.status !== "closed") {
+      newErrors.status = "Status must be 'Closed' when moving to closed"
+    } else if (!["lead", "cold", "warm"].includes(formData.status || "lead")) {
+      newErrors.status = "Status must be 'Lead', 'Cold', or 'Warm'"
+    }
 
     // Validate dates
     if (formData.trainingDate && !isValidTimestamp(formData.trainingDate)) {
@@ -416,7 +422,7 @@ export function ClosedStoreEditModal({
         id: store?.id || "",
         tradingName: formData.tradingName || "",
         streetAddress: formData.streetAddress || "",
-        Province: formData.Province || "",
+        province: formData.province || "",
         status: isMovingToClosed ? "closed" : formData.status || "lead",
         salespersonId: formData.salespersonId || currentUserId,
         isSetup: formData.isSetup || false,
@@ -527,6 +533,13 @@ export function ClosedStoreEditModal({
     setCollectionTimes(updatedTimes)
   }
 
+
+  const getValueBagGroup = (storeType: string): 'pnp' | 'spar' | 'standard' => {
+    if (storeType.includes('picknpay')) return 'pnp';
+    if (storeType.includes('spar')) return 'spar';
+    return 'standard';
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[90vw] max-w-5xl max-h-[90vh] overflow-y-auto p-2" aria-describedby={undefined}>
@@ -574,10 +587,6 @@ export function ClosedStoreEditModal({
               <TabsTrigger value="contacts">Contacts</TabsTrigger>
               <TabsTrigger value="products">Products</TabsTrigger>
               <TabsTrigger value="documents">Documents</TabsTrigger>
-              {isSuperadmin && (
-                <TabsTrigger value="superadmin">Superadmin</TabsTrigger>
-              )}
-
             </TabsList>
           </div>
 
@@ -686,7 +695,28 @@ export function ClosedStoreEditModal({
                   </Select>
                   <p className="text-sm text-gray-500 mt-1">Assign this store to a group for multi-store owners</p>
                 </div>
-                <div className="py-2">
+
+                <div className="flex flex-row items-center space-x-4">
+                  {!isMovingToClosed && (
+                    <div>
+                      <Label htmlFor="status">Status</Label>
+                      <Select
+                        defaultValue="lead"
+                        value={formData.status || "lead"}
+                        onValueChange={(value: Store["status"]) => handleInputChange("status", value)}
+                      >
+                        <SelectTrigger className={errors.status ? "border-red-500" : ""}>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="lead">Lead</SelectItem>
+                          <SelectItem value="cold">Cold</SelectItem>
+                          <SelectItem value="warm">Warm</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {errors.status && <p className="text-red-500 text-sm mt-1">{errors.status}</p>}
+                    </div>
+                  )}
                   <div className="flex items-center space-x-2">
                     <input
                       type="checkbox"
@@ -927,10 +957,27 @@ export function ClosedStoreEditModal({
                   </Button>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-1">
+                {formData.storeType && (
+                  <div className="space-y-2 mb-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                      {bagPresets[getValueBagGroup(formData.storeType)].map((bag, idx) => (
+                        <Button
+                          key={idx}
+                          className="w-full border-rounded-lg justify-start bg-gray-400 hover:bg-gray-500"
+                          onClick={() => setProducts((prev) => [...prev, { ...bag }])}
+                        >
+                          <FastForward className="w-4 h-4 mr-2" />
+                          {bag.name}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {products.length === 0 && <p className="text-gray-500 text-center py-4">No products added yet.</p>}
                 {products.map((product, index) => (
-                  <div key={index} className=" rounded-xl p-4 space-y-4 bg-white/80">
+                  <div key={index} className="rounded-xl p-4 space-y-4 bg-white/80">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center justify-center w-8 h-8 bg-blue-500 text-white font-bold rounded-full">
                         {index + 1}
@@ -939,8 +986,6 @@ export function ClosedStoreEditModal({
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
-
-
 
                     <div>
                       <Label>Name</Label>
@@ -996,7 +1041,6 @@ export function ClosedStoreEditModal({
                       </div>
                     </div>
 
-
                     <div>
                       <Label>Description</Label>
                       <Textarea
@@ -1008,7 +1052,6 @@ export function ClosedStoreEditModal({
                   </div>
                 ))}
               </CardContent>
-            </EditCard>
 
             <EditCard>
               <CardHeader>
@@ -1024,12 +1067,12 @@ export function ClosedStoreEditModal({
                       <Label className="text-sm text-gray-600 capitalize text-left pt-4">
                         {period === "mondayFriday"
                           ? "Weekday"
-                          : period === "saturday"
-                            ? "Sat"
-                            : period === "sunday"
-                              ? "Sun"
-                              : period === "publicHoliday"
-                                ? "Public Holiday"
+                          : period === "publicHoliday"
+                            ? "Holiday"
+                            : period === "saturday"
+                              ? "Sat"
+                              : period === "sunday"
+                                ? "Sun"
                                 : period.charAt(0).toUpperCase() + period.slice(1)}
                       </Label>
                     </div>
@@ -1067,6 +1110,8 @@ export function ClosedStoreEditModal({
                   </div>
                 ))}
               </CardContent>
+            </EditCard>
+
             </EditCard>
           </TabsContent>
 
@@ -1158,70 +1203,6 @@ export function ClosedStoreEditModal({
               </CardContent>
             </EditCard>
           </TabsContent>
-
-          {isSuperadmin && (
-            <TabsContent value="superadmin" className="space-y-6">
-              <EditCard>
-                <CardHeader>
-                  <CardTitle className="text-lg">Copy Store Rollout Info</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div>
-                      <Label>Store Name</Label>
-                      <Input value={formData.tradingName || ""} readOnly />
-                    </div>
-                    <div>
-                      <Label>Street Address</Label>
-                      <Input value={formData.streetAddress || ""} readOnly />
-                    </div>
-                    <div>
-                      <Label>Province</Label>
-                      <Input value={formData.province || ""} readOnly />
-                    </div>
-                    <div>
-                      <Label>Store ID</Label>
-                      <Input value={formData.storeId || ""} readOnly />
-                    </div>
-                    <div>
-                      <Label>Products</Label>
-                      <div className="space-y-2">
-                        {products.length === 0 ? (
-                          <p className="text-gray-500">No products added.</p>
-                        ) : (
-                          products.map((product, idx) => (
-                            <div key={idx} className="border rounded p-2 bg-gray-50">
-                              <div><strong>Name:</strong> {product.name}</div>
-                              <div><strong>Description:</strong> {product.description}</div>
-                              <div><strong>Retail Price:</strong> {product.retailPrice}</div>
-                              <div><strong>Estimated Value:</strong> {product.estimatedValue}</div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <Button
-                    type="button"
-                    className="mt-4"
-                    onClick={() => {
-                      const info = {
-                        StoreName: formData.tradingName,
-                        StreetAddress: formData.streetAddress,
-                        Province: formData.Province || "",
-
-                        StoreID: formData.storeId,
-                        Products: products,
-                      }
-                      navigator.clipboard.writeText(JSON.stringify(info, null, 2))
-                    }}
-                  >
-                    Copy Info to Clipboard
-                  </Button>
-                </CardContent>
-              </EditCard>
-            </TabsContent>
-          )}
         </Tabs>
 
         <Separator className="my-6" />
@@ -1260,5 +1241,3 @@ export function ClosedStoreEditModal({
     </Dialog>
   )
 }
-
-

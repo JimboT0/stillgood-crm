@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Rocket, EditIcon, Check } from "lucide-react";
-import { ClosedStoreEditModal } from "./closed-store-edit-modal";
+import { ClosedStoreEditModal } from "./modals/closed-store-edit-modal";
 import {
   DocumentsCell,
   LaunchTrainDateCell,

@@ -4,7 +4,7 @@ import { useState } from "react"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { useDashboardData } from "@/components/dashboard/dashboard-provider"
 import { KeyAccountsTab } from "@/components/key-accounts-tab"
-import { ClosedStoreEditModal } from "@/components/closed-store-edit-modal"
+import { ClosedStoreEditModal } from "@/components/modals/closed-store-edit-modal"
 import type { Store } from "@/lib/firebase/types"
 
 

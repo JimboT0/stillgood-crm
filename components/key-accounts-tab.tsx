@@ -9,13 +9,13 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Star, Search, MapPin, Phone, Mail, User, Calendar, Users, Plus, Edit, Trash2 } from "lucide-react"
-import { GroupCreateModal } from "./group-create-modal"
-import { GroupEditModal } from "./group-edit-modal"
+import { GroupCreateModal } from "./modals/group-create-modal"
+import { GroupEditModal } from "./modals/group-edit-modal"
 import { groupService } from "@/lib/firebase/services/group"
 import type { Store, User as UserType, StoreGroup } from "@/lib/firebase/types"
 import { Avatar, AvatarFallback } from "./ui/avatar"
 import { Timestamp } from "firebase/firestore"
-import { formatDateTimeForDisplay } from "../lib/utils/date-utils"
+import { formatDateTimeForDisplay } from "@/lib/utils/date-utils"
 
 interface KeyAccountsTabProps {
   stores: Store[]

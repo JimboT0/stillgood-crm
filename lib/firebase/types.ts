@@ -22,7 +22,7 @@ export const PROVINCES = [
   "Western Cape",
 ] as const;
 
-export type Province = (typeof PROVINCES)[number];
+export type province = (typeof PROVINCES)[number];
 
 
 export const storeTypes = [
@@ -75,7 +75,7 @@ export interface Store {
   id: string;
   tradingName: string;
   streetAddress: string;
-Province: string
+  province: string;
   status: "lead" | "cold" | "warm" | "closed" | "pending setup" | "rollout" | "completed";
   salespersonId: string;
   assignedUserId?: string;
@@ -148,7 +148,7 @@ export interface StoreGroup {
 
 export interface BagInventory {
   id: string;
-  province: Province;
+  province: province;
   totalBags: number;
   lastUpdated: Date;
   updatedBy: string;
@@ -157,7 +157,7 @@ export interface BagInventory {
 
 export interface BagLog {
   id: string;
-  province: Province;
+  province: province;
   changeType: "addition" | "removal";
   bagsChanged: number;
   source?: string;

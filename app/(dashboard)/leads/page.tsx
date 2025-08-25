@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { LeadsTab } from "@/components/leads-tab";
-import { StoreEditModal } from "@/components/store-edit-modal";
-import { DocumentViewerModal } from "@/components/document-viewer-modal";
+import { StoreEditModal } from "@/components/modals/store-edit-modal";
+import { DocumentViewerModal } from "@/components/modals/document-viewer-modal";
 import { useDashboardData } from "@/components/dashboard/dashboard-provider";
 import type { Store } from "@/lib/firebase/types";
 
