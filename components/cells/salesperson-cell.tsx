@@ -38,14 +38,14 @@ export const SalespersonCell: React.FC<SalespersonCellProps> = ({
 
   return (
     <TableCell className={className}>
-      <div className="flex flex-col items-center text-center">
+      <span className="flex flex-col items-center text-center">
         <Avatar className="w-5 h-5 flex-shrink-0">
           <AvatarFallback className="bg-orange-100 text-orange-500 border border-orange-500 text-xs font-xs">{initials}</AvatarFallback>
         </Avatar>
         <span className="text-[7px] text-gray-700 truncate max-w-[120px]" title={name}>
           {name}
         </span>
-      </div>
+      </span>
     </TableCell>
   )
 }

@@ -24,13 +24,11 @@ export const ProvinceCell: React.FC<ProvinceCellProps> = ({ province, className 
   const abbreviation = provinceMap[province] || province
 
   return (
-    <TableCell className={className}>
-      <div className="flex flex-col items-center gap-2 text-sm text-gray-600">
+    <TableCell className='flex flex-col items-center gap-2 text-sm text-gray-600'>
         <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
         <span className="font-medium" title={province}>
           {abbreviation}
         </span>
-      </div>
     </TableCell>
   )
 }

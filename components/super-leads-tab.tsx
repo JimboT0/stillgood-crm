@@ -15,11 +15,12 @@ import {
     StoreStatusBadge,
 } from "./cells/index"
 import type { Store, User } from "@/lib/firebase/types"
-import { SearchInput, StatusFilter, FilterBar, LEAD_STATUS_OPTIONS } from "@/components/shared/filters"
+import { SearchInput, StatusFilter, AssignedOpsFilter, FilterBar, LEAD_STATUS_OPTIONS } from "@/components/shared/filters"
 import { useState } from "react"
 import { StoreDetailModal } from "./rollout/store-detail-modal"
 import { Checkbox } from "@/components/ui/checkbox" // Assuming you have a Checkbox component from shadcn/ui
 import { Label } from "@/components/ui/label"
+import { AssignedOpsCell } from "./cells/assigned-ops-cell"
 
 interface LeadsTabProps {
     stores: Store[]
@@ -53,6 +54,8 @@ export function SuperLeadsTab({
     const [salespersonFilter, setSalespersonFilter] = useState<string>("")
     const [searchTerm, setSearchTerm] = useState<string>("")
     const [statusFilter, setStatusFilter] = useState<string>("")
+    const [assignedOpsFilter, setAssignedOpsFilter] = useState<string>("")
+
     const [provinceFilter, setProvinceFilter] = useState<string>("")
     // State for modal
     const [selectedStore, setSelectedStore] = useState<Store | null>(null)
@@ -60,6 +63,7 @@ export function SuperLeadsTab({
     // State for column visibility
     const [columnVisibility, setColumnVisibility] = useState({
         Creator: true,
+        Assigned: true,
         Contact: true,
         Location: true,
         Dates: true,
@@ -69,6 +73,7 @@ export function SuperLeadsTab({
 
     const filters = {
         salespersonFilter,
+        assignedOpsFilter,
         searchTerm,
         statusFilter,
         provinceFilter,
@@ -81,6 +86,7 @@ export function SuperLeadsTab({
         setSalespersonFilter("")
         setSearchTerm("")
         setStatusFilter("")
+        setAssignedOpsFilter("")
         setProvinceFilter("")
     }
 
@@ -128,13 +134,16 @@ export function SuperLeadsTab({
         const matchesStatus =
             !filters.statusFilter || filters.statusFilter === "All" || store.status === filters.statusFilter
 
+        const matchesAssignedOps =
+            !filters.assignedOpsFilter || filters.assignedOpsFilter === "All" || store.assignedOpsIds?.includes(filters.assignedOpsFilter)
+
         const matchesSalesperson =
             !filters.salespersonFilter || filters.salespersonFilter === "All" || store.salespersonId === filters.salespersonFilter
 
         const matchesProvince =
             !filters.provinceFilter || filters.provinceFilter === "All" || store.province === filters.provinceFilter
 
-        return matchesSearch && matchesStatus && matchesSalesperson && matchesProvince
+        return matchesSearch && matchesStatus && matchesSalesperson && matchesAssignedOps && matchesProvince
     })
 
     // Handler to open the modal
@@ -196,11 +205,10 @@ export function SuperLeadsTab({
                             key={column}
                             type="button"
                             onClick={() => toggleColumn(column as keyof typeof columnVisibility)}
-                            className={`px-3 py-1 rounded-full transition-colors text-sm font-medium ${
-                                isVisible
-                                    ? "bg-black text-white"
-                                    : "bg-gray-100 text-gray-400"
-                            }`}
+                            className={`px-3 py-1 rounded-full transition-colors text-sm font-medium ${isVisible
+                                ? "bg-black text-white"
+                                : "bg-gray-100 text-gray-400"
+                                }`}
                         >
                             {column}
                         </button>
@@ -220,6 +228,7 @@ export function SuperLeadsTab({
                             <TableRow>
                                 <TableHead>Store</TableHead>
                                 {columnVisibility.Creator && <TableHead>Creator</TableHead>}
+                                {columnVisibility.Assigned && <TableHead>Ops</TableHead>}
                                 <TableHead>Status</TableHead>
                                 {columnVisibility.Contact && <TableHead>Contact</TableHead>}
                                 {columnVisibility.Location && <TableHead>Location</TableHead>}
@@ -236,6 +245,9 @@ export function SuperLeadsTab({
                                     {columnVisibility.Creator && (
                                         <SalespersonCell isSuperadmin={isSuperadmin} salespersonId={store.salespersonId} users={users} />
                                     )}
+                                    {columnVisibility.Assigned && (
+                                        <AssignedOpsCell isSuperadmin={isSuperadmin} users={users} assignedOpsIds={store.assignedOpsIds ?? []} />
+                                    )}
                                     <StoreStatusBadge status={store.status} isKeyAccount={!!store.isKeyAccount} />
                                     {columnVisibility.Contact && (
                                         <ContactsCell contactPersons={store.contactPersons ?? []} />
@@ -251,11 +263,11 @@ export function SuperLeadsTab({
                                     {columnVisibility.Contract && (
                                         <ContractTermsCell
                                             contractTerms={store.contractTerms}
-                                            isKeyAccount={!!store.isKeyAccount}
+                                            // isKeyAccount={!!store.isKeyAccount}
                                         />
                                     )}
                                     <TableCell>
-                                        <div className="flex items-center gap-1">
+                                        <div className="flex gap-1">
                                             <Button
                                                 size="sm"
                                                 variant="outline"
@@ -306,3 +318,6 @@ export function SuperLeadsTab({
         </div>
     )
 }
+
+
+

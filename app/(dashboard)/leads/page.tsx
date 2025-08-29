@@ -8,8 +8,7 @@ import { useDashboardData } from "@/components/dashboard/dashboard-provider";
 import type { Store } from "@/lib/firebase/types";
 
 function LeadsPageContent() {
-  const { currentUser, stores, users, handleSaveStore, handleDeleteStore, handleStatusChange } =
-    useDashboardData();
+  const { currentUser, stores, users, handleSaveStore, handleDeleteStore, handleStatusChange } = useDashboardData();
 
   const [editingStore, setEditingStore] = useState<Store | null>(null);
   const [isMovingToClosed, setIsMovingToClosed] = useState(false);

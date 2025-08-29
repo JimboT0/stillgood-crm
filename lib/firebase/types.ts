@@ -79,6 +79,7 @@ export interface Store {
   status: "lead" | "cold" | "warm" | "closed" | "pending setup" | "rollout" | "completed";
   salespersonId: string;
   assignedUserId?: string;
+  assignedOpsIds?: string[]; 
   isSetup?: boolean;
   setupConfirmed?: boolean;
   setupConfirmedBy?: string;

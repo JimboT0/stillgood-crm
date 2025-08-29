@@ -17,6 +17,7 @@ import {
 import type { Store, User } from "@/lib/firebase/types"
 import { useLeadFilters } from "@/hooks/use-lead-filters"
 import { SearchInput, StatusFilter, FilterBar, LEAD_STATUS_OPTIONS } from "@/components/shared/filters"
+import { AssignedOpsCell } from "./cells/assigned-ops-cell"
 
 interface LeadsTabProps {
   stores: Store[]
@@ -102,7 +103,8 @@ export function LeadsTab({
             <TableHeader>
               <TableRow>
                 <TableHead>Store</TableHead>
-                {isSuperadmin ? (<TableHead>Creator</TableHead>) : null}
+                {isSuperadmin ? (<TableHead>Creator</TableHead>) : null }
+                {isSuperadmin ? (<TableHead>Assigned</TableHead>) : null }
                 <TableHead>Status</TableHead>
                 <TableHead>Contact</TableHead>
                 <TableHead>Location</TableHead>
@@ -117,6 +119,8 @@ export function LeadsTab({
                 <TableRow key={store.id}>
                   <StoreInfoCell tradingName={store.tradingName} streetAddress={store.streetAddress} />
                   {isSuperadmin ? <SalespersonCell isSuperadmin={isSuperadmin} salespersonId={store.salespersonId} users={users} /> : null}
+                  {isSuperadmin ? <AssignedOpsCell isSuperadmin={isSuperadmin} users={users} assignedOpsIds={store.assignedOpsIds ?? []} /> : null}
+
                   <StoreStatusBadge status={store.status} isKeyAccount={!!store.isKeyAccount} />
                   <ContactsCell contactPersons={store.contactPersons ?? []} />
                   <ProvinceCell province={store.province} />
@@ -133,20 +137,20 @@ export function LeadsTab({
                     <div className="flex items-center gap-1">
                       {store.status === "lead" && (
                         <>
-                        <Button
-                          size="sm"
-                          className="bg-orange-500 hover:bg-orange-600"
-                          onClick={() => onStatusChange(store.id, "warm")}
-                        >
-                          <Flame className="w-3 h-3 mx-[2px]" />
-                        </Button><Button
-                          size="sm"
-                          className="bg-blue-500 hover:bg-blue-600"
-                          onClick={() => onStatusChange(store.id, "warm")}
-                        >
+                          <Button
+                            size="sm"
+                            className="bg-orange-500 hover:bg-orange-600"
+                            onClick={() => onStatusChange(store.id, "warm")}
+                          >
+                            <Flame className="w-3 h-3 mx-[2px]" />
+                          </Button><Button
+                            size="sm"
+                            className="bg-blue-500 hover:bg-blue-600"
+                            onClick={() => onStatusChange(store.id, "warm")}
+                          >
                             <Snowflake className="w-3 h-3 mx-[2px]" />
                           </Button>
-                          </>
+                        </>
                       )}
                       {store.status === "cold" && (
                         <Button

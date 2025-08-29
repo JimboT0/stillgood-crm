@@ -15,24 +15,24 @@ export const LaunchTrainDateCell: React.FC<LaunchTrainDateCellProps> = ({
 }) => {
   return (
     <TableCell className={className}>
-      <div className="space-y-2 text-sm">
-        <div className="flex items-center gap-2">
+      <span className="space-y-2 text-sm">
+        <span className="flex items-center gap-2">
           <span className="flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-blue-600 font-semibold text-xs flex-shrink-0">
             T
           </span>
           <span className={`text-xs ${trainingDate ? "text-blue-600" : "text-gray-400"}`}>
             {formatDateTime(trainingDate, "Not set")}
           </span>
-        </div>
-        <div className="flex items-center gap-2">
+        </span>
+        <span className="flex items-center gap-2">
           <span className="flex items-center justify-center w-5 h-5 rounded-full bg-green-100 text-green-600 font-semibold text-xs flex-shrink-0">
             L
           </span>
           <span className={`text-xs ${launchDate ? "text-green-600" : "text-gray-400"}`}>
             {formatDateTime(launchDate, "Not set")}
           </span>
-        </div>
-      </div>
+        </span>
+      </span>
     </TableCell>
   )
 }

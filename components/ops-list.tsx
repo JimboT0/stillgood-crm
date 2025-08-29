@@ -130,7 +130,7 @@ export function OpsList({
                     <CardDescription>Monitor and manage {title.toLowerCase()}</CardDescription>
                 </CardHeader>
             )}
-            <div className="w-full overflow-x-auto p-4">
+            <span className="w-full overflow-x-auto p-4">
                 <div className="block md:hidden space-y-2">
                     {events.length === 0 ? (
                         <div className="text-center py-2">
@@ -231,7 +231,7 @@ export function OpsList({
                                     </span>
                                 </TableCell>
                                 <TableCell>
-                                    <div className="flex items-center gap-2">
+                                    <span className="flex items-center gap-2">
                                         <Button
                                             size="sm"
                                             variant="outline"
@@ -257,22 +257,22 @@ export function OpsList({
                                                 Confirm Setup
                                             </Button>
                                         )}
-                                    </div>
+                                    </span>
                                 </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
                 </Table>
                 {events.length === 0 && (
-                    <div className="text-center py-8 hidden md:block">
+                    <span className="text-center py-8 hidden md:block">
                         <CheckCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                         <h3 className="text-lg font-medium text-gray-900 mb-2">No {title.toLowerCase()} found</h3>
                         <p className="text-gray-600">
                             {hasActiveFilters ? "Try adjusting your search or filter criteria" : `No ${title.toLowerCase()} available`}
                         </p>
-                    </div>
+                    </span>
                 )}
-            </div>
+            </span>
         </Card>
     )
 

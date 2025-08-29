@@ -1,3 +1,4 @@
+
 import {
   collection,
   doc,
@@ -38,6 +39,7 @@ const convertFirestoreToStore = (doc: any): Store => {
   return {
     id: doc.id,
     ...data,
+    assignedOpsIds: data.assignedOpsIds || [], // Ensure assignedOpsIds is always an array
     createdAt: parseFirestoreDate(data.createdAt),
     updatedAt: parseFirestoreDate(data.updatedAt),
     setupConfirmedAt: parseFirestoreDate(data.setupConfirmedAt),
@@ -50,6 +52,7 @@ const convertFirestoreToStore = (doc: any): Store => {
 const convertStoreToFirestore = (store: Partial<Store>): any => {
   return removeUndefined({
     ...store,
+    assignedOpsIds: store.assignedOpsIds || [], // Ensure assignedOpsIds is always an array
     createdAt: safeDateToTimestamp(store.createdAt),
     updatedAt: safeDateToTimestamp(store.updatedAt),
     setupConfirmedAt: safeDateToTimestamp(store.setupConfirmedAt),
@@ -85,6 +88,21 @@ export const storeService = {
     }
   },
 
+  async getByOpsUser(userId: string): Promise<Store[]> {
+    try {
+      const q = query(
+        collection(db, "stores"),
+        where("assignedOpsIds", "array-contains", userId),
+        orderBy("createdAt", "desc"),
+      )
+      const querySnapshot = await getDocs(q)
+      return querySnapshot.docs.map(convertFirestoreToStore)
+    } catch (error) {
+      console.error("Error getting stores by operations user:", error)
+      return []
+    }
+  },
+
   async getById(id: string): Promise<Store | null> {
     try {
       const docRef = doc(db, "stores", id)
@@ -103,6 +121,7 @@ export const storeService = {
     try {
       const storeData = {
         ...store,
+        assignedOpsIds: store.assignedOpsIds || [], // Ensure assignedOpsIds is an array
         createdAt: new Date(),
         updatedAt: new Date(),
       }
@@ -122,6 +141,7 @@ export const storeService = {
       const docRef = doc(db, "stores", id)
       const updateData = {
         ...updates,
+        assignedOpsIds: updates.assignedOpsIds || [], // Ensure assignedOpsIds is an array
         updatedAt: new Date(),
       }
       await updateDoc(docRef, convertStoreToFirestore(updateData))

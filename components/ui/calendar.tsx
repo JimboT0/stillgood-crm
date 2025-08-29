@@ -10,6 +10,7 @@ import { DayButton, DayPicker, getDefaultClassNames } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
+import { TableCell } from "./table"
 
 function Calendar({
   className,
@@ -158,11 +159,11 @@ function Calendar({
         DayButton: CalendarDayButton,
         WeekNumber: ({ children, ...props }) => {
           return (
-            <td {...props}>
+            <TableCell {...props}>
               <div className="flex size-(--cell-size) items-center justify-center text-center">
                 {children}
               </div>
-            </td>
+            </TableCell>
           )
         },
         ...components,

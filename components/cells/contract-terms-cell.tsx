@@ -18,28 +18,28 @@ export const ContractTermsCell: React.FC<ContractTermsCellProps> = ({ contractTe
   if (!hasTerms && !hasNotes) {
     return (
       <TableCell className={className}>
-        <div className="flex items-center gap-1 text-xs text-gray-400">
+        <span className="flex items-center gap-1 text-xs text-gray-400">
           <FileText className="w-3 h-3" />
           <span>None</span>
-        </div>
+        </span>
       </TableCell>
     )
   }
 
   return (
-    <TableCell className={className}>
-      <div className="space-y-1">
-        {hasTerms && (
-          <Badge variant="outline" className="text-xs">
-            {contractTerms.months} month{contractTerms.months === 1 || contractTerms.months === "1" ? "" : "s"}
-          </Badge>
-        )}
-        {hasNotes && (
-          <div className="text-xs text-gray-500 max-w-[100px] truncate" title={String(contractTerms.notes)}>
-            {contractTerms.notes}
-          </div>
-        )}
-      </div>
+    <TableCell className="flex flex-col gap-1">
+      <span className="block max-w-[100px] overflow-hidden">
+      {hasTerms && (
+        <Badge variant="outline" className="text-xs mb-1">
+        {contractTerms.months} month{contractTerms.months === 1 || contractTerms.months === "1" ? "" : "s"}
+        </Badge>
+      )}
+      {hasNotes && (
+        <span className="text-xs text-gray-500 truncate whitespace-nowrap block" title={String(contractTerms.notes)}>
+        {contractTerms.notes}
+        </span>
+      )}
+      </span>
     </TableCell>
   )
 }

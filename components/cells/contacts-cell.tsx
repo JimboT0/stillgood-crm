@@ -31,26 +31,26 @@ export const ContactsCell: React.FC<ContactsCellProps> = ({ contactPersons, clas
 
   return (
     <TableCell className={className}>
-      <div className="space-y-1">
+      <>
         {primaryContact.name && (
-          <div className="flex items-center gap-1 text-xs text-gray-600">
+          <span className="flex items-center gap-1 text-xs text-gray-600">
             <User className="w-3 h-3 text-gray-400 flex-shrink-0" />
             <span title={primaryContact.name}>{truncateText(primaryContact.name, 15)}</span>
-          </div>
+          </span>
         )}
         {primaryContact.phone && (
-          <div className="flex items-center gap-1 text-xs text-gray-600">
+          <span className="flex items-center gap-1 text-xs text-gray-600">
             <Phone className="w-3 h-3 text-gray-400 flex-shrink-0" />
             <span title={primaryContact.phone}>{truncateText(primaryContact.phone, 15)}</span>
-          </div>
+          </span>
         )}
         {primaryContact.email && (
-          <div className="flex items-center gap-1 text-xs text-gray-600">
+          <span className="flex items-center gap-1 text-xs text-gray-600">
             <Mail className="w-3 h-3 text-gray-400 flex-shrink-0" />
             <span title={primaryContact.email}>{truncateText(primaryContact.email, 20)}</span>
-          </div>
+          </span>
         )}
-      </div>
+      </>
     </TableCell>
   )
 }

@@ -13,7 +13,7 @@ import { Calendar, MapPin, Users, CheckCircle, AlertTriangle, Edit, Info } from 
 import { storeService } from "@/lib/firebase/services/store"
 import { userService } from "@/lib/firebase/services/user"
 import type { Store, User } from "@/lib/firebase/types"
-import { StoreAssignmentModal } from "@/components/store-assignment-modal"
+import { StoreAssignmentModal } from "@/components/modals/store-assignment-modal"
 import { StoreDetailsModal } from "@/components/modals/store-details-modal"
 
 interface RolloutDetailModalProps {

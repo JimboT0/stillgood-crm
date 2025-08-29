@@ -136,7 +136,7 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
           console.log("DashboardProvider - Salesperson: Fetched stores:", storesData)
           break
         case "operations":
-          storesData = await storeService.getAll()
+          storesData = await storeService.getByOpsUser(currentUser.id)
           console.log("DashboardProvider - Operations: Fetched stores:", storesData)
           break
         case "media":

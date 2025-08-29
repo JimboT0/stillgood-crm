@@ -3,26 +3,26 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Filter } from "lucide-react"
 
-interface StatusOption {
+interface AssignedOpsOption {
   value: string
   label: string
 }
 
-interface StatusFilterProps {
+interface AssignedOpsFilterProps {
   value: string
   onChange: (value: string) => void
-  options: StatusOption[]
+  options: AssignedOpsOption[]
   placeholder?: string
   className?: string
 }
 
-export function StatusFilter({
+export function AssignedOpsFilter({
   value,
   onChange,
   options,
-  placeholder = "Filter by status",
+  placeholder = "Filter by ops",
   className = "",
-}: StatusFilterProps) {
+}: AssignedOpsFilterProps) {
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger className={`w-full sm:w-48 ${className}`}>
@@ -39,4 +39,3 @@ export function StatusFilter({
     </Select>
   )
 }
-

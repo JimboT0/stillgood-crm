@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -15,11 +16,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { storeService } from "@/lib/firebase/services/store"
 import { fileService } from "@/lib/firebase/services/file"
 import { groupService } from "@/lib/firebase/services/group"
+import { userService } from "@/lib/firebase/services/user"
 import { formatDateTime, formatDateTimeForInput, parseDateTime } from "../../lib/utils/date-utils"
 import { isValidTimestamp } from "@/lib/date-validation"
-import type { Store, ContactPerson, Product, CollectionTimes, StoreGroup, Document } from "@/lib/firebase/types"
+import type { Store, ContactPerson, Product, CollectionTimes, StoreGroup, Document, User } from "@/lib/firebase/types"
 import { PROVINCES, storeTypes } from "@/lib/firebase/types"
-import {bagPresets} from "../../lib/data/bag-presets"
+import { bagPresets } from "../../lib/data/bag-presets"
 
 interface SuperStoreEditModalProps {
   store: Store | null
@@ -54,9 +56,10 @@ export function SuperStoreEditModal({
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [autoAssignStoreId, setAutoAssignStoreId] = useState(true)
   const [groups, setGroups] = useState<StoreGroup[]>([])
+  const [opsUsers, setOpsUsers] = useState<User[]>([])
   const [errorDescription, setErrorDescription] = useState<string>("")
 
-  // Load groups
+  // Load groups and operations users
   useEffect(() => {
     const loadGroups = async () => {
       try {
@@ -67,8 +70,18 @@ export function SuperStoreEditModal({
       }
     }
 
+    const loadOpsUsers = async () => {
+      try {
+        const usersData = await userService.getAll()
+        setOpsUsers(usersData as any)
+      } catch (error) {
+        console.error("[StoreEditModal] Error loading operations users:", error)
+      }
+    }
+
     if (isOpen) {
       loadGroups()
+      loadOpsUsers()
     }
   }, [isOpen])
 
@@ -84,6 +97,7 @@ export function SuperStoreEditModal({
         ...store,
         trainingDate,
         launchDate,
+        assignedOpsIds: store.assignedOpsIds || [],
       })
       setContactPersons(store.contactPersons || [])
       setProducts(
@@ -113,8 +127,8 @@ export function SuperStoreEditModal({
       setFormData({
         tradingName: "",
         streetAddress: "",
-        Province: undefined,
-        status: "cold", // Default to "cold" for new stores
+        province: undefined,
+        status: "cold",
         salespersonId: currentUserId || "",
         isKeyStore: false,
         storeType: "",
@@ -122,7 +136,7 @@ export function SuperStoreEditModal({
         notes: "",
         isKeyAccount: false,
         keyAccountManager: "",
-        assignedOpsUsers: [],
+        assignedOpsIds: [],
         groupId: "",
         trainingDate: null,
         launchDate: null,
@@ -160,14 +174,12 @@ export function SuperStoreEditModal({
     if (!formData.province) newErrors.province = "Province is required"
     if (!formData.storeType) newErrors.storeType = "Store type is required"
 
-    // Validate status only if isMovingToClosed is true and status is "closed"
     if (isMovingToClosed && formData.status !== "closed") {
       newErrors.status = "Status must be 'Closed' when moving to closed"
     } else if (!["lead", "cold", "warm"].includes(formData.status || "lead")) {
       newErrors.status = "Status must be 'Lead', 'Cold', or 'Warm'"
     }
 
-    // Validate dates
     if (formData.trainingDate && !isValidTimestamp(formData.trainingDate)) {
       newErrors.trainingDate = "Invalid training date"
       console.log("[validateForm] Invalid trainingDate:", formData.trainingDate)
@@ -211,6 +223,11 @@ export function SuperStoreEditModal({
         storeId: value,
       }))
       setAutoAssignStoreId(false)
+    } else if (field === "assignedOpsIds") {
+      setFormData((prev) => ({
+        ...prev,
+        assignedOpsIds: value,
+      }))
     } else {
       setFormData((prev) => ({
         ...prev,
@@ -461,7 +478,7 @@ export function SuperStoreEditModal({
         notes: formData.notes || "",
         isKeyAccount: formData.isKeyAccount || false,
         keyAccountManager: formData.keyAccountManager || "",
-        assignedOpsUsers: formData.assignedOpsUsers || [],
+        assignedOpsIds: formData.assignedOpsIds || [],
         groupId: formData.groupId || undefined,
         createdAt: store?.createdAt || new Date(),
         updatedAt: new Date(),
@@ -484,7 +501,7 @@ export function SuperStoreEditModal({
         }
         onSave(storeData)
         onClose()
-        window.location.reload() // Force reload after creating a new store
+        window.location.reload()
         return
       }
 
@@ -533,12 +550,11 @@ export function SuperStoreEditModal({
     setCollectionTimes(updatedTimes)
   }
 
-
-  const getValueBagGroup = (storeType: string): 'pnp' | 'spar' | 'standard' => {
-    if (storeType.includes('picknpay')) return 'pnp';
-    if (storeType.includes('spar')) return 'spar';
-    return 'standard';
-  };
+  const getValueBagGroup = (storeType: string): "pnp" | "spar" | "standard" => {
+    if (storeType.includes("picknpay")) return "pnp"
+    if (storeType.includes("spar")) return "spar"
+    return "standard"
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -695,6 +711,69 @@ export function SuperStoreEditModal({
                   </Select>
                   <p className="text-sm text-gray-500 mt-1">Assign this store to a group for multi-store owners</p>
                 </div>
+                <div></div>
+
+
+
+
+
+                <div>
+                  <Label htmlFor="assignedOpsIds" className="flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    Assigned Operations Users (Optional)
+                  </Label>
+                  <div className="mb-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full flex justify-between"
+                      onClick={() => {
+                        const el = document.getElementById("ops-users-list")
+                        if (el) el.style.display = el.style.display === "none" ? "block" : "none"
+                      }}
+                    >
+                      {Array.isArray(formData.assignedOpsIds) && formData.assignedOpsIds.length > 0
+                        ? opsUsers
+                            .filter((user) => formData.assignedOpsIds?.includes(user.id))
+                            .map((user) => user.name || user.email || user.id)
+                            .join(", ")
+                        : "No operations users assigned."}
+                      <span className="ml-2 text-xs text-gray-500">▼</span>
+                    </Button>
+                  </div>
+                  <div
+                    id="ops-users-list"
+                    style={{ display: "none" }}
+                    className="border rounded-lg p-2 bg-gray-50"
+                  >
+                    {opsUsers.length === 0 ? (
+                      <p className="text-gray-400 text-sm">No operations users available.</p>
+                    ) : (
+                      opsUsers.map((user) => (
+                        <div key={user.id} className="flex items-center gap-2 py-1">
+                          <input
+                            type="checkbox"
+                            id={`ops-user-${user.id}`}
+                            checked={Array.isArray(formData.assignedOpsIds) && formData.assignedOpsIds.includes(user.id)}
+                            onChange={(e) => {
+                              const current = Array.isArray(formData.assignedOpsIds) ? formData.assignedOpsIds : []
+                              const newValue = e.target.checked
+                                ? [...current, user.id]
+                                : current.filter((id) => id !== user.id)
+                              handleInputChange("assignedOpsIds", newValue)
+                            }}
+                            className="h-4 w-4 text-orange-500 border-gray-300 rounded"
+                          />
+                          <label htmlFor={`ops-user-${user.id}`} className="text-sm">
+                            {user.name || user.email || user.id}
+                          </label>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
 
                 <div className="flex flex-row items-center space-x-4">
                   {!isMovingToClosed && (
@@ -1053,65 +1132,64 @@ export function SuperStoreEditModal({
                 ))}
               </CardContent>
 
-            <EditCard>
-              <CardHeader>
-                <CardTitle className="text-lg">Collection Times</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {Object.entries(collectionTimes).map(([period, times], index) => (
-                  <div
-                    key={period}
-                    className="flex flex-col md:grid md:grid-cols-3 gap-1 items-left relative"
-                  >
-                    <div className="md:col-span-1 flex justify-start">
-                      <Label className="text-sm text-gray-600 capitalize text-left pt-4">
-                        {period === "mondayFriday"
-                          ? "Weekday"
-                          : period === "publicHoliday"
-                            ? "Holiday"
-                            : period === "saturday"
-                              ? "Sat"
-                              : period === "sunday"
-                                ? "Sun"
-                                : period.charAt(0).toUpperCase() + period.slice(1)}
-                      </Label>
-                    </div>
-                    <div className="flex flex-row gap-4 w-full md:col-span-2">
-                      <div className="flex-1">
-                        <Label className="text-xs text-gray-400">From</Label>
-                        <Input
-                          type="time"
-                          value={times.from}
-                          onChange={(e) =>
-                            handleCollectionTimeChange(period as keyof CollectionTimes, "from", e.target.value)
-                          }
-                        />
+              <EditCard>
+                <CardHeader>
+                  <CardTitle className="text-lg">Collection Times</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {Object.entries(collectionTimes).map(([period, times], index) => (
+                    <div
+                      key={period}
+                      className="flex flex-col md:grid md:grid-cols-3 gap-1 items-left relative"
+                    >
+                      <div className="md:col-span-1 flex justify-start">
+                        <Label className="text-sm text-gray-600 capitalize text-left pt-4">
+                          {period === "mondayFriday"
+                            ? "Weekday"
+                            : period === "publicHoliday"
+                              ? "Holiday"
+                              : period === "saturday"
+                                ? "Sat"
+                                : period === "sunday"
+                                  ? "Sun"
+                                  : period.charAt(0).toUpperCase() + period.slice(1)}
+                        </Label>
                       </div>
-                      <div className="flex-1 relative">
-                        <Label className="text-xs text-gray-400">To</Label>
-                        <Input
-                          type="time"
-                          value={times.to}
-                          onChange={(e) =>
-                            handleCollectionTimeChange(period as keyof CollectionTimes, "to", e.target.value)
-                          }
-                        />
-                        {index === 0 && (
-                          <button
-                            type="button"
-                            className="absolute bottom-10 right-0 text-xs text-blue-600 underline mt-1"
-                            onClick={() => handleApplyToAll(times.from, times.to)}
-                          >
-                            Apply to all
-                          </button>
-                        )}
+                      <div className="flex flex-row gap-4 w-full md:col-span-2">
+                        <div className="flex-1">
+                          <Label className="text-xs text-gray-400">From</Label>
+                          <Input
+                            type="time"
+                            value={times.from}
+                            onChange={(e) =>
+                              handleCollectionTimeChange(period as keyof CollectionTimes, "from", e.target.value)
+                            }
+                          />
+                        </div>
+                        <div className="flex-1 relative">
+                          <Label className="text-xs text-gray-400">To</Label>
+                          <Input
+                            type="time"
+                            value={times.to}
+                            onChange={(e) =>
+                              handleCollectionTimeChange(period as keyof CollectionTimes, "to", e.target.value)
+                            }
+                          />
+                          {index === 0 && (
+                            <button
+                              type="button"
+                              className="absolute bottom-10 right-0 text-xs text-blue-600 underline mt-1"
+                              onClick={() => handleApplyToAll(times.from, times.to)}
+                            >
+                              Apply to all
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </CardContent>
-            </EditCard>
-
+                  ))}
+                </CardContent>
+              </EditCard>
             </EditCard>
           </TabsContent>
 
@@ -1137,7 +1215,8 @@ export function SuperStoreEditModal({
                     />
                     <label
                       htmlFor="slaDocument"
-                      className={`cursor-pointer flex items-center gap-2 px-4 py-2 border border-dashed border-gray-300 rounded-md hover:bg-gray-50 ${isUploading ? "opacity-50 cursor-not-allowed" : ""}`}
+                      className={`cursor-pointer flex items-center gap-2 px-4 py-2 border border-dashed border-gray-300 rounded-md hover:bg-gray-50 ${isUploading ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
                     >
                       <Upload className="w-4 h-4" />
                       Choose File
@@ -1177,7 +1256,8 @@ export function SuperStoreEditModal({
                     />
                     <label
                       htmlFor="bankDocument"
-                      className={`cursor-pointer flex items-center gap-2 px-4 py-2 border border-dashed border-gray-300 rounded-md hover:bg-gray-50 ${isUploading ? "opacity-50 cursor-not-allowed" : ""}`}
+                      className={`cursor-pointer flex items-center gap-2 px-4 py-2 border border-dashed border-gray-300 rounded-md hover:bg-gray-50 ${isUploading ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
                     >
                       <Upload className="w-4 h-4" />
                       Choose File
@@ -1223,7 +1303,7 @@ export function SuperStoreEditModal({
                   className="animate-spin h-5 w-5 text-white"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
-                  viewBox="0 0 24 24"
+                  viewBox="0 24 24"
                 >
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>

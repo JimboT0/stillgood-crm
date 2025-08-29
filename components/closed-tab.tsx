@@ -125,7 +125,7 @@ export function ClosedTab({
                     <DocumentsCell store={store} onViewDocument={onViewDocument} />
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        {status === "closed" && isSuperadmin && (
+                        {status === "closed" && (
                           <Button
                             size="sm"
                             variant="outline"

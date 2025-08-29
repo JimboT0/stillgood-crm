@@ -73,7 +73,7 @@ export const StoreStatusBadge: React.FC<StoreStatusBadgeProps> = ({ status, isKe
 
   return (
     <TableCell className={className}>
-      <div className="flex flex-col gap-1">
+      <span className="flex flex-col gap-1">
         <Badge className={`${badgeClassName} flex items-center gap-1 w-fit`}>
           {icon}
           <span className="text-xs font-thin">{label}</span>
@@ -84,7 +84,7 @@ export const StoreStatusBadge: React.FC<StoreStatusBadgeProps> = ({ status, isKe
             <span className="text-xs font-thin">Key</span>
           </Badge>
         )}
-      </div>
+      </span>
     </TableCell>
   )
 }

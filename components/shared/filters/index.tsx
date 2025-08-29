@@ -6,6 +6,7 @@ export { ManagerFilter } from "./manager-filter"
 export { FilterBar } from "./filter-bar"
 export { FilterPresets } from "./filter-presets"
 export { AdvancedFilterBar } from "./advanced-filter-bar"
+export { AssignedOpsFilter } from "./assigned-ops-filter"
 
 // Common filter option types
 export interface FilterOption {

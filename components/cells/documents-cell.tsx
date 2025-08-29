@@ -20,10 +20,10 @@ export const DocumentsCell: React.FC<DocumentsCellProps> = ({ store, onViewDocum
   if (!onViewDocument) {
     return (
       <TableCell className={className}>
-        <div className="flex flex-col gap-1">
-          <div className={`text-xs ${hasSla ? "text-green-600" : "text-gray-400"}`}>SLA: {hasSla ? "✓" : "✗"}</div>
-          <div className={`text-xs ${hasBank ? "text-green-600" : "text-gray-400"}`}>Bank: {hasBank ? "✓" : "✗"}</div>
-        </div>
+        <span className="flex flex-col gap-1">
+          <span className={`text-xs ${hasSla ? "text-green-600" : "text-gray-400"}`}>SLA: {hasSla ? "✓" : "✗"}</span>
+          <span className={`text-xs ${hasBank ? "text-green-600" : "text-gray-400"}`}>Bank: {hasBank ? "✓" : "✗"}</span>
+        </span>
       </TableCell>
     )
   }

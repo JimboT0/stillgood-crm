@@ -62,6 +62,7 @@
     "react-hook-form": "latest",
     "react-hot-toast": "^2.6.0",
     "react-resizable-panels": "latest",
+    "react-select": "^5.10.2",
     "recharts": "latest",
     "sonner": "latest",
     "tailwind-merge": "^2.5.5",
