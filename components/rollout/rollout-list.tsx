@@ -77,36 +77,27 @@ export function RolloutList({ stores, users, currentUser, onToggleSetup, onSetup
       return dateA.getTime() - dateB.getTime();
     });
 
-  const handleToggleSocialSetup = async (storeId: string, tradingName: string, isSocialSetup: boolean) => {
-    if (isSocialSetup) {
-      toast.error('Social setup already confirmed and cannot be reverted.', {
-        style: {
-          background: '#fff',
-          color: '#111827',
-          border: '1px solid #f97316',
-        },
-      });
-      return;
-    }
-    try {
-      await onToggleSocialSetup(storeId);
-      toast.success(`"${tradingName} setup confirmed!"`, {
-        style: {
-          background: '#fff',
-          color: '#111827',
-          border: '1px solid #f97316',
-        },
-      });
-    } catch (error) {
-      toast.error('Failed to confirm social setup', {
-        style: {
-          background: '#fff',
-          color: '#111827',
-          border: '1px solid #f97316',
-        },
-      });
-    }
-  };
+const handleToggleSocialSetup = async (storeId: string, tradingName: string, isSocialSetup: boolean) => {
+  try {
+    await onToggleSocialSetup(storeId);
+    toast.success(`"${tradingName}" social setup ${isSocialSetup ? "removed" : "confirmed"}!`, {
+      style: {
+        background: '#fff',
+        color: '#111827',
+        border: '1px solid #f97316',
+      },
+    });
+  } catch (error) {
+    toast.error('Failed to toggle social setup', {
+      style: {
+        background: '#fff',
+        color: '#111827',
+        border: '1px solid #f97316',
+      },
+    });
+  }
+};
+
 
   const handleOpenConfirmSetupModal = (store: Store) => {
     setSelectedStore(store);
@@ -174,29 +165,31 @@ export function RolloutList({ stores, users, currentUser, onToggleSetup, onSetup
                 </TableCell>
                 <TableCell>
                   {isSuperadmin ? (
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={!!store.setupConfirmed}
-                          onChange={() => isSuperadmin && handleOpenConfirmSetupModal(store)}
-                          disabled={!store.isSocialSetup || !isSuperadmin}
-                          className="sr-only peer"
-                          aria-label="Setup Confirmed"
-                        />
-                        <div
-                          className={`w-11 h-6 rounded-full transition-colors duration-200
-                            ${!!store.setupConfirmed ? "bg-green-500" : "bg-red-500"}
-                            ${!store.isSocialSetup || !isSuperadmin ? "opacity-60" : ""}
-                            peer-disabled:opacity-60`}
-                        ></div>
-                        <div
-                          className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform duration-200
-                            ${!!store.setupConfirmed ? "translate-x-5" : ""}
-                            peer-disabled:opacity-60`}
-                        ></div>
-                      </label>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={!!store.credentials}
+                        onChange={() => isSuperadmin && handleOpenConfirmSetupModal(store)}
+                        disabled={ !isSuperadmin}
+                        className="sr-only peer"
+                        aria-label="Setup Confirmed"
+                      />
+                      <div
+                        className={`w-11 h-6 rounded-full transition-colors duration-200
+                          ${!!store.credentials ? "bg-green-500" : "bg-red-500"}
+                          ${ !isSuperadmin ? "opacity-60" : ""}
+                          peer-disabled:opacity-60`}
+                      ></div>
+                      <div
+                        className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform duration-200
+                          ${!!store.credentials ? "translate-x-5" : ""}
+                          peer-disabled:opacity-60`}
+                      ></div>
+                    </label>
                   ) : (
-                    <span className="text-sm text-gray-500">{store.setupConfirmed ? <CheckCheck className='text-green-500' size={16} /> : <X className='text-red-500' size={16} />}</span>
+                    <span className="text-sm text-gray-500">
+                      {!!store.credentials ? <CheckCheck className='text-green-500' size={16} /> : <X className='text-red-500' size={16} />}
+                    </span>
                   )}
                 </TableCell>
                 <TableCell>
