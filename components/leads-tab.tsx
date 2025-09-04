@@ -131,7 +131,6 @@ export function LeadsTab({
                   <DocumentsCell store={store} onViewDocument={onViewDocument} />
                   <ContractTermsCell
                     contractTerms={store.contractTerms}
-                    isKeyAccount={!!store.isKeyAccount}
                   />
                   <TableCell>
                     <div className="flex items-center gap-1">

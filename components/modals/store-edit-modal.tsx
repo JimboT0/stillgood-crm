@@ -113,7 +113,7 @@ export function StoreEditModal({
       setFormData({
         tradingName: "",
         streetAddress: "",
-        Province: undefined,
+        province: undefined,
         status: "cold", // Default to "cold" for new stores
         salespersonId: currentUserId || "",
         isKeyStore: false,
@@ -162,9 +162,17 @@ export function StoreEditModal({
 
     // Validate status only if isMovingToClosed is true and status is "closed"
     if (isMovingToClosed && formData.status !== "closed") {
-      newErrors.status = "Status must be 'Closed' when moving to closed"
+      // Show toaster notification instead of error in errors object
+      if (typeof window !== "undefined") {
+      // @ts-ignore
+      window.toast?.("Status must be 'Closed' when moving to closed", { type: "error" })
+      }
     } else if (!["lead", "cold", "warm"].includes(formData.status || "lead")) {
-      newErrors.status = "Status must be 'Lead', 'Cold', or 'Warm'"
+      // Show toaster notification instead of error in errors object
+      if (typeof window !== "undefined") {
+      // @ts-ignore
+      window.toast?.("Status must be 'Lead', 'Cold', or 'Warm'", { type: "error" })
+      }
     }
 
     // Validate dates

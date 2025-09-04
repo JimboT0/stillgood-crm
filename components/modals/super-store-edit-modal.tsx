@@ -174,12 +174,6 @@ export function SuperStoreEditModal({
     if (!formData.province) newErrors.province = "Province is required"
     if (!formData.storeType) newErrors.storeType = "Store type is required"
 
-    if (isMovingToClosed && formData.status !== "closed") {
-      newErrors.status = "Status must be 'Closed' when moving to closed"
-    } else if (!["lead", "cold", "warm"].includes(formData.status || "lead")) {
-      newErrors.status = "Status must be 'Lead', 'Cold', or 'Warm'"
-    }
-
     if (formData.trainingDate && !isValidTimestamp(formData.trainingDate)) {
       newErrors.trainingDate = "Invalid training date"
       console.log("[validateForm] Invalid trainingDate:", formData.trainingDate)
@@ -713,10 +707,6 @@ export function SuperStoreEditModal({
                 </div>
                 <div></div>
 
-
-
-
-
                 <div>
                   <Label htmlFor="assignedOpsIds" className="flex items-center gap-2">
                     <Users className="w-4 h-4" />
@@ -776,26 +766,6 @@ export function SuperStoreEditModal({
 
 
                 <div className="flex flex-row items-center space-x-4">
-                  {!isMovingToClosed && (
-                    <div>
-                      <Label htmlFor="status">Status</Label>
-                      <Select
-                        defaultValue="lead"
-                        value={formData.status || "lead"}
-                        onValueChange={(value: Store["status"]) => handleInputChange("status", value)}
-                      >
-                        <SelectTrigger className={errors.status ? "border-red-500" : ""}>
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="lead">Lead</SelectItem>
-                          <SelectItem value="cold">Cold</SelectItem>
-                          <SelectItem value="warm">Warm</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {errors.status && <p className="text-red-500 text-sm mt-1">{errors.status}</p>}
-                    </div>
-                  )}
                   <div className="flex items-center space-x-2">
                     <input
                       type="checkbox"

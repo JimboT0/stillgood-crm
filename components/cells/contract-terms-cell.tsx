@@ -7,6 +7,7 @@ interface ContractTermsCellProps {
   contractTerms?: {
     months?: string | number
     notes?: string | number
+    isKeyaccount?: boolean
   }
   className?: string
 }

@@ -57,23 +57,39 @@ export function RolloutList({ stores, users, currentUser, onToggleSetup, onSetup
 
   const upcomingStores = filteredStores
     .filter((store) => {
-      const launchDate = store.launchDate instanceof Timestamp ? store.launchDate.toDate() : new Date(store.launchDate);
+      const launchDate = store.launchDate instanceof Timestamp
+        ? store.launchDate.toDate()
+        : store.launchDate
+          ? new Date(store.launchDate)
+          : new Date(0);
       return launchDate >= currentDate;
     })
     .sort((a, b) => {
-      const dateA = a.launchDate instanceof Timestamp ? a.launchDate.toDate() : new Date(a.launchDate);
-      const dateB = b.launchDate instanceof Timestamp ? b.launchDate.toDate() : new Date(b.launchDate);
+      const dateA = a.launchDate instanceof Timestamp
+        ? a.launchDate.toDate()
+        : new Date(a.launchDate ?? 0);
+      const dateB = b.launchDate instanceof Timestamp
+        ? b.launchDate.toDate()
+        : new Date(b.launchDate ?? 0);
       return dateA.getTime() - dateB.getTime();
     });
 
   const pastStores = filteredStores
     .filter((store) => {
-      const launchDate = store.launchDate instanceof Timestamp ? store.launchDate.toDate() : new Date(store.launchDate);
+      const launchDate = store.launchDate instanceof Timestamp
+        ? store.launchDate.toDate()
+        : store.launchDate
+          ? new Date(store.launchDate)
+          : new Date(0);
       return launchDate <= currentDate;
     })
     .sort((a, b) => {
-      const dateA = a.launchDate instanceof Timestamp ? a.launchDate.toDate() : new Date(a.launchDate);
-      const dateB = b.launchDate instanceof Timestamp ? b.launchDate.toDate() : new Date(b.launchDate);
+      const dateA = a.launchDate instanceof Timestamp
+        ? a.launchDate.toDate()
+        : new Date(a.launchDate ?? 0);
+      const dateB = b.launchDate instanceof Timestamp
+        ? b.launchDate.toDate()
+        : new Date(b.launchDate ?? 0);
       return dateA.getTime() - dateB.getTime();
     });
 
@@ -136,7 +152,6 @@ const handleToggleSocialSetup = async (storeId: string, tradingName: string, isS
                 <LaunchTrainDateCell
                   launchDate={store.launchDate}
                   trainingDate={store.trainingDate}
-                  formatDateTime={formatDateTime}
                 />
                 <TableCell>
                     <div className="flex items-center">
@@ -194,28 +209,39 @@ const handleToggleSocialSetup = async (storeId: string, tradingName: string, isS
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-row items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedStore(store);
-                        setModalMode("share"); // Ensure StoreDetailsModal is used
-                      }}
-                      className="text-gray-900 hover:text-blue-600"
-                    >
-                      <Eye size={16} />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedStore(store);
-                        setModalMode("confirmSetup"); // Ensure StoreDetailModal is used
-                      }}
-                      className="text-gray-500 hover:text-blue-600"
-                    >
-                      <Share size={16} />
-                    </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                    setSelectedStore(store);
+                    setModalMode("share");
+                    }}
+                    className="text-gray-900 hover:text-blue-600"
+                  >
+                    <Eye size={16} />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                    setSelectedStore(store);
+                    setModalMode("confirmSetup");
+                    }}
+                    className="text-gray-500 hover:text-blue-600"
+                  >
+                    <Share size={16} />
+                  </Button>
+                  {/* <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                    setSelectedStore(store);
+                    setModalMode("delay");
+                    }}
+                    className="text-orange-500 hover:text-orange-700"
+                  >
+                    Delay
+                  </Button> */}
                   </div>
                 </TableCell>
               </TableRow>
