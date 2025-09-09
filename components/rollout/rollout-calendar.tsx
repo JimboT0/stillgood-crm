@@ -193,6 +193,15 @@ export function RolloutCalendar({
     )
   }
 
+  // Log trading names of stores with events on the current day
+  const todayStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`
+  const todayStores = stores.filter(store => {
+    const normalizedTrainingDate = normalizeDate(store.trainingDate)
+    const normalizedLaunchDate = normalizeDate(store.launchDate)
+    return normalizedTrainingDate === todayStr || normalizedLaunchDate === todayStr
+  })
+  console.log(todayStores.map(store => store.tradingName))
+
   return (
     <div className="space-y-4">
       <div className="md:hidden flex justify-center mb-4">

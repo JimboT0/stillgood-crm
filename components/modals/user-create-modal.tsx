@@ -129,7 +129,7 @@ export function UserCreateModal({ isOpen, onClose, onSave }: UserCreateModalProp
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="superadmin">Super Admin</SelectItem>
-                  <SelectItem value="salesperson">Creator</SelectItem>
+                  <SelectItem value="salesperson">Salesperson</SelectItem>
                   <SelectItem value="operations">Operations</SelectItem>
                   <SelectItem value="media">Media Team</SelectItem>
                 </SelectContent>

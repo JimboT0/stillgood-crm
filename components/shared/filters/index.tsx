@@ -25,6 +25,7 @@ export const LEAD_STATUS_OPTIONS: FilterOption[] = [
   { value: "cold", label: "Cold Leads" },
   { value: "warm", label: "Warm Leads" },
   { value: "lead", label: "Hot Leads" },
+  { value: "closed", label: "Closed Leads" },
 ]
 
 export const CLOSED_STATUS_OPTIONS: FilterOption[] = [

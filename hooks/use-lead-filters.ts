@@ -14,7 +14,7 @@ export function useLeadFilters(stores: Store[], users: User[]) {
   }, [stores])
 
   const filterHook = useStoreFilters(leadStores, users, {
-    includeKeyAccounts: false,
+    includeKeyAccounts: true,
     includeDateFiltering: false,
   })
 
