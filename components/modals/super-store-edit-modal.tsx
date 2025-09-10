@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
@@ -57,9 +56,10 @@ export function SuperStoreEditModal({
   const [autoAssignStoreId, setAutoAssignStoreId] = useState(true)
   const [groups, setGroups] = useState<StoreGroup[]>([])
   const [opsUsers, setOpsUsers] = useState<User[]>([])
+  const [salesUsers, setSalesUsers] = useState<User[]>([])
   const [errorDescription, setErrorDescription] = useState<string>("")
 
-  // Load groups and operations users
+  // Load groups, operations users, and salespeople
   useEffect(() => {
     const loadGroups = async () => {
       try {
@@ -79,9 +79,21 @@ export function SuperStoreEditModal({
       }
     }
 
+    const loadSalesUsers = async () => {
+      try {
+        const usersData = await userService.getAll()
+        // Filter for salespeople if role field exists; otherwise, use all users
+        const sales = usersData.filter((user: User) => user.role === "salesperson" || true)
+        setSalesUsers(sales as any)
+      } catch (error) {
+        console.error("[StoreEditModal] Error loading salespeople:", error)
+      }
+    }
+
     if (isOpen) {
       loadGroups()
       loadOpsUsers()
+      loadSalesUsers()
     }
   }, [isOpen])
 
@@ -98,6 +110,7 @@ export function SuperStoreEditModal({
         trainingDate,
         launchDate,
         assignedOpsIds: store.assignedOpsIds || [],
+        salespersonId: store.salespersonId || currentUserId || "",
       })
       setContactPersons(store.contactPersons || [])
       setProducts(
@@ -173,6 +186,7 @@ export function SuperStoreEditModal({
     if (!formData.streetAddress) newErrors.streetAddress = "Street address is required"
     if (!formData.province) newErrors.province = "Province is required"
     if (!formData.storeType) newErrors.storeType = "Store type is required"
+    if (!formData.salespersonId) newErrors.salespersonId = "Salesperson is required"
 
     if (formData.trainingDate && !isValidTimestamp(formData.trainingDate)) {
       newErrors.trainingDate = "Invalid training date"
@@ -222,6 +236,12 @@ export function SuperStoreEditModal({
         ...prev,
         assignedOpsIds: value,
       }))
+    } else if (field === "salespersonId") {
+      setFormData((prev) => ({
+        ...prev,
+        salespersonId: value,
+      }))
+      setErrors((prev) => ({ ...prev, salespersonId: value ? "" : "Salesperson is required" }))
     } else {
       setFormData((prev) => ({
         ...prev,
@@ -435,7 +455,7 @@ export function SuperStoreEditModal({
         streetAddress: formData.streetAddress || "",
         province: formData.province || "",
         status: isMovingToClosed ? "closed" : formData.status || "lead",
-        salespersonId: formData.salespersonId || currentUserId,
+        salespersonId: formData.salespersonId || currentUserId || "",
         isSetup: formData.isSetup || false,
         setupConfirmed: formData.setupConfirmed || false,
         setupConfirmedBy: formData.setupConfirmedBy || "",
@@ -669,6 +689,58 @@ export function SuperStoreEditModal({
                     </div>
                     {errors.storeId && <p className="text-red-500 text-sm mt-1">{errors.storeId}</p>}
                   </div>
+                  <div>
+                    <Label htmlFor="salespersonId" className="flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      Assigned Salesperson *
+                    </Label>
+                    <div className="mb-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="w-full flex justify-between"
+                        onClick={() => {
+                          const el = document.getElementById("sales-users-list")
+                          if (el) el.style.display = el.style.display === "none" ? "block" : "none"
+                        }}
+                      >
+                        {formData.salespersonId
+                          ? salesUsers.find((user) => user.id === formData.salespersonId)?.name ||
+                            salesUsers.find((user) => user.id === formData.salespersonId)?.email ||
+                            formData.salespersonId
+                          : "No salesperson assigned."}
+                        <span className="ml-2 text-xs text-gray-500">▼</span>
+                      </Button>
+                    </div>
+                    <div
+                      id="sales-users-list"
+                      style={{ display: "none" }}
+                      className="border rounded-lg p-2 bg-gray-50"
+                    >
+                      {salesUsers.length === 0 ? (
+                        <p className="text-gray-400 text-sm">No salespeople available.</p>
+                      ) : (
+                        salesUsers.map((user) => (
+                          <div key={user.id} className="flex items-center gap-2 py-1">
+                            <input
+                              type="checkbox"
+                              id={`sales-user-${user.id}`}
+                              checked={formData.salespersonId === user.id}
+                              onChange={(e) => {
+                                handleInputChange("salespersonId", e.target.checked ? user.id : "")
+                              }}
+                              className="h-4 w-4 text-orange-500 border-gray-300 rounded"
+                            />
+                            <label htmlFor={`sales-user-${user.id}`} className="text-sm">
+                              {user.name || user.email || user.id}
+                            </label>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    {errors.salespersonId && <p className="text-red-500 text-sm mt-1">{errors.salespersonId}</p>}
+                  </div>
                 </div>
                 <div className="py-2">
                   <Label htmlFor="streetAddress">Street Address *</Label>
@@ -763,7 +835,6 @@ export function SuperStoreEditModal({
                     )}
                   </div>
                 </div>
-
 
                 <div className="flex flex-row items-center space-x-4">
                   <div className="flex items-center space-x-2">

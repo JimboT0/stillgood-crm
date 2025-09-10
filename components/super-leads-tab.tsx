@@ -229,7 +229,7 @@ export function SuperLeadsTab({
                                 <TableHead>Store</TableHead>
                                 {columnVisibility.Creator && <TableHead>Creator</TableHead>}
                                 {columnVisibility.Assigned && <TableHead>Ops</TableHead>}
-                                <TableHead>ID</TableHead>
+                                {/* <TableHead>ID</TableHead> */}
                                 <TableHead>Status</TableHead>
                                 {columnVisibility.Contact && <TableHead>Contact</TableHead>}
                                 {columnVisibility.Location && <TableHead>Location</TableHead>}
@@ -249,7 +249,7 @@ export function SuperLeadsTab({
                                     {columnVisibility.Assigned && (
                                         <AssignedOpsCell isSuperadmin={isSuperadmin} users={users} assignedOpsIds={store.assignedOpsIds ?? []} />
                                     )}
-                                                                 <TableCell>{store.id}</TableCell>
+                                    {/* <TableCell>{store.id}</TableCell> */}
                                     <StoreStatusBadge status={store.status} isKeyAccount={!!store.isKeyAccount} />
                                     {columnVisibility.Contact && (
                                         <ContactsCell contactPersons={store.contactPersons ?? []} />
