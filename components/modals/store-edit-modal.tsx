@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { EditCard, Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Plus, Trash2, Upload, FileText, Users, X, AlertCircle, FastForward } from "lucide-react"
+import { Plus, Trash2, Upload, FileText, Users, X, AlertCircle, FastForward, Mail } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { storeService } from "@/lib/firebase/services/store"
 import { fileService } from "@/lib/firebase/services/file"
@@ -19,7 +19,7 @@ import { formatDateTime, formatDateTimeForInput, parseDateTime } from "../../lib
 import { isValidTimestamp } from "@/lib/date-validation"
 import type { Store, ContactPerson, Product, CollectionTimes, StoreGroup, Document } from "@/lib/firebase/types"
 import { PROVINCES, storeTypes } from "@/lib/firebase/types"
-import {bagPresets} from "../../lib/data/bag-presets"
+import { bagPresets } from "../../lib/data/bag-presets"
 
 interface StoreEditModalProps {
   store: Store | null
@@ -164,14 +164,14 @@ export function StoreEditModal({
     if (isMovingToClosed && formData.status !== "closed") {
       // Show toaster notification instead of error in errors object
       if (typeof window !== "undefined") {
-      // @ts-ignore
-      window.toast?.("Status must be 'Closed' when moving to closed", { type: "error" })
+        // @ts-ignore
+        window.toast?.("Status must be 'Closed' when moving to closed", { type: "error" })
       }
     } else if (!["lead", "cold", "warm"].includes(formData.status || "lead")) {
       // Show toaster notification instead of error in errors object
       if (typeof window !== "undefined") {
-      // @ts-ignore
-      window.toast?.("Status must be 'Lead', 'Cold', or 'Warm'", { type: "error" })
+        // @ts-ignore
+        window.toast?.("Status must be 'Lead', 'Cold', or 'Warm'", { type: "error" })
       }
     }
 
@@ -1061,64 +1061,64 @@ export function StoreEditModal({
                 ))}
               </CardContent>
 
-            <EditCard>
-              <CardHeader>
-                <CardTitle className="text-lg">Collection Times</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {Object.entries(collectionTimes).map(([period, times], index) => (
-                  <div
-                    key={period}
-                    className="flex flex-col md:grid md:grid-cols-3 gap-1 items-left relative"
-                  >
-                    <div className="md:col-span-1 flex justify-start">
-                      <Label className="text-sm text-gray-600 capitalize text-left pt-4">
-                        {period === "mondayFriday"
-                          ? "Weekday"
-                          : period === "publicHoliday"
-                            ? "Holiday"
-                            : period === "saturday"
-                              ? "Sat"
-                              : period === "sunday"
-                                ? "Sun"
-                                : period.charAt(0).toUpperCase() + period.slice(1)}
-                      </Label>
-                    </div>
-                    <div className="flex flex-row gap-4 w-full md:col-span-2">
-                      <div className="flex-1">
-                        <Label className="text-xs text-gray-400">From</Label>
-                        <Input
-                          type="time"
-                          value={times.from}
-                          onChange={(e) =>
-                            handleCollectionTimeChange(period as keyof CollectionTimes, "from", e.target.value)
-                          }
-                        />
+              <EditCard>
+                <CardHeader>
+                  <CardTitle className="text-lg">Collection Times</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {Object.entries(collectionTimes).map(([period, times], index) => (
+                    <div
+                      key={period}
+                      className="flex flex-col md:grid md:grid-cols-3 gap-1 items-left relative"
+                    >
+                      <div className="md:col-span-1 flex justify-start">
+                        <Label className="text-sm text-gray-600 capitalize text-left pt-4">
+                          {period === "mondayFriday"
+                            ? "Weekday"
+                            : period === "publicHoliday"
+                              ? "Holiday"
+                              : period === "saturday"
+                                ? "Sat"
+                                : period === "sunday"
+                                  ? "Sun"
+                                  : period.charAt(0).toUpperCase() + period.slice(1)}
+                        </Label>
                       </div>
-                      <div className="flex-1 relative">
-                        <Label className="text-xs text-gray-400">To</Label>
-                        <Input
-                          type="time"
-                          value={times.to}
-                          onChange={(e) =>
-                            handleCollectionTimeChange(period as keyof CollectionTimes, "to", e.target.value)
-                          }
-                        />
-                        {index === 0 && (
-                          <button
-                            type="button"
-                            className="absolute bottom-10 right-0 text-xs text-blue-600 underline mt-1"
-                            onClick={() => handleApplyToAll(times.from, times.to)}
-                          >
-                            Apply to all
-                          </button>
-                        )}
+                      <div className="flex flex-row gap-4 w-full md:col-span-2">
+                        <div className="flex-1">
+                          <Label className="text-xs text-gray-400">From</Label>
+                          <Input
+                            type="time"
+                            value={times.from}
+                            onChange={(e) =>
+                              handleCollectionTimeChange(period as keyof CollectionTimes, "from", e.target.value)
+                            }
+                          />
+                        </div>
+                        <div className="flex-1 relative">
+                          <Label className="text-xs text-gray-400">To</Label>
+                          <Input
+                            type="time"
+                            value={times.to}
+                            onChange={(e) =>
+                              handleCollectionTimeChange(period as keyof CollectionTimes, "to", e.target.value)
+                            }
+                          />
+                          {index === 0 && (
+                            <button
+                              type="button"
+                              className="absolute bottom-10 right-0 text-xs text-blue-600 underline mt-1"
+                              onClick={() => handleApplyToAll(times.from, times.to)}
+                            >
+                              Apply to all
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </CardContent>
-            </EditCard>
+                  ))}
+                </CardContent>
+              </EditCard>
 
             </EditCard>
           </TabsContent>
@@ -1207,6 +1207,19 @@ export function StoreEditModal({
                   </div>
                   {errors.bankDocument && <p className="text-red-500 text-sm mt-1">{errors.bankDocument}</p>}
                   <p className="text-sm text-gray-500 mt-1">Upload a PDF, PNG, JPEG, TXT, or Word file (max 5MB)</p>
+                  <Label htmlFor="bankConfirmationEmail" className="flex items-center gap-2">
+                    <Mail className="w-4 h-4" />
+                    Bank Confirmation Email {isMovingToClosed && <span className="text-red-500">*</span>}
+                  </Label>
+                  <Input
+                    id="bankConfirmationEmail"
+                    type="email"
+                    value={formData.bankConfirmationEmail || ""}
+                    onChange={(e) => handleInputChange("bankConfirmationEmail", e.target.value)}
+                    placeholder="Enter bank confirmation email"
+                    className={errors.bankConfirmationEmail ? "border-red-500" : ""}
+                  />
+                  {errors.bankConfirmationEmail && <p className="text-red-500 text-sm mt-1">{errors.bankConfirmationEmail}</p>}
                 </div>
               </CardContent>
             </EditCard>

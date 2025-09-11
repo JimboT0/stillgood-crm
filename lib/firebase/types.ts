@@ -69,6 +69,7 @@ export interface Document {
   storeId: string;
   uploadedBy: string;
   uploadedAt: Date;
+  
 }
 
 export interface Store {
@@ -101,6 +102,7 @@ export interface Store {
   bankDocument?: Document;
   signedSla?: boolean;
   bankConfirmation?: boolean;
+  bankConfirmationEmail?: string;
   isKeyStore?: boolean;
   storeType?: string;
   storeId?: string;

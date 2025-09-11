@@ -64,10 +64,12 @@ export function DocumentViewerModal({ isOpen, onClose, store, documentType, curr
                           : new Date(documentInfo.uploadedAt).toLocaleDateString()}
                       </p>
                     </div>
+                  {isSla && (
                     <div>
                       <span className="font-medium">Uploaded By:</span>
-                      <p className="text-gray-600">{documentInfo.uploadedBy}</p>
+                      <p className="text-gray-600">{documentInfo.bankConfirmationEmail}</p>
                     </div>
+                  )}
                   </div>
 
                   <div className="flex gap-2">

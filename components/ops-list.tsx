@@ -4,14 +4,14 @@ import { useState, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, EditCard } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Bell, BellIcon, Calendar, CheckCircle, EditIcon, EyeIcon } from "lucide-react"
+import { Bell, BellIcon, Calendar, CheckCircle, EditIcon, EyeIcon, FileText } from "lucide-react"
 import { SearchInput, StatusFilter } from "@/components/shared/filters"
 import { StoreInfoCell, ProvinceCell, StoreStatusBadge, SalespersonCell } from "./cells"
 import { OpsCalendarModal } from "./modals/ops-calendar-modal"
 import type { StoreOpsView, User } from "@/lib/firebase/types"
 import { StoreDetailsModal } from "./modals/store-details-modal"
+import { DocumentViewerModal } from "./modals/document-viewer-modal"
 import { formatDateTimeForDisplay } from "@/lib/utils/date-formatter"
-
 
 interface OpsListProps {
     stores: StoreOpsView[]
@@ -51,6 +51,17 @@ export function OpsList({
 }: OpsListProps) {
     const [statusFilter, setStatusFilter] = useState<"all" | "coming" | "past" | "future">("coming")
     const isSuperadmin = currentUser?.role === "superadmin"
+
+    const [documentViewModal, setDocumentViewModal] = useState<{
+        isOpen: boolean;
+        store: StoreOpsView | null;
+        documentType: "sla" | "bank" | null;
+    }>({ isOpen: false, store: null, documentType: null });
+
+    const handleViewDocument = (store: StoreOpsView, documentType: "sla" | "bank") => {
+        console.log(`Viewing ${documentType} document for store ${store.id}`);
+        setDocumentViewModal({ isOpen: true, store, documentType });
+    };
 
     // Get current date and coming month range
     const currentDate = new Date()
@@ -169,12 +180,22 @@ export function OpsList({
                                             </span>
 
                                             <span className="px-2 py-1.5 rounded border border-gray-400 bg-gray-50 text-gray-800 text-xs font-mono">
-                                                <EyeIcon className="w-3 h-3" onClick={() => setSelectedStore(event.store)} />
+                                                <EyeIcon className="w-3 h-3 cursor-pointer" onClick={() => setSelectedStore(event.store)} />
                                             </span>
                                             <span className="px-2 py-1.5 rounded border border-yellow-400 text-yellow-500 bg-gray-50 text-gray-800 text-xs font-mono">
-                                                <BellIcon className="w-3 h-3" onClick={() => addToCalendar(event.store, event.eventType, event.eventDate)}
+                                                <BellIcon className="w-3 h-3 cursor-pointer" onClick={() => addToCalendar(event.store, event.eventType, event.eventDate)}
                                                 />
                                             </span>
+                                            {event.store.slaDocument && (
+                                                <span className="px-2 py-1.5 rounded border border-green-400 text-green-500 bg-gray-50 text-gray-800 text-xs font-mono">
+                                                    <FileText className="w-3 h-3 cursor-pointer" onClick={() => handleViewDocument(event.store, "sla")} />
+                                                </span>
+                                            )}
+                                            {event.store.bankDocument && (
+                                                <span className="px-2 py-1.5 rounded border border-blue-400 text-blue-500 bg-gray-50 text-gray-800 text-xs font-mono">
+                                                    <FileText className="w-3 h-3 cursor-pointer" onClick={() => handleViewDocument(event.store, "bank")} />
+                                                </span>
+                                            )}
                                         </div>
 
 
@@ -246,6 +267,24 @@ export function OpsList({
                                         >
                                             <Bell className="w-4 h-4" />
                                         </Button>
+                                        {event.store.slaDocument && (
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => handleViewDocument(event.store, "sla")}
+                                            >
+                                                <FileText className="w-4 h-4" />
+                                            </Button>
+                                        )}
+                                        {event.store.bankDocument && (
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => handleViewDocument(event.store, "bank")}
+                                            >
+                                                <FileText className="w-4 h-4" />
+                                            </Button>
+                                        )}
 
                                         {isSuperadmin && event.store.isSetup && !event.store.setupConfirmed && (
                                             <Button
@@ -277,32 +316,42 @@ export function OpsList({
     )
 
     return (
-        <div className="space-y-4 w-full">
+        <>
+            <div className="space-y-4 w-full">
 
-            <div className="flex flex-col sm:flex-row gap-4">
-                <SearchInput
-                    value={searchTerm}
-                    onChange={setSearchTerm}
-                    placeholder="Search store events..."
-                />
-                <StatusFilter
-                    value={statusFilter}
-                    onChange={setStatusFilter}
-                    options={EVENT_STATUS_OPTIONS}
-                    placeholder="Filter by status"
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <SearchInput
+                        value={searchTerm}
+                        onChange={setSearchTerm}
+                        placeholder="Search store events..."
+                    />
+                    <StatusFilter
+                        value={statusFilter}
+                        onChange={setStatusFilter}
+                        options={EVENT_STATUS_OPTIONS}
+                        placeholder="Filter by status"
+                    />
+                </div>
+
+
+                {renderEventTable(filteredEvents, "Coming Month Events", true)}
+                {pastEvents.length > 0 && statusFilter === "all" && renderEventTable(pastEvents, "Past Events")}
+                {futureEvents.length > 0 && statusFilter === "all" && renderEventTable(futureEvents, "Future Events")}
+
+                <StoreDetailsModal
+                    store={selectedStore}
+                    isOpen={!!selectedStore}
+                    onClose={() => setSelectedStore(null)}
                 />
             </div>
 
-
-            {renderEventTable(filteredEvents, "Coming Month Events", true)}
-            {pastEvents.length > 0 && statusFilter === "all" && renderEventTable(pastEvents, "Past Events")}
-            {futureEvents.length > 0 && statusFilter === "all" && renderEventTable(futureEvents, "Future Events")}
-
-            <StoreDetailsModal
-                store={selectedStore}
-                isOpen={!!selectedStore}
-                onClose={() => setSelectedStore(null)}
+            <DocumentViewerModal
+                isOpen={documentViewModal.isOpen}
+                onClose={() => setDocumentViewModal({ isOpen: false, store: null, documentType: null })}
+                store={documentViewModal.store}
+                documentType={documentViewModal.documentType}
+                currentUser={currentUser}
             />
-        </div>
+        </>
     )
 }

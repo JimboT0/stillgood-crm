@@ -9,6 +9,8 @@ import { Building, MapPin, Calendar, Phone, Mail, UserIcon, CheckCircle, Clock, 
 import type { Store, User } from "@/lib/firebase/types"
 // import { Timestamp } from "firebase/firestore"
 import { formatDateTimeForDisplay, getSalespersonInitials, getSalespersonName } from "../../lib/utils/date-utils"
+import { DocumentViewerModal } from "./document-viewer-modal"
+import { useState } from "react"
 
 interface StoreDetailsModalProps {
   store: Store | null
@@ -59,6 +61,12 @@ export function StoreDetailsModal({
     }
   }
 
+  const [documentViewModal, setDocumentViewModal] = useState<{
+    isOpen: boolean;
+    store: Store | null;
+    documentType: "sla" | "bank" | null;
+  }>({ isOpen: false, store: null, documentType: null });
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -75,12 +83,12 @@ export function StoreDetailsModal({
           <div className="flex items-center justify-between">
             {getStatusBadge()}
             <div className="flex gap-2">
-              {!store.isSetup && isSuperadmin && (
+              {/* {!store.isSetup && isSuperadmin && (
                 <Button size="sm" className="bg-blue-500 hover:bg-blue-600" onClick={() => onToggleSetup(store.id)}>
                   Mark Setup Complete
                 </Button>
-              )}
-              {store.isSetup && !store.setupConfirmed && currentUser?.role === "superadmin" && (
+              )} */}
+              {/* {store.isSetup && !store.setupConfirmed && currentUser?.role === "superadmin" && (
                 <Button
                   size="sm"
                   onClick={() => onSetupConfirmation(store.id)}
@@ -89,7 +97,7 @@ export function StoreDetailsModal({
                   <CheckCircle className="w-4 h-4 mr-2 text-white" />
                   Confirm Setup
                 </Button>
-              )}
+              )} */}
             </div>
           </div>
 
@@ -194,7 +202,7 @@ export function StoreDetailsModal({
           )}
 
           {/* Documents */}
-          {(store.slaDocument || store.bankDocument) && (
+          {(store.slaDocument || store.bankDocument) ? (
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Documents</CardTitle>
@@ -212,6 +220,13 @@ export function StoreDetailsModal({
                     </Badge>
                   </div>
                 )}
+                <DocumentViewerModal
+                  isOpen={documentViewModal.isOpen}
+                  onClose={() => setDocumentViewModal({ isOpen: false, store: null, documentType: null })}
+                  store={documentViewModal.store}
+                  documentType={documentViewModal.documentType}
+                  currentUser={currentUser}
+                />
                 {store.bankDocument && (
                   <div className="flex items-center gap-3 p-3 border rounded-lg">
                     <FileText className="w-5 h-5 text-blue-600" />
@@ -226,6 +241,8 @@ export function StoreDetailsModal({
                 )}
               </CardContent>
             </Card>
+          ) : (
+            <p className="text-sm text-gray-500">Documents not loaded</p>
           )}
 
           {/* Contract Terms */}
