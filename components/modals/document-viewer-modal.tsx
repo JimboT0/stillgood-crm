@@ -67,7 +67,7 @@ export function DocumentViewerModal({ isOpen, onClose, store, documentType, curr
                   {isSla && (
                     <div>
                       <span className="font-medium">Uploaded By:</span>
-                      <p className="text-gray-600">{documentInfo.bankConfirmationEmail}</p>
+                      <p className="text-gray-600">{store.bankConfirmationEmail}</p>
                     </div>
                   )}
                   </div>
@@ -92,8 +92,10 @@ export function DocumentViewerModal({ isOpen, onClose, store, documentType, curr
                           Download
                         </Button>
                       </>
+
                     )}
                   </div>
+                  {store.bankConfirmationEmail ? store.bankConfirmationEmail : "No email"}
                 </div>
               ) : (
                 <div className="text-center py-8">

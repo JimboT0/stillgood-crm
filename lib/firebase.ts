@@ -86,6 +86,7 @@ export interface DocumentInfo {
   url: string
   uploadedAt: Date
   uploadedBy: string
+  popEmail?: string
 }
 
 export interface Store {

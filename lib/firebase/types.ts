@@ -44,9 +44,9 @@ export interface ContactPerson {
 
 export interface Product {
   name: string;
-  description: string;
-  retailPrice: number;
-  estimatedValue: number;
+  description?: string;
+  retailPrice?: number;
+  estimatedValue?: number;
 }
 
 export interface CollectionTimes {
@@ -69,15 +69,22 @@ export interface Document {
   storeId: string;
   uploadedBy: string;
   uploadedAt: Date;
-  
+}
+
+export interface NewLeadDetails {
+  id: string;
+  type: "owner" | "supplier" | "other";
+  launch: "soon" | "later";
+  marketing: boolean;
 }
 
 export interface Store {
   id: string;
+  newleaddetails: NewLeadDetails[];
   tradingName: string;
   streetAddress: string;
   province: string;
-  status: "lead" | "cold" | "warm" | "closed" | "pending setup" | "rollout" | "completed";
+  status: "new" | "lead" | "cold" | "warm" | "closed" | "pending setup" | "rollout" | "completed";
   salespersonId: string;
   assignedUserId?: string;
   assignedOpsIds?: string[]; 
@@ -203,4 +210,22 @@ export interface Refunds {
   type: "bag costs" | "printing" | "travel" | "consulting" | "marketing" | "stationery" | "entertainment" | "other"
   submittedAt: Date
   status: "pending" | "accepted" | "paid" | "declined"
+}
+
+
+export interface TrainingItem {
+  name: string;
+  size: number;
+  url: string; // URL to Firebase Storage file
+}
+
+export interface TrainingDocument {
+  id: string; // Firestore document ID
+  name: string;
+  size: number;
+  type: "training" | "pnp_franchise" | "pnp_corporate" | "spar_franchise" | "spar_corporate" | "other";
+  credentials?: Credential[];
+  items?: TrainingItem[]; // For training packages
+  url: string; // Firebase Storage URL for non-training documents
+  createdAt: Date;
 }

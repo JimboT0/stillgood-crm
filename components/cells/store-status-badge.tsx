@@ -3,11 +3,11 @@ import { TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Hand, SnowflakeIcon, Flame, Rocket, CheckCircle, Calendar, KeyIcon, Clock, ThumbsUp } from "lucide-react"
 
-type StoreStatus =
+type storeStatus =
   "lead" | "cold" | "warm" | "closed" | "pending setup" | "rollout" | "completed";
 
 interface StoreStatusBadgeProps {
-  status: StoreStatus
+  status: storeStatus
   isKeyAccount?: boolean
   className?: string
 }

@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { EditCard, Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Plus, Trash2, Upload, FileText, Users, X, AlertCircle } from "lucide-react"
+import { Plus, Trash2, Upload, FileText, Users, X, AlertCircle, Mail } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { storeService } from "@/lib/firebase/services/store"
 import { fileService } from "@/lib/firebase/services/file"
@@ -55,6 +55,9 @@ export function ClosedStoreEditModal({
   const [autoAssignStoreId, setAutoAssignStoreId] = useState(true)
   const [groups, setGroups] = useState<StoreGroup[]>([])
   const [errorDescription, setErrorDescription] = useState<string>("")
+  const [bankConfirmationEmail, setBankConfirmationEmail] = useState<string>("")
+
+
 
 
   // Load groups
@@ -105,6 +108,7 @@ export function ClosedStoreEditModal({
       )
       setSlaFile(null)
       setBankFile(null)
+      setBankConfirmationEmail("")
       setErrors({})
       setUploadError(null)
       setAutoAssignStoreId(false)
@@ -203,6 +207,12 @@ export function ClosedStoreEditModal({
       setFormData((prev) => ({
         ...prev,
         storeId: value,
+      }))
+      setAutoAssignStoreId(false)
+    } else if (field === "bankConfirmationEmail") {
+      setFormData((prev) => ({
+        ...prev,
+        bankConfirmationEmail: value,
       }))
       setAutoAssignStoreId(false)
     } else {
@@ -434,6 +444,8 @@ export function ClosedStoreEditModal({
         errorSetAt: formData.errorSetAt || undefined,
         slaDocument,
         bankDocument,
+        bankConfirmationEmail: formData.bankConfirmationEmail || "",
+
         signedSla: !!slaDocument,
         bankConfirmation: !!bankDocument,
         isKeyStore: formData.isKeyStore || false,
@@ -1154,7 +1166,21 @@ export function ClosedStoreEditModal({
                   </div>
                   {errors.bankDocument && <p className="text-red-500 text-sm mt-1">{errors.bankDocument}</p>}
                   <p className="text-sm text-gray-500 mt-1">Upload a PDF, PNG, JPEG, TXT, or Word file (max 5MB)</p>
+                  <Label htmlFor="bankConfirmationEmail" className="flex items-center gap-2">
+                    <Mail className="w-4 h-4" />
+                    Bank Confirmation Email {isMovingToClosed && <span className="text-red-500">*</span>}
+                  </Label>
+                  <Input
+                    id="bankConfirmationEmail"
+                    type="email"
+                    value={formData.bankConfirmationEmail || ""}
+                    onChange={(e) => handleInputChange("bankConfirmationEmail", e.target.value)}
+                    placeholder="Enter bank confirmation email"
+                    className={errors.bankConfirmationEmail ? "border-red-500" : ""}
+                  />
+                  {errors.bankConfirmationEmail && <p className="text-red-500 text-sm mt-1">{errors.bankConfirmationEmail}</p>}
                 </div>
+
               </CardContent>
             </EditCard>
           </TabsContent>

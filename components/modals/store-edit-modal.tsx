@@ -55,6 +55,7 @@ export function StoreEditModal({
   const [autoAssignStoreId, setAutoAssignStoreId] = useState(true)
   const [groups, setGroups] = useState<StoreGroup[]>([])
   const [errorDescription, setErrorDescription] = useState<string>("")
+  const [bankConfirmationEmail, setBankConfirmationEmail] = useState<string>("")
 
   // Load groups
   useEffect(() => {
@@ -84,6 +85,7 @@ export function StoreEditModal({
         ...store,
         trainingDate,
         launchDate,
+        bankConfirmationEmail: store.bankConfirmationEmail || "",
       })
       setContactPersons(store.contactPersons || [])
       setProducts(
@@ -104,6 +106,7 @@ export function StoreEditModal({
       )
       setSlaFile(null)
       setBankFile(null)
+      setBankConfirmationEmail("")
       setErrors({})
       setUploadError(null)
       setAutoAssignStoreId(false)
@@ -126,6 +129,7 @@ export function StoreEditModal({
         groupId: "",
         trainingDate: null,
         launchDate: null,
+        bankConfirmationEmail: "",
       })
       setContactPersons([])
       setProducts([])
@@ -159,6 +163,12 @@ export function StoreEditModal({
     if (!formData.streetAddress) newErrors.streetAddress = "Street address is required"
     if (!formData.province) newErrors.province = "Province is required"
     if (!formData.storeType) newErrors.storeType = "Store type is required"
+
+    if (isMovingToClosed && !formData.bankConfirmationEmail) {
+      newErrors.bankConfirmationEmail = "Bank confirmation email is required when moving to closed"
+    } else if (formData.bankConfirmationEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.bankConfirmationEmail)) {
+      newErrors.bankConfirmationEmail = "Invalid email format"
+    }
 
     // Validate status only if isMovingToClosed is true and status is "closed"
     if (isMovingToClosed && formData.status !== "closed") {
@@ -213,6 +223,12 @@ export function StoreEditModal({
         storeType: value,
         storeId: generateStoreId(value),
       }))
+    } else if (field === "bankConfirmationEmail") {
+      setFormData((prev) => ({
+        ...prev,
+        bankConfirmationEmail: value,
+      }))
+      setAutoAssignStoreId(false)
     } else if (field === "storeId") {
       setFormData((prev) => ({
         ...prev,
@@ -448,6 +464,7 @@ export function StoreEditModal({
         errorSetAt: formData.errorSetAt || undefined,
         slaDocument,
         bankDocument,
+bankConfirmationEmail: formData.bankConfirmationEmail || "",
         signedSla: !!slaDocument,
         bankConfirmation: !!bankDocument,
         isKeyStore: formData.isKeyStore || false,
@@ -1262,3 +1279,4 @@ export function StoreEditModal({
     </Dialog>
   )
 }
+

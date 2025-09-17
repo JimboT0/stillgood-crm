@@ -6,6 +6,7 @@ import { useDashboardData } from "@/components/dashboard/dashboard-provider"
 import { KeyAccountsTab } from "@/components/key-accounts-tab"
 import { ClosedStoreEditModal } from "@/components/modals/closed-store-edit-modal"
 import type { Store } from "@/lib/firebase/types"
+import { StoreEditModal } from "@/components/modals/store-edit-modal"
 
 
 function KeyAccountsPageContent() {
@@ -26,7 +27,7 @@ function KeyAccountsPageContent() {
         onStatusChange={handleStatusChange}
       />
 
-      <ClosedStoreEditModal
+      <StoreEditModal
         store={editingStore}
         isOpen={!!editingStore}
         onClose={() => setEditingStore(null)}

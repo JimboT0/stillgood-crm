@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StoreDetailModal } from "./store-detail-modal";
-import { Search, Filter, CheckCircle, Eye, Share, X, CheckCheck, Share2Icon, CheckSquare } from "lucide-react";
+import { Search, Filter, CheckCircle, Eye, Share, X, CheckCheck, Share2Icon, CheckSquare, FileText } from "lucide-react";
 import type { Store, User } from "@/lib/firebase/types";
 import { Timestamp } from "firebase/firestore";
 import { formatDateTime } from "@/lib/utils/date-utils";
@@ -15,6 +15,7 @@ import { ProvinceCell } from "@/components/cells/province-cell";
 import { LaunchTrainDateCell, SalespersonCell, StoreInfoCell } from "@/components/cells";
 import toast, { Toaster } from "react-hot-toast";
 import { StoreDetailsModal } from "../modals/store-details-modal";
+import { DocumentViewerModal } from "../modals/document-viewer-modal";
 
 interface RolloutListProps {
   stores: Store[];
@@ -31,9 +32,19 @@ export function RolloutList({ stores, users, currentUser, onToggleSetup, onSetup
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "setup" | "confirmed">("all");
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [modalMode, setModalMode] = useState<"share" | "confirmSetup">("share");
+  const [documentViewModal, setDocumentViewModal] = useState<{
+    isOpen: boolean;
+    store: Store | null;
+    documentType: "sla" | "bank" | null;
+  }>({ isOpen: false, store: null, documentType: null });
   const isSuperadmin = currentUser?.role === "superadmin";
   const isMedia = currentUser?.role === "media";
   const [showTables, setShowTables] = useState(false);
+
+  const handleViewDocument = (store: Store, documentType: "sla" | "bank") => {
+    console.log(`Viewing ${documentType} document for store ${store.id}`);
+    setDocumentViewModal({ isOpen: true, store, documentType });
+  };
 
   const currentDate = new Date();
 
@@ -93,26 +104,26 @@ export function RolloutList({ stores, users, currentUser, onToggleSetup, onSetup
       return dateA.getTime() - dateB.getTime();
     });
 
-const handleToggleSocialSetup = async (storeId: string, tradingName: string, isSocialSetup: boolean) => {
-  try {
-    await onToggleSocialSetup(storeId);
-    toast.success(`"${tradingName}" social setup ${isSocialSetup ? "removed" : "confirmed"}!`, {
-      style: {
-        background: '#fff',
-        color: '#111827',
-        border: '1px solid #f97316',
-      },
-    });
-  } catch (error) {
-    toast.error('Failed to toggle social setup', {
-      style: {
-        background: '#fff',
-        color: '#111827',
-        border: '1px solid #f97316',
-      },
-    });
-  }
-};
+  const handleToggleSocialSetup = async (storeId: string, tradingName: string, isSocialSetup: boolean) => {
+    try {
+      await onToggleSocialSetup(storeId);
+      toast.success(`"${tradingName}" social setup ${isSocialSetup ? "removed" : "confirmed"}!`, {
+        style: {
+          background: '#fff',
+          color: '#111827',
+          border: '1px solid #f97316',
+        },
+      });
+    } catch (error) {
+      toast.error('Failed to toggle social setup', {
+        style: {
+          background: '#fff',
+          color: '#111827',
+          border: '1px solid #f97316',
+        },
+      });
+    }
+  };
 
 
   const handleOpenConfirmSetupModal = (store: Store) => {
@@ -154,29 +165,29 @@ const handleToggleSocialSetup = async (storeId: string, tradingName: string, isS
                   trainingDate={store.trainingDate}
                 />
                 <TableCell>
-                    <div className="flex items-center">
+                  <div className="flex items-center">
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
-                      type="checkbox"
-                      checked={!!store.isSocialSetup}
-                      onChange={() => handleToggleSocialSetup(store.id, store.tradingName, !!store.isSocialSetup)}
-                      disabled={store.isSocialSetup || (!isSuperadmin && !isMedia)}
-                      className="sr-only peer"
-                      aria-label="Social Setup Confirmed"
+                        type="checkbox"
+                        checked={!!store.isSocialSetup}
+                        onChange={() => handleToggleSocialSetup(store.id, store.tradingName, !!store.isSocialSetup)}
+                        disabled={store.isSocialSetup || (!isSuperadmin && !isMedia)}
+                        className="sr-only peer"
+                        aria-label="Social Setup Confirmed"
                       />
                       <div
-                      className={`w-11 h-6 rounded-full transition-colors duration-200
+                        className={`w-11 h-6 rounded-full transition-colors duration-200
                         ${!!store.isSocialSetup ? "bg-green-500" : "bg-red-500"}
                         ${store.isSocialSetup ? "opacity-60" : ""}
                         peer-disabled:opacity-60`}
                       ></div>
                       <div
-                      className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform duration-200
+                        className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform duration-200
                         ${!!store.isSocialSetup ? "translate-x-5" : ""}
                         peer-disabled:opacity-60`}
                       ></div>
                     </label>
-                    </div>
+                  </div>
                 </TableCell>
                 <TableCell>
                   {isSuperadmin ? (
@@ -185,14 +196,14 @@ const handleToggleSocialSetup = async (storeId: string, tradingName: string, isS
                         type="checkbox"
                         checked={!!store.credentials}
                         onChange={() => isSuperadmin && handleOpenConfirmSetupModal(store)}
-                        disabled={ !isSuperadmin}
+                        disabled={!isSuperadmin}
                         className="sr-only peer"
                         aria-label="Setup Confirmed"
                       />
                       <div
                         className={`w-11 h-6 rounded-full transition-colors duration-200
                           ${!!store.credentials ? "bg-green-500" : "bg-red-500"}
-                          ${ !isSuperadmin ? "opacity-60" : ""}
+                          ${!isSuperadmin ? "opacity-60" : ""}
                           peer-disabled:opacity-60`}
                       ></div>
                       <div
@@ -209,29 +220,49 @@ const handleToggleSocialSetup = async (storeId: string, tradingName: string, isS
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-row items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                    setSelectedStore(store);
-                    setModalMode("share");
-                    }}
-                    className="text-gray-900 hover:text-blue-600"
-                  >
-                    <Eye size={16} />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                    setSelectedStore(store);
-                    setModalMode("confirmSetup");
-                    }}
-                    className="text-gray-500 hover:text-blue-600"
-                  >
-                    <Share size={16} />
-                  </Button>
-                  {/* <Button
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedStore(store);
+                        setModalMode("share");
+                      }}
+                      className="text-gray-900 hover:text-blue-600"
+                    >
+                      <Eye size={16} />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedStore(store);
+                        setModalMode("confirmSetup");
+                      }}
+                      className="text-gray-500 hover:text-blue-600"
+                    >
+                      <Share size={16} />
+                    </Button>
+                    {store.slaDocument && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewDocument(store, "sla")}
+                        className="text-green-600 hover:text-green-700"
+                      >
+                        <FileText size={16} />
+                      </Button>
+                    )}
+                    {store.bankDocument && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewDocument(store, "bank")}
+                        className="text-blue-600 hover:text-blue-700"
+                      >
+                        <FileText size={16} />
+                      </Button>
+                    )}
+                    {/* <Button
                     variant="outline"
                     size="sm"
                     onClick={() => {
@@ -243,6 +274,7 @@ const handleToggleSocialSetup = async (storeId: string, tradingName: string, isS
                     Delay
                   </Button> */}
                   </div>
+                  
                 </TableCell>
               </TableRow>
             ))}
@@ -333,6 +365,13 @@ const handleToggleSocialSetup = async (storeId: string, tradingName: string, isS
           mode={modalMode}
         />
       )}
+      <DocumentViewerModal
+        isOpen={documentViewModal.isOpen}
+        onClose={() => setDocumentViewModal({ isOpen: false, store: null, documentType: null })}
+        store={documentViewModal.store}
+        documentType={documentViewModal.documentType}
+        currentUser={currentUser}
+      />
     </div>
   );
 }

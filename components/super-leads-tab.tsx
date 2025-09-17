@@ -160,6 +160,8 @@ export function SuperLeadsTab({
         }))
     }
 
+    console.log(stores)
+
     return (
         <div className="space-y-6 w-full">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

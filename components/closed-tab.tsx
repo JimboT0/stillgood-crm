@@ -16,6 +16,7 @@ import type { Store, User } from "@/lib/firebase/types";
 import { useClosedFilters } from "@/hooks/use-closed-filters";
 import { SearchInput, StatusFilter, CLOSED_STATUS_OPTIONS, AdvancedFilterBar } from "@/components/shared/filters";
 import { useState } from "react";
+import { StoreEditModal } from "./modals/store-edit-modal";
 
 interface ClosedTabProps {
   stores: Store[];
@@ -176,7 +177,7 @@ export function ClosedTab({
         </CardContent>
       </Card>
 
-      <ClosedStoreEditModal
+      <StoreEditModal
         store={selectedStore}
         isOpen={!!selectedStore}
         onClose={() => setSelectedStore(null)}

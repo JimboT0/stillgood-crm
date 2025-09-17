@@ -1,0 +1,22 @@
+{
+  "pnp_franchise": {
+    "message": "Hi Team,\nHere are the details for adding stock and checking collections at your store.\n\nAdding site:\nWebsite: https://admin.stillgood.co.za\nUsername: {username}\nPassword: {password}\n\nOrder view site:\nWebsite: https://admin.stillgood.co.za\nUsername: {orderusername}\nPassword: {orderpassword}\n\nI’ve included two short videos showing you how to upload the value bags and how to view orders.\nPlease drop us a message if you have any questions — happy to help!\nThanks!",
+    "phones": ["+27123456789", "+27123456790"]
+  },
+  "pnp_corporate": {
+    "message": "Hi Team,\nHere are the details for adding stock and checking collections at your store.\n\nAdding site:\nWebsite: https://admin.stillgood.co.za\nUsername: {username}\nPassword: {password}\n\nOrder view site:\nWebsite: https://admin.stillgood.co.za\nUsername: {orderusername}\nPassword: {orderpassword}\n\nI’ve included two short videos showing you how to upload the value bags and how to view orders.\nPlease drop us a message if you have any questions — happy to help!\nThanks!",
+    "phones": ["+27123456791", "+27123456792"]
+  },
+  "spar_franchise": {
+    "message": "Hi Team,\nHere are the details for adding stock and checking collections at your store.\n\nAdding site:\nWebsite: https://admin.stillgood.co.za\nUsername: {username}\nPassword: {password}\n\nOrder view site:\nWebsite: https://admin.stillgood.co.za\nUsername: {orderusername}\nPassword: {orderpassword}\n\nI’ve included two short videos showing you how to upload the value bags and how to view orders.\nPlease drop us a message if you have any questions — happy to help!\nThanks!",
+    "phones": ["+27123456793", "+27123456794"]
+  },
+  "spar_corporate": {
+    "message": "Hi Team,\nHere are the details for adding stock and checking collections at your store.\n\nAdding site:\nWebsite: https://admin.stillgood.co.za\nUsername: {username}\nPassword: {password}\n\nOrder view site:\nWebsite: https://admin.stillgood.co.za\nUsername: {orderusername}\nPassword: {orderpassword}\n\nI’ve included two short videos showing you how to upload the value bags and how to view orders.\nPlease drop us a message if you have any questions — happy to help!\nThanks!",
+    "phones": ["+27123456795", "+27123456796"]
+  },
+  "other": {
+    "message": "Hi Team,\nHere are the details for adding stock and checking collections at your store.\n\nAdding site:\nWebsite: https://admin.stillgood.co.za\nUsername: {username}\nPassword: {password}\n\nOrder view site:\nWebsite: https://admin.stillgood.co.za\nUsername: {orderusername}\nPassword: {orderpassword}\n\nI’ve included two short videos showing you how to upload the value bags and how to view orders.\nPlease drop us a message if you have any questions — happy to help!\nThanks!",
+    "phones": ["+27123456797", "+27123456798"]
+  }
+}

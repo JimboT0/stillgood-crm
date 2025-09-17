@@ -1,15 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { SuperLeadsTab } from "@/components/super-leads-tab";
+import { LeadsTab } from "@/components/leads-tab";
+import { StoreEditModal } from "@/components/modals/store-edit-modal";
 import { DocumentViewerModal } from "@/components/modals/document-viewer-modal";
 import { useDashboardData } from "@/components/dashboard/dashboard-provider";
 import type { Store } from "@/lib/firebase/types";
-import { SuperStoreEditModal } from "@/components/modals/super-store-edit-modal";
-import { StoreEditModal } from "@/components/modals/store-edit-modal";
 
-function SuperLeadsPageContent() {
-  const { currentUser, stores, users, handleSaveStore, handleDeleteStore, handleStatusChange, handleToggleSetup, handleSetupConfirmation, handleUpdateCredentials } = useDashboardData();
+function LeadsPageContent() {
+  const { currentUser, stores, users, handleSaveStore, handleDeleteStore, handleStatusChange } = useDashboardData();
 
   const [editingStore, setEditingStore] = useState<Store | null>(null);
   const [isMovingToClosed, setIsMovingToClosed] = useState(false);
@@ -18,15 +17,6 @@ function SuperLeadsPageContent() {
     store: Store | null;
     documentType: "sla" | "bank" | null;
   }>({ isOpen: false, store: null, documentType: null });
-
-  // Only allow access if currentUser is superadmin
-  if (!currentUser || currentUser.role !== "superadmin") {
-    return (
-      <div className="p-8 text-center text-lg text-gray-500">
-        Access denied. Superadmin only.
-      </div>
-    );
-  }
 
   const handleAddStore = () => {
     setEditingStore({} as Store);
@@ -45,7 +35,7 @@ function SuperLeadsPageContent() {
 
   return (
     <>
-      <SuperLeadsTab
+      <LeadsTab
         stores={stores}
         users={users}
         currentUser={currentUser}
@@ -54,9 +44,6 @@ function SuperLeadsPageContent() {
         onDeleteStore={handleDeleteStore}
         onStatusChange={handleStatusChange}
         onViewDocument={handleViewDocument}
-        onToggleSetup={handleToggleSetup}
-        onSetupConfirmation={handleSetupConfirmation}
-        updateCredentials={handleUpdateCredentials}
       />
 
       <DocumentViewerModal
@@ -82,6 +69,6 @@ function SuperLeadsPageContent() {
   );
 }
 
-export default function SuperLeadsPage() {
-  return <SuperLeadsPageContent />;
+export default function LeadsPage() {
+  return <LeadsPageContent />;
 }

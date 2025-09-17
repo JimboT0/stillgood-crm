@@ -44,6 +44,20 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
   const [users, setUsers] = useState<User[]>([])
   const [documents, setDocuments] = useState<Document[]>([])
   const [loading, setLoading] = useState(true)
+
+
+  useEffect(() => {
+  if (stores.length > 0) {
+    const filteredStores = stores.filter(
+      (store) => store.status === "closed" || store.status === "rollout"
+    );
+    const emails = filteredStores
+      .flatMap((store) => store.contactPersons?.map((person) => person.email))
+      .filter(Boolean);
+    console.log("Contact person emails for closed/rollout stores:", emails);
+  }
+}, [stores]);
+
   
 
   useEffect(() => {
