@@ -36,7 +36,7 @@ export const bagPresets: Record<'pnp' | 'spar' | 'standard', Product[]> = {
       estimatedValue: 150.00,
     },
         {
-      name: 'Fruit & Veg - Value Bag',
+      name: 'Bakery - Value Bag',
       description: 'Enjoy a fresh selection of perfectly good bakery products at a fraction of the price. You might find bread rolls, muffins, or pastries—savoury, sweet, or both. Contents vary, but quality is still good. Images are for illustration only—actual contents may vary.',
       retailPrice: 38.45,
       estimatedValue: 100.00,
@@ -62,7 +62,7 @@ export const bagPresets: Record<'pnp' | 'spar' | 'standard', Product[]> = {
       estimatedValue: 150.00,
     },
         {
-      name: 'Fruit & Veg - Value Bag',
+      name: 'Bakery - Value Bag',
       description: 'Enjoy a fresh selection of perfectly good bakery products at a fraction of the price. You might find bread rolls, muffins, or pastries—savoury, sweet, or both. Contents vary, but quality is still good. Images are for illustration only—actual contents may vary.',
       retailPrice: 38.45,
       estimatedValue: 100.00,

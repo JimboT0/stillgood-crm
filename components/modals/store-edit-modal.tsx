@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { EditCard, Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Plus, Trash2, Upload, FileText, Users, X, AlertCircle, FastForward, Mail } from "lucide-react"
+import { Plus, Trash2, Upload, FileText, Users, X, AlertCircle, FastForward, Mail, BaggageClaimIcon, ShoppingBag } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { storeService } from "@/lib/firebase/services/store"
 import { fileService } from "@/lib/firebase/services/file"
@@ -989,11 +989,18 @@ bankConfirmationEmail: formData.bankConfirmationEmail || "",
                       {bagPresets[getValueBagGroup(formData.storeType)].map((bag, idx) => (
                         <Button
                           key={idx}
-                          className="w-full border-rounded-lg justify-start bg-gray-400 hover:bg-gray-500"
-                          onClick={() => setProducts((prev) => [...prev, { ...bag }])}
+                          className="w-full border-rounded-sm justify-start bg-gray-400 hover:bg-gray-500 flex flex-row items-start py-2"
+                          onClick={() =>
+                            setProducts((prev) => [
+                              ...prev,
+                              {
+                                ...bag,
+                                name: bag.name.replace(/ - value bag$/i, ""),
+                              },
+                            ])
+                          }
                         >
-                          <FastForward className="w-4 h-4 mr-2" />
-                          {bag.name}
+                          <ShoppingBag/> {bag.name.replace(/ - value bag$/i, "")}
                         </Button>
                       ))}
                     </div>
