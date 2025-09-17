@@ -18,7 +18,7 @@ export const StoreInfoCell: React.FC<StoreInfoCellProps> = ({ tradingName, stree
           className="font-medium text-gray-900 max-w-[200px] truncate cursor-pointer hover:text-gray-700 transition-colors"
           title={tradingName}
         >
-          {/* {truncateText(tradingName, 70)} */} {streetAddress}
+          {/* {truncateText(tradingName, 70)} */} {tradingName}
         </span>
         <span
           className="text-sm text-gray-500 max-w-[200px] truncate cursor-pointer hover:text-gray-600 transition-colors"
