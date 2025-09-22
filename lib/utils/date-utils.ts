@@ -331,8 +331,7 @@ export const getSalespersonInitials = (salespersonId: string, users: { id: strin
   )
 }
 
-export const addToCalendar = (store: any, eventType: "training" | "launch") => {
-  const eventDate = eventType === "training" ? store.trainingDate : store.launchDate
+export const addToCalendar = (store: any, eventDate: Date | null, eventType: "training" | "launch") => {
   if (!eventDate) {
     console.warn(`No ${eventType} date for store: ${store.tradingName || store.storeId}`)
     return

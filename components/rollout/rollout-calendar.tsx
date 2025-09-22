@@ -10,6 +10,7 @@ import { ChevronLeft, ChevronRight, Calendar } from "lucide-react"
 import type { Store, User } from "@/lib/firebase/types"
 import { Timestamp } from "firebase/firestore"
 
+
 interface RolloutCalendarProps {
   stores: Store[]
   users: User[]
@@ -31,35 +32,55 @@ export function RolloutCalendar({
   const [isSubModalOpen, setIsSubModalOpen] = useState(false)
   const [calendarView, setCalendarView] = useState<"month" | "week">("month")
 
-  // Helper function to normalize dates to YYYY-MM-DD format
-  const normalizeDate = (date: Timestamp | string | null): string | null => {
-    if (!date) return null
-    let parsedDate: Date
+const normalizeDate = (date: any): string | null => {
+  if (date === null || date === undefined) {
+    console.warn("Date is null or undefined");
+    return null;
+  }
 
+  let parsedDate: Date;
+  try {
     if (date instanceof Timestamp) {
-      parsedDate = date.toDate()
+      parsedDate = date.toDate();
+    } else if (typeof date === "object" && "seconds" in date && typeof date.seconds === "number") {
+      parsedDate = new Date(date.seconds * 1000);
     } else if (typeof date === "string") {
       if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(date)) {
-        const [month, day, year] = date.split("/").map(Number)
-        parsedDate = new Date(year, month - 1, day)
+        // MM/DD/YYYY
+        const [month, day, year] = date.split("/").map(Number);
+        parsedDate = new Date(year, month - 1, day);
+      } else if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        // YYYY-MM-DD
+        parsedDate = new Date(date);
       } else if (/^\d{1,2}\s+[A-Za-z]+\s+\d{4}$/.test(date)) {
-        parsedDate = new Date(date)
+        // DD Month YYYY
+        parsedDate = new Date(date);
+      } else if (/^\d{2}-\d{2}-\d{4}$/.test(date)) {
+        // DD-MM-YYYY
+        const [day, month, year] = date.split("-").map(Number);
+        parsedDate = new Date(year, month - 1, day);
       } else {
-        console.warn(`Invalid date format: ${date}`)
-        return null
+        console.warn(`Unsupported date string format: ${date}`);
+        return null;
       }
+    } else if (date instanceof Date) {
+      parsedDate = date;
     } else {
-      console.warn(`Invalid date type: ${date}`)
-      return null
+      console.warn(`Invalid date type: ${JSON.stringify(date)}`);
+      return null;
     }
 
     if (isNaN(parsedDate.getTime())) {
-      console.warn(`Invalid date parsed: ${date}`)
-      return null
+      console.warn(`Invalid date parsed: ${JSON.stringify(date)}`);
+      return null;
     }
 
-    return `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, "0")}-${String(parsedDate.getDate()).padStart(2, "0")}`
+    return `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, "0")}-${String(parsedDate.getDate()).padStart(2, "0")}`;
+  } catch (error) {
+    console.error(`Error parsing date: ${JSON.stringify(date)}`, error);
+    return null;
   }
+};
 
   useEffect(() => {
     const handleResize = () => {
@@ -83,14 +104,20 @@ export function RolloutCalendar({
     return new Date(date.getFullYear(), date.getMonth(), 1).getDay()
   }
 
-  const getStoresForDate = (day: number) => {
-    const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
-    return stores.filter((store) => {
-      const normalizedTrainingDate = normalizeDate(store.trainingDate)
-      const normalizedLaunchDate = normalizeDate(store.launchDate)
-      return normalizedTrainingDate === dateStr || normalizedLaunchDate === dateStr
-    })
-  }
+const getStoresForDate = (day: number) => {
+  const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  const matchingStores = stores.filter((store) => {
+    const normalizedTrainingDate = normalizeDate(store.trainingDate ?? null);
+    const normalizedLaunchDate = normalizeDate(store.launchDate ?? null);
+    console.log(`Store ${store.tradingName}:`, { trainingDate: store.trainingDate, normalizedTrainingDate, launchDate: store.launchDate, normalizedLaunchDate });
+    return normalizedTrainingDate === dateStr || normalizedLaunchDate === dateStr;
+  });
+  return matchingStores;
+};
+
+  
+
+  
 
 
   const navigateMonth = (direction: "prev" | "next") => {
@@ -141,8 +168,8 @@ export function RolloutCalendar({
     }
 
     stores.forEach((store) => {
-      const normalizedTrainingDate = normalizeDate(store.trainingDate)
-      const normalizedLaunchDate = normalizeDate(store.launchDate)
+      const normalizedTrainingDate = normalizeDate(store.trainingDate ?? null)
+      const normalizedLaunchDate = normalizeDate(store.launchDate ?? null)
       const provinceFull = store.province || "Unknown"
       const province = provinceMap[provinceFull] || provinceFull
       if (normalizedTrainingDate === dateStr) {
@@ -196,8 +223,8 @@ export function RolloutCalendar({
   // Log trading names of stores with events on the current day
   const todayStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`
   const todayStores = stores.filter(store => {
-    const normalizedTrainingDate = normalizeDate(store.trainingDate)
-    const normalizedLaunchDate = normalizeDate(store.launchDate)
+    const normalizedTrainingDate = normalizeDate(store.trainingDate ?? null)
+    const normalizedLaunchDate = normalizeDate(store.launchDate ?? null)
     return normalizedTrainingDate === todayStr || normalizedLaunchDate === todayStr
   })
   console.log(todayStores.map(store => store.tradingName))
@@ -273,8 +300,8 @@ export function RolloutCalendar({
           <div className="space-y-4">
             {selectedDay &&
               getStoresForDate(selectedDay).map((store) => {
-                const normalizedTrainingDate = normalizeDate(store.trainingDate)
-                const normalizedLaunchDate = normalizeDate(store.launchDate)
+                const normalizedTrainingDate = normalizeDate(store.trainingDate ?? null)
+                const normalizedLaunchDate = normalizeDate(store.launchDate ?? null)
                 const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(selectedDay).padStart(2, "0")}`
                 return (
                   <div

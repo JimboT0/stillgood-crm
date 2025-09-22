@@ -777,7 +777,6 @@ export function SuperStoreEditModal({
                   </Select>
                   <p className="text-sm text-gray-500 mt-1">Assign this store to a group for multi-store owners</p>
                 </div>
-                <div></div>
 
                 <div>
                   <Label htmlFor="assignedOpsIds" className="flex items-center gap-2">

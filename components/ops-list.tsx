@@ -1,34 +1,40 @@
+
 "use client"
 
 import { useState, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, EditCard } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Bell, BellIcon, Calendar, CheckCircle, EditIcon, EyeIcon, FileText } from "lucide-react"
+import { Bell, BellIcon, Calendar, CheckCircle, EditIcon, EyeIcon, FileText, KeySquare } from "lucide-react"
 import { SearchInput, StatusFilter } from "@/components/shared/filters"
 import { StoreInfoCell, ProvinceCell, StoreStatusBadge, SalespersonCell } from "./cells"
 import { OpsCalendarModal } from "./modals/ops-calendar-modal"
-import type { StoreOpsView, User } from "@/lib/firebase/types"
+import type { Store, User } from "@/lib/firebase/types"
 import { StoreDetailsModal } from "./modals/store-details-modal"
 import { DocumentViewerModal } from "./modals/document-viewer-modal"
 import { formatDateTimeForDisplay } from "@/lib/utils/date-formatter"
+import { addToCalendar } from "@/lib/utils/date-utils"
+import { useDashboardData } from "./dashboard/dashboard-provider"
+import { StoreCredModal } from "./store-cred-modal"
 
 interface OpsListProps {
-    stores: StoreOpsView[]
+    stores: Store[]
     users: User[]
     currentUser: User | null
-    selectedStore: StoreOpsView | null
-    setSelectedStore: (store: StoreOpsView | null) => void
+    selectedStore: Store | null
+    setSelectedStore: (store: Store | null) => void
     searchTerm: string
     setSearchTerm: (term: string) => void
     onToggleSetup: (storeId: string) => Promise<void>
     onSetupConfirmation: (storeId: string) => Promise<void>
+    updateCredentials: (storeId: string, credentials: Store['credentials']) => Promise<void>
 }
 
 interface StoreEvent {
-    store: StoreOpsView
+    store: Store
     eventType: "training" | "launch"
     eventDate: Date | null
+    documentType?: "sla" | "bank"
 }
 
 const EVENT_STATUS_OPTIONS = [
@@ -39,29 +45,59 @@ const EVENT_STATUS_OPTIONS = [
 ]
 
 export function OpsList({
-    stores,
-    users,
-    currentUser,
     selectedStore,
     setSelectedStore,
     searchTerm,
     setSearchTerm,
     onToggleSetup,
     onSetupConfirmation,
+    updateCredentials
 }: OpsListProps) {
+    const { currentUser, stores, users, handleSaveStore, handleDeleteStore, handleStatusChange, handleToggleSetup, handleSetupConfirmation, handleUpdateCredentials } = useDashboardData();
+
     const [statusFilter, setStatusFilter] = useState<"all" | "coming" | "past" | "future">("coming")
     const isSuperadmin = currentUser?.role === "superadmin"
-
+    const [modalMode, setModalMode] = useState<"share" | "confirmSetup">("share")
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
+    const [selectedDetailsStore, setSelectedDetailsStore] = useState<Store | null>(null)
+    const [selectedDetailStore, setSelectedDetailStore] = useState<Store | null>(null)
     const [documentViewModal, setDocumentViewModal] = useState<{
         isOpen: boolean;
-        store: StoreOpsView | null;
+        store: Store | null;
         documentType: "sla" | "bank" | null;
     }>({ isOpen: false, store: null, documentType: null });
 
-    const handleViewDocument = (store: StoreOpsView, documentType: "sla" | "bank") => {
+    const handleViewDocument = (store: Store, documentType: "sla" | "bank") => {
         console.log(`Viewing ${documentType} document for store ${store.id}`);
         setDocumentViewModal({ isOpen: true, store, documentType });
     };
+
+
+
+
+
+    const handleOpenModal = (store: Store, modal: "details" | "confirmSetup") => {
+        console.log(`Opening modal: ${modal} for store ${store.id}`);
+        if (modal === "details") {
+            setSelectedDetailsStore(store)
+            setIsDetailsModalOpen(true)
+        } else if (modal === "confirmSetup") {
+            setSelectedDetailStore(store)
+            setModalMode("confirmSetup")
+            setIsDetailModalOpen(true)
+        }
+    }
+
+    const handleCloseDetailsModal = () => {
+        setIsDetailsModalOpen(false)
+        setSelectedDetailsStore(null)
+    }
+
+    const handleCloseDetailModal = () => {
+        setIsDetailModalOpen(false)
+        setSelectedDetailStore(null)
+    }
 
     // Get current date and coming month range
     const currentDate = new Date()
@@ -88,7 +124,7 @@ export function OpsList({
             return eventsList
         }).filter((event) =>
             searchTerm
-                ? (event.store.tradingName || event.store.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+                ? (event.store.tradingName || event.store.tradingName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
                 (event.store.storeId || "").toLowerCase().includes(searchTerm.toLowerCase())
                 : true
         )
@@ -132,6 +168,13 @@ export function OpsList({
     }), [events, comingEvents, pastEvents, futureEvents, stores])
 
     const hasActiveFilters = searchTerm !== "" || statusFilter !== "coming"
+
+    console.log("Stores in OpsList:", stores.map(s => ({
+        id: s.id,
+        tradingName: s.tradingName,
+        trainingDate: s.trainingDate,
+        launchDate: s.launchDate,
+    })));
 
     const renderEventTable = (events: StoreEvent[], title: string, showHeader: boolean = false) => (
         <Card className="w-full mt-6">
@@ -180,11 +223,10 @@ export function OpsList({
                                             </span>
 
                                             <span className="px-2 py-1.5 rounded border border-gray-400 bg-gray-50 text-gray-800 text-xs font-mono">
-                                                <EyeIcon className="w-3 h-3 cursor-pointer" onClick={() => setSelectedStore(event.store)} />
+                                                <EyeIcon className="w-3 h-3 cursor-pointer" onClick={() => handleOpenModal(event.store, "details")} />
                                             </span>
                                             <span className="px-2 py-1.5 rounded border border-yellow-400 text-yellow-500 bg-gray-50 text-gray-800 text-xs font-mono">
-                                                <BellIcon className="w-3 h-3 cursor-pointer" onClick={() => addToCalendar(event.store, event.eventType, event.eventDate)}
-                                                />
+                                                <BellIcon className="w-3 h-3 cursor-pointer" onClick={() => addToCalendar(event.store, event.eventDate, event.eventType)} />
                                             </span>
                                             {event.store.slaDocument && (
                                                 <span className="px-2 py-1.5 rounded border border-green-400 text-green-500 bg-gray-50 text-gray-800 text-xs font-mono">
@@ -196,19 +238,24 @@ export function OpsList({
                                                     <FileText className="w-3 h-3 cursor-pointer" onClick={() => handleViewDocument(event.store, "bank")} />
                                                 </span>
                                             )}
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => handleOpenModal(event.store, "confirmSetup")}
+                                                className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 bg-transparent"
+                                            >
+                                                <KeySquare className="w-3 h-3" />
+                                            </Button>
                                         </div>
-
-
                                     </div>
                                     <div className="flex gap-2">
-
                                         {isSuperadmin && event.store.isSetup && !event.store.setupConfirmed && (
-                                       <Button
+                                            <Button
                                                 size="sm"
                                                 onClick={() => onSetupConfirmation(event.store.id)}
-                                                className="bg-white text-white hover:bg-green-600"
+                                                className="bg-white text-green-600 hover:bg-green-600 hover:text-white"
                                             >
-                                                <CheckCircle className="w-4 h-4 mr-2 text-white" />
+                                                <CheckCircle className="w-4 h-4 mr-2" />
                                                 Confirm Setup
                                             </Button>
                                         )}
@@ -217,7 +264,7 @@ export function OpsList({
                             </EditCard>
                         ))
                     )}
-                    |       </div>
+                </div>
 
                 <Table className="hidden md:table w-full" role="grid">
                     <TableHeader>
@@ -247,7 +294,7 @@ export function OpsList({
                                     >
                                         {event.eventType === "training" ? "training" : "launch"}
                                     </span>
-                                    <span className=" px-2 py-1 rounded border border-gray-300 bg-gray-50 text-gray-800 text-xs font-mono">
+                                    <span className="px-2 py-1 rounded border border-gray-300 bg-gray-50 text-gray-800 text-xs font-mono">
                                         {event.eventDate ? formatDateTimeForDisplay(event.eventDate) : "N/A"}
                                     </span>
                                 </TableCell>
@@ -256,14 +303,14 @@ export function OpsList({
                                         <Button
                                             size="sm"
                                             variant="outline"
-                                            onClick={() => setSelectedStore(event.store)}
+                                            onClick={() => handleOpenModal(event.store, "details")}
                                         >
                                             <EyeIcon className="w-4 h-4" />
                                         </Button>
                                         <Button
                                             size="sm"
                                             variant="outline"
-                                            onClick={() => addToCalendar(event.store, event.eventType, event.eventDate)}
+                                            onClick={() => addToCalendar(event.store, event.eventDate, event.eventType)}
                                         >
                                             <Bell className="w-4 h-4" />
                                         </Button>
@@ -285,17 +332,19 @@ export function OpsList({
                                                 <FileText className="w-4 h-4" />
                                             </Button>
                                         )}
-
-                                        {isSuperadmin && event.store.isSetup && !event.store.setupConfirmed && (
-                                            <Button
-                                                size="sm"
-                                                onClick={() => onSetupConfirmation(event.store.id)}
-                                                className="bg-white text-white hover:bg-green-600"
-                                            >
-                                                <CheckCircle className="w-4 h-4 mr-2 text-white" />
-                                                Confirm Setup
-                                            </Button>
-                                        )}
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => handleOpenModal(event.store, "confirmSetup")}
+                                            className={
+                                                event.store.credentials
+                                                    ? "text-yellow-600 border-yellow-400 hover:text-yellow-700 hover:bg-yellow-50 bg-transparent"
+                                                    : "text-gray-200 border-gray-200 hover:text-gray-400 hover:bg-gray-40 bg-transparent"
+                                            }
+                                        >
+                                            <KeySquare className="w-3 h-3" />
+                                        </Button>
+                                        {/* )} */}
                                     </span>
                                 </TableCell>
                             </TableRow>
@@ -318,7 +367,6 @@ export function OpsList({
     return (
         <>
             <div className="space-y-4 w-full">
-
                 <div className="flex flex-col sm:flex-row gap-4">
                     <SearchInput
                         value={searchTerm}
@@ -333,25 +381,40 @@ export function OpsList({
                     />
                 </div>
 
-
                 {renderEventTable(filteredEvents, "Coming Month Events", true)}
                 {pastEvents.length > 0 && statusFilter === "all" && renderEventTable(pastEvents, "Past Events")}
                 {futureEvents.length > 0 && statusFilter === "all" && renderEventTable(futureEvents, "Future Events")}
 
                 <StoreDetailsModal
-                    store={selectedStore}
-                    isOpen={!!selectedStore}
-                    onClose={() => setSelectedStore(null)}
+                    store={selectedDetailsStore}
+                    isOpen={isDetailsModalOpen}
+                    onClose={handleCloseDetailsModal}
+                    users={[]}
+                    currentUser={null}
+                    onToggleSetup={function (storeId: string): Promise<void> {
+                        throw new Error("Function not implemented.")
+                    }}
+                    onSetupConfirmation={function (storeId: string): Promise<void> {
+                        throw new Error("Function not implemented.")
+                    }}
+                />
+
+                <StoreCredModal
+                    store={selectedDetailStore}
+                    isOpen={isDetailModalOpen}
+                    onClose={handleCloseDetailModal}
+                    users={users}
+                    currentUser={currentUser}
+                />
+
+                <DocumentViewerModal
+                    isOpen={documentViewModal.isOpen}
+                    onClose={() => setDocumentViewModal({ isOpen: false, store: null, documentType: null })}
+                    store={documentViewModal.store}
+                    documentType={documentViewModal.documentType}
+                    currentUser={currentUser}
                 />
             </div>
-
-            <DocumentViewerModal
-                isOpen={documentViewModal.isOpen}
-                onClose={() => setDocumentViewModal({ isOpen: false, store: null, documentType: null })}
-                store={documentViewModal.store}
-                documentType={documentViewModal.documentType}
-                currentUser={currentUser}
-            />
         </>
     )
 }

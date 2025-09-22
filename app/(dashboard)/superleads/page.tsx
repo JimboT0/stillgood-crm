@@ -67,7 +67,7 @@ function SuperLeadsPageContent() {
         currentUser={currentUser}
       />
 
-      <StoreEditModal
+      <SuperStoreEditModal
         store={editingStore}
         isOpen={!!editingStore}
         onClose={() => {

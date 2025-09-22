@@ -56,14 +56,14 @@ export function DocumentViewerModal({ isOpen, onClose, store, documentType, curr
                       <span className="font-medium">File Name:</span>
                       <p className="text-gray-600">{documentInfo.name}</p>
                     </div>
-                    <div>
+                    {/* <div>
                       <span className="font-medium">Uploaded:</span>
                       <p className="text-gray-600">
                         {documentInfo.uploadedAt instanceof Date
                           ? documentInfo.uploadedAt.toLocaleDateString()
                           : new Date(documentInfo.uploadedAt).toLocaleDateString()}
                       </p>
-                    </div>
+                    </div> */}
                   {isSla && (
                     <div>
                       <span className="font-medium">Uploaded By:</span>

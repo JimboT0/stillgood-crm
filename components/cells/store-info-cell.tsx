@@ -9,7 +9,9 @@ interface StoreInfoCellProps {
 
 export const StoreInfoCell: React.FC<StoreInfoCellProps> = ({ tradingName, streetAddress, className = "" }) => {
   const truncateText = (text: string, maxLength: number) =>
-    text.length > maxLength ? `${text.slice(0, maxLength)}…` : text
+    text && text.trim() !== "" && text.length > maxLength ? `${text.slice(0, maxLength)}…` : text
+
+  if (!tradingName && !streetAddress) return null
 
   return (
     <TableCell className={className}>
@@ -18,13 +20,13 @@ export const StoreInfoCell: React.FC<StoreInfoCellProps> = ({ tradingName, stree
           className="font-medium text-gray-900 max-w-[200px] truncate cursor-pointer hover:text-gray-700 transition-colors"
           title={tradingName}
         >
-          {/* {truncateText(tradingName, 70)} */} {tradingName}
+          {truncateText(tradingName, 70)} {tradingName}
         </span>
         <span
           className="text-sm text-gray-500 max-w-[200px] truncate cursor-pointer hover:text-gray-600 transition-colors"
           title={streetAddress}
         >
-          {/* {truncateText(streetAddress, 70)} */}{streetAddress}
+          {truncateText(streetAddress, 70)}{streetAddress}
         </span>
       </span>
     </TableCell>

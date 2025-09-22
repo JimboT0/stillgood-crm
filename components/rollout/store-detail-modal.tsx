@@ -179,11 +179,7 @@ export function StoreDetailModal({
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-6">
-          {!isAuthenticated ? (
-            <p className="text-red-500 text-sm">
-              You must be logged in to view store credentials.
-            </p>
-          ) : (
+          
             <>
               {isSuperadmin && (
                 <div>
@@ -291,7 +287,7 @@ OrderPassword: ${store.credentials[0].orderpassword ?? "UNDEFINED"}`}
                 )}
               </div>
             </>
-          )}
+          
         </div>
       </DialogContent>
     </Dialog>

@@ -17,9 +17,10 @@ import { fileService } from "@/lib/firebase/services/file"
 import { groupService } from "@/lib/firebase/services/group"
 import { formatDateTime, formatDateTimeForInput, parseDateTime } from "../../lib/utils/date-utils"
 import { isValidTimestamp } from "@/lib/date-validation"
-import type { Store, ContactPerson, Product, CollectionTimes, StoreGroup, Document } from "@/lib/firebase/types"
+import type { Store, ContactPerson, Product, CollectionTimes, StoreGroup, Document, User } from "@/lib/firebase/types"
 import { PROVINCES, storeTypes } from "@/lib/firebase/types"
 import { bagPresets } from "../../lib/data/bag-presets"
+import { userService } from "@/lib/firebase"
 
 interface StoreEditModalProps {
   store: Store | null
@@ -56,6 +57,8 @@ export function StoreEditModal({
   const [groups, setGroups] = useState<StoreGroup[]>([])
   const [errorDescription, setErrorDescription] = useState<string>("")
   const [bankConfirmationEmail, setBankConfirmationEmail] = useState<string>("")
+  const [opsUsers, setOpsUsers] = useState<User[]>([])
+  
 
   // Load groups
   useEffect(() => {
@@ -68,8 +71,18 @@ export function StoreEditModal({
       }
     }
 
+    const loadOpsUsers = async () => {
+      try {
+        const usersData = await userService.getAll()
+        setOpsUsers(usersData as any)
+      } catch (error) {
+        console.error("[StoreEditModal] Error loading operations users:", error)
+      }
+    }
+
     if (isOpen) {
       loadGroups()
+      loadOpsUsers()
     }
   }, [isOpen])
 
@@ -464,7 +477,7 @@ export function StoreEditModal({
         errorSetAt: formData.errorSetAt || undefined,
         slaDocument,
         bankDocument,
-bankConfirmationEmail: formData.bankConfirmationEmail || "",
+        bankConfirmationEmail: formData.bankConfirmationEmail || "",
         signedSla: !!slaDocument,
         bankConfirmation: !!bankDocument,
         isKeyStore: formData.isKeyStore || false,
@@ -721,8 +734,65 @@ bankConfirmationEmail: formData.bankConfirmationEmail || "",
                   <p className="text-sm text-gray-500 mt-1">Assign this store to a group for multi-store owners</p>
                 </div>
 
+                <div>
+                  <Label htmlFor="assignedOpsIds" className="flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    Assigned Operations Users (Optional)
+                  </Label>
+                  <div className="mb-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full flex justify-between"
+                      onClick={() => {
+                        const el = document.getElementById("ops-users-list")
+                        if (el) el.style.display = el.style.display === "none" ? "block" : "none"
+                      }}
+                    >
+                      {Array.isArray(formData.assignedOpsIds) && formData.assignedOpsIds.length > 0
+                        ? opsUsers
+                          .filter((user) => formData.assignedOpsIds?.includes(user.id))
+                          .map((user) => user.name || user.email || user.id)
+                          .join(", ")
+                        : "No operations users assigned."}
+                      <span className="ml-2 text-xs text-gray-500">▼</span>
+                    </Button>
+                  </div>
+                  <div
+                    id="ops-users-list"
+                    style={{ display: "none" }}
+                    className="border rounded-lg p-2 bg-gray-50"
+                  >
+                    {opsUsers.length === 0 ? (
+                      <p className="text-gray-400 text-sm">No operations users available.</p>
+                    ) : (
+                      opsUsers.map((user) => (
+                        <div key={user.id} className="flex items-center gap-2 py-1">
+                          <input
+                            type="checkbox"
+                            id={`ops-user-${user.id}`}
+                            checked={Array.isArray(formData.assignedOpsIds) && formData.assignedOpsIds.includes(user.id)}
+                            onChange={(e) => {
+                              const current = Array.isArray(formData.assignedOpsIds) ? formData.assignedOpsIds : []
+                              const newValue = e.target.checked
+                                ? [...current, user.id]
+                                : current.filter((id) => id !== user.id)
+                              handleInputChange("assignedOpsIds", newValue)
+                            }}
+                            className="h-4 w-4 text-orange-500 border-gray-300 rounded"
+                          />
+                          <label htmlFor={`ops-user-${user.id}`} className="text-sm">
+                            {user.name || user.email || user.id}
+                          </label>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
                 <div className="flex flex-row items-center space-x-4">
-                  {!isMovingToClosed && (
+                  {!isMovingToClosed && formData.status !== "closed" && formData.status !== "rollout" && (
                     <div>
                       <Label htmlFor="status">Status</Label>
                       <Select
@@ -1000,7 +1070,7 @@ bankConfirmationEmail: formData.bankConfirmationEmail || "",
                             ])
                           }
                         >
-                          <ShoppingBag/> {bag.name.replace(/ - value bag$/i, "")}
+                          <ShoppingBag /> {bag.name.replace(/ - value bag$/i, "")}
                         </Button>
                       ))}
                     </div>

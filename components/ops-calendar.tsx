@@ -10,14 +10,14 @@ import { CalendarIcon, List, X } from "lucide-react"
 import { storeService } from "@/lib/firebase/services/store"
 import { userService } from "@/lib/firebase/services/user"
 import { auth } from "@/lib/firebase/config"
-import type { User, StoreOpsView } from "@/lib/firebase/types"
+import type { User, Store } from "@/lib/firebase/types"
 import { OpsCalendarModal } from "./modals/ops-calendar-modal"
 import { RolloutCalendar } from "@/components/rollout/rollout-calendar"
 import { OpsList } from "./ops-list"
 import { StoreDetailsModal } from "./modals/store-details-modal"
 
 interface OpsCalendarProps {
-  stores?: StoreOpsView[]
+  stores?: Store[]
 }
 
 const allProvinces = [
@@ -35,13 +35,35 @@ const allProvinces = [
 export function OpsCalendar({
    stores: initialStores = [] }: OpsCalendarProps) {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
-  const [stores, setStores] = useState<StoreOpsView[]>(initialStores)
+  const [stores, setStores] = useState<Store[]>(initialStores)
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list")
-  const [selectedStore, setSelectedStore] = useState<StoreOpsView | null>(null)
+  const [selectedStore, setSelectedStore] = useState<Store | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [provinceFilter, setProvinceFilter] = useState("All Provinces")
-
+  
+useEffect(() => {
+  const loadData = async () => {
+    if (!currentUser) return;
+    setLoading(true);
+    try {
+      const storesData = await storeService.getAll();
+      console.log("Fetched stores:", storesData.map(s => ({
+        id: s.id,
+        tradingName: s.tradingName,
+        trainingDate: JSON.stringify(s.trainingDate),
+        launchDate: JSON.stringify(s.launchDate),
+      })));
+      setStores(storesData);
+    } catch (error) {
+      console.error("Error loading stores:", error);
+      setStores([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+  loadData();
+}, [currentUser]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -106,7 +128,7 @@ export function OpsCalendar({
   const filteredStores = useMemo(() => {
     let filtered = stores
 
-    filtered = filtered.filter((store) => store.status === "setup" || store.status === "rollout" || store.status === "completed" || store.status === "closed");
+    filtered = filtered.filter((store) =>  store.status === "rollout" || store.status === "completed" || store.status === "closed");
 
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase()
@@ -136,16 +158,15 @@ export function OpsCalendar({
     )
   }, [stores])
 
-  const convertToRolloutStores = (opsStores: StoreOpsView[]) => {
-    return opsStores.map((store) => ({
-      ...store,
-      pushedToRollout: true,
-      isSetup: store.isSetup || false,
-      setupConfirmed: store.setupConfirmed || false,
-    }))
-  }
+  // const convertToRolloutStores = (opsStores: StoreOpsView[]) => {
+  //   return opsStores.map((store) => ({
+  //     ...store,
+  //     // pushedToRollout: true,
+  //     // setupConfirmed: store.setupConfirmed || false,
+  //   }))
+  // }
 
-  const rolloutCompatibleStores = convertToRolloutStores(filteredStores)
+  // const rolloutCompatibleStores = convertToRolloutStores(filteredStores)
 
   if (loading) {
     return (
@@ -221,9 +242,8 @@ export function OpsCalendar({
           <OpsList stores={filteredStores} selectedStore={selectedStore} setSelectedStore={setSelectedStore} users={[]}
             currentUser={null}
             onToggleSetup={async () => { }}
-            onSetupConfirmation={async () => { }} searchTerm={""} setSearchTerm={function (term: string): void {
-              throw new Error("Function not implemented.")
-            }} />
+            onSetupConfirmation={async () => { }} searchTerm={""} setSearchTerm={function (term: string): void { }}
+            updateCredentials={async (storeId: string, credentials: Store['credentials']) => { }} />
         ) : (
           <RolloutCalendar
             stores={filteredStores}
@@ -239,8 +259,14 @@ export function OpsCalendar({
         store={selectedStore}
         isOpen={!!selectedStore}
         onClose={() => setSelectedStore(null)}
-        currentUser={currentUser}
-      />    
+        currentUser={currentUser} 
+        users={[]} 
+        onToggleSetup={function (storeId: string): Promise<void> {
+          throw new Error("Function not implemented.")
+        } } 
+        onSetupConfirmation={function (storeId: string): Promise<void> {
+          throw new Error("Function not implemented.")
+        } }      />    
       </div>
   )
 }

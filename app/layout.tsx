@@ -10,7 +10,6 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Onboarding Dashboard",
   description: "Store onboarding and management dashboard",
-  generator: "v0.app",
 }
 
 export default function RootLayout({

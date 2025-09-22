@@ -182,19 +182,6 @@ export interface BagLog {
   removedByName: string;
 }
 
-export type StoreOpsView = Omit<
-  Store,
-  | "slaDocument"
-  | "bankDocument"
-  | "contractTerms"
-  | "signedSla"
-  | "bankConfirmation"
-  | "salespersonId"
-  | "assignedUserId"
-  | "groupId"
-  | "credentials"
->;
-
 
 export interface Refunds {
   id: string
@@ -228,4 +215,13 @@ export interface TrainingDocument {
   items?: TrainingItem[]; // For training packages
   url: string; // Firebase Storage URL for non-training documents
   createdAt: Date;
+}
+
+export interface Event {
+  id: string
+  title: string
+  description?: string
+  date: Timestamp
+  type: "training" | "launch" | "other"
+  province?: string
 }
