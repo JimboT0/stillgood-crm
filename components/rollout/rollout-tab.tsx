@@ -63,7 +63,7 @@ export function RolloutTab({ stores, users, currentUser, onToggleSetup, onSetupC
             </Button>
           </div>
         </div>
-
+{/* 
         <div className=" grid grid-cols-1 md:grid-cols-4 gap-2 mt-2">
           <Card className="md:block hidden">
             <CardHeader className=" pb-2">
@@ -99,7 +99,7 @@ export function RolloutTab({ stores, users, currentUser, onToggleSetup, onSetupC
               <div className="text-2xl font-bold text-orange-600">{rolloutStores.filter((s) => !s.isSetup).length}</div>
             </CardContent>
           </Card>
-        </div>
+        </div> */}
 
         {/* View Content */}
         <div className="mt-6">
@@ -109,10 +109,9 @@ export function RolloutTab({ stores, users, currentUser, onToggleSetup, onSetupC
               users={users}
               currentUser={currentUser}
               onToggleSetup={onToggleSetup}
-              onSetupConfirmation={onSetupConfirmation} 
+              onSetupConfirmation={onSetupConfirmation}
               onToggleSocialSetup={onToggleSocialSetup}
-              updateCredentials={updateCredentials}
-               />
+              updateCredentials={updateCredentials} events={[]}               />
           ) : (
             <RolloutCalendar
               stores={rolloutStores}

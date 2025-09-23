@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from "react";
@@ -7,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StoreDetailModal } from "./store-detail-modal";
-import { Search, Filter, CheckCircle, Eye, Share, X, CheckCheck, Share2Icon, CheckSquare, FileText } from "lucide-react";
-import type { Store, User, Event } from "@/lib/firebase/types"; // Add Event type
+import { Search, Filter, CheckCircle, Eye, Share, X, CheckCheck, FileText } from "lucide-react";
+import type { Store, User, Event } from "@/lib/firebase/types";
 import { Timestamp } from "firebase/firestore";
 import { formatDateTime } from "@/lib/utils/date-utils";
 import { ProvinceCell } from "@/components/cells/province-cell";
@@ -18,9 +19,9 @@ import { StoreDetailsModal } from "../modals/store-details-modal";
 import { DocumentViewerModal } from "../modals/document-viewer-modal";
 
 interface RolloutListProps {
-  stores: Store[];
-  events: Event[]; // Add events prop
-  users: User[];
+  stores: Store[] | null | undefined;
+  events: Event[] | null | undefined;
+  users: User[] | null | undefined;
   currentUser: User | null;
   onToggleSetup: (storeId: string) => Promise<void>;
   onSetupConfirmation: (storeId: string) => Promise<void>;
@@ -28,7 +29,6 @@ interface RolloutListProps {
   updateCredentials: (storeId: string, credentials: Store["credentials"]) => Promise<void>;
 }
 
-// Define unified event types
 interface StoreEvent {
   type: "store";
   store: Store;
@@ -43,9 +43,9 @@ interface CustomEvent {
 }
 
 export function RolloutList({
-  stores,
-  events, // Add to destructuring
-  users,
+  stores: storesProp,
+  events: eventsProp,
+  users: usersProp,
   currentUser,
   onToggleSetup,
   onSetupConfirmation,
@@ -65,47 +65,117 @@ export function RolloutList({
   const isMedia = currentUser?.role === "media";
   const [showTables, setShowTables] = useState(false);
 
+  // Normalize props to empty arrays if undefined/null
+  const stores = Array.isArray(storesProp) ? storesProp : [];
+  const events = Array.isArray(eventsProp) ? eventsProp : [];
+  const users = Array.isArray(usersProp) ? usersProp : [];
+
+  // Date normalization function (copied from RolloutCalendar)
+  const normalizeDate = (date: any): string | null => {
+    if (date === null || date === undefined) {
+      console.warn("Date is null or undefined");
+      return null;
+    }
+
+    let parsedDate: Date;
+    try {
+      if (typeof date === "string") {
+        parsedDate = new Date(date);
+        if (isNaN(parsedDate.getTime())) {
+          if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(date)) {
+            const [month, day, year] = date.split("/").map(Number);
+            parsedDate = new Date(year, month - 1, day);
+          } else if (/^\d{2}-\d{2}-\d{4}$/.test(date)) {
+            const [day, month, year] = date.split("-").map(Number);
+            parsedDate = new Date(year, month - 1, day);
+          } else if (/^\d{1,2}\s+[A-Za-z]+\s+\d{4}$/.test(date)) {
+            parsedDate = new Date(date);
+          } else {
+            console.warn(`Unsupported date string format: ${date}`);
+            return null;
+          }
+        }
+      } else if (date instanceof Timestamp) {
+        parsedDate = date.toDate();
+      } else if (typeof date === "object" && "seconds" in date && typeof date.seconds === "number") {
+        parsedDate = new Date(date.seconds * 1000);
+      } else if (date instanceof Date) {
+        parsedDate = date;
+      } else {
+        console.warn(`Invalid date type: ${JSON.stringify(date)}`);
+        return null;
+      }
+
+      if (isNaN(parsedDate.getTime())) {
+        console.warn(`Invalid date parsed: ${JSON.stringify(date)}`);
+        return null;
+      }
+
+      return `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, "0")}-${String(parsedDate.getDate()).padStart(2, "0")}`;
+    } catch (error) {
+      console.error(`Error parsing date: ${JSON.stringify(date)}`, error);
+      return null;
+    }
+  };
+
   const handleViewDocument = (store: Store, documentType: "sla" | "bank") => {
     console.log(`Viewing ${documentType} document for store ${store.id}`);
     setDocumentViewModal({ isOpen: true, store, documentType });
   };
 
   const currentDate = new Date();
-  const comingMonthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 2, 0);
+  const todayStr = normalizeDate(currentDate);
+  // Match RolloutCalendar: include current and next month
+  const calendarStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+  const calendarEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 2, 0);
+  // Yesterday for past events filter
+  const yesterday = new Date(currentDate);
+  yesterday.setDate(currentDate.getDate() - 1);
 
-  // Combine store and custom events
+  // Combine store and custom events, matching RolloutCalendar's date range
   const allEvents: (StoreEvent | CustomEvent)[] = useMemo(() => {
     const storeEvents: StoreEvent[] = stores.flatMap((store) => {
       const eventsList: StoreEvent[] = [];
-      if (store.trainingDate) {
+      const normalizedTrainingDate = normalizeDate(store.trainingDate);
+      const normalizedLaunchDate = normalizeDate(store.launchDate);
+
+      // Convert normalized dates to Date objects for filtering
+      const trainingDate = normalizedTrainingDate ? new Date(normalizedTrainingDate) : null;
+      const launchDate = normalizedLaunchDate ? new Date(normalizedLaunchDate) : null;
+
+      // Only include events within the calendar date range
+      if (trainingDate && trainingDate >= calendarStart && trainingDate <= calendarEnd) {
         eventsList.push({
           type: "store",
           store,
           eventType: "training",
-          eventDate: store.trainingDate instanceof Timestamp
-            ? store.trainingDate.toDate()
-            : new Date(store.trainingDate),
+          eventDate: trainingDate,
         });
       }
-      if (store.launchDate) {
+      if (launchDate && launchDate >= calendarStart && launchDate <= calendarEnd) {
         eventsList.push({
           type: "store",
           store,
           eventType: "launch",
-          eventDate: store.launchDate instanceof Timestamp
-            ? store.launchDate.toDate()
-            : new Date(store.launchDate),
+          eventDate: launchDate,
         });
       }
       return eventsList;
     });
 
-    const customEvents: CustomEvent[] = events.map((event) => ({
-      type: "custom",
-      event,
-      eventDate: event.date ? new Date(event.date) : null,
-    }));
+    const customEvents: CustomEvent[] = events
+      .filter((event) => {
+        const normalizedEventDate = normalizeDate(event.date);
+        const eventDate = normalizedEventDate ? new Date(normalizedEventDate) : null;
+        return eventDate && eventDate >= calendarStart && eventDate <= calendarEnd;
+      })
+      .map((event) => ({
+        type: "custom",
+        event,
+        eventDate: event.date ? new Date(normalizeDate(event.date)!) : null,
+      }));
 
+    // Apply search term filter
     return [...storeEvents, ...customEvents].filter((event) =>
       searchTerm
         ? event.type === "store"
@@ -113,11 +183,11 @@ export function RolloutList({
             event.store.streetAddress.toLowerCase().includes(searchTerm.toLowerCase()) ||
             event.store.province.toLowerCase().includes(searchTerm.toLowerCase())
           : event.event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            event.event.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            event.event.province?.toLowerCase().includes(searchTerm.toLowerCase())
+            (event.event.description?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+            (event.event.province?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
         : true
     );
-  }, [stores, events, searchTerm]);
+  }, [stores, events, searchTerm, calendarStart, calendarEnd]);
 
   // Filter events by status
   const filteredEvents = useMemo(() => {
@@ -129,12 +199,23 @@ export function RolloutList({
     return allEvents;
   }, [allEvents, statusFilter]);
 
+  // Split into today's, upcoming, and past events
+  const todaysEvents = filteredEvents
+    .filter((event) => {
+      const eventDateStr = event.eventDate ? normalizeDate(event.eventDate) : null;
+      return eventDateStr === todayStr;
+    })
+    .sort((a, b) => (a.eventDate && b.eventDate ? a.eventDate.getTime() - b.eventDate.getTime() : 0));
+
   const upcomingEvents = filteredEvents
-    .filter((event) => event.eventDate && event.eventDate >= currentDate && event.eventDate <= comingMonthEnd)
+    .filter((event) => event.eventDate && event.eventDate > currentDate && event.eventDate <= calendarEnd)
     .sort((a, b) => (a.eventDate && b.eventDate ? a.eventDate.getTime() - b.eventDate.getTime() : 0));
 
   const pastEvents = filteredEvents
-    .filter((event) => event.eventDate && event.eventDate < currentDate)
+    .filter((event) => {
+      const eventDate = event.eventDate;
+      return eventDate && eventDate <= yesterday && eventDate >= calendarStart;
+    })
     .sort((a, b) => (a.eventDate && b.eventDate ? a.eventDate.getTime() - b.eventDate.getTime() : 0));
 
   const handleToggleSocialSetup = async (storeId: string, tradingName: string, isSocialSetup: boolean) => {
@@ -385,6 +466,7 @@ export function RolloutList({
         </Select>
       </div>
 
+      {todaysEvents.length > 0 && renderEventTable(todaysEvents, "Today's Events")}
       {renderEventTable(upcomingEvents, "Upcoming Events")}
       <Button
         variant="default"
