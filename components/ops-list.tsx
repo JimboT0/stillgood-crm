@@ -328,7 +328,7 @@ export function OpsList({
                                             }`}
                                         style={{ letterSpacing: "0.05em" }}
                                     >
-                                        {event.eventType === "training" ? "rm-test" : event.eventType === "launch" ? "Launch" : "Event"}
+                                        {event.eventType === "training" ? "Training" : event.eventType === "launch" ? "Launch" : "Event"}
                                     </span>
                                     <span className="px-2 py-1 rounded border border-gray-300 bg-gray-50 text-gray-800 text-xs font-mono">
                                         {event.eventDate ? formatDateTimeForDisplay(event.eventDate) : "N/A"}
