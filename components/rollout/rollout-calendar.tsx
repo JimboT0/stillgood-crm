@@ -7,94 +7,90 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { StoreDetailsModal } from "@/components/modals/store-details-modal"
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react"
-import type { Store, User } from "@/lib/firebase/types"
+import type { StoreOpsView, User } from "@/lib/firebase/types"
 import { Timestamp } from "firebase/firestore"
 
 
 interface RolloutCalendarProps {
-  stores: Store[]
+  stores: StoreOpsView[]
+  events: Event[]
   users: User[]
   currentUser: User | null
-  onToggleSetup: (storeId: string) => Promise<void>
-  onSetupConfirmation: (storeId: string) => Promise<void>
 }
 
 export function RolloutCalendar({
   stores,
+  events,
   users,
   currentUser,
-  onToggleSetup,
-  onSetupConfirmation,
 }: RolloutCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date())
-  const [selectedStore, setSelectedStore] = useState<Store | null>(null)
+  const [selectedStore, setSelectedStore] = useState<StoreOpsView | null>(null)
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [isSubModalOpen, setIsSubModalOpen] = useState(false)
   const [calendarView, setCalendarView] = useState<"month" | "week">("month")
 
 const normalizeDate = (date: any): string | null => {
-  if (date === null || date === undefined) {
-    console.warn("Date is null or undefined");
-    return null;
-  }
+    if (date === null || date === undefined) {
+      console.warn("Date is null or undefined");
+      return null;
+    }
 
-  let parsedDate: Date;
-  try {
-    if (date instanceof Timestamp) {
-      parsedDate = date.toDate();
-    } else if (typeof date === "object" && "seconds" in date && typeof date.seconds === "number") {
-      parsedDate = new Date(date.seconds * 1000);
-    } else if (typeof date === "string") {
-      if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(date)) {
-        // MM/DD/YYYY
-        const [month, day, year] = date.split("/").map(Number);
-        parsedDate = new Date(year, month - 1, day);
-      } else if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-        // YYYY-MM-DD
-        parsedDate = new Date(date);
-      } else if (/^\d{1,2}\s+[A-Za-z]+\s+\d{4}$/.test(date)) {
-        // DD Month YYYY
-        parsedDate = new Date(date);
-      } else if (/^\d{2}-\d{2}-\d{4}$/.test(date)) {
-        // DD-MM-YYYY
-        const [day, month, year] = date.split("-").map(Number);
-        parsedDate = new Date(year, month - 1, day);
+    let parsedDate: Date;
+    try {
+      if (typeof date === "string") {
+        parsedDate = new Date(date);  // Handles ISO, YYYY-MM-DD, etc.
+        if (isNaN(parsedDate.getTime())) {
+          // Fallback for other formats
+          if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(date)) {
+            const [month, day, year] = date.split("/").map(Number);
+            parsedDate = new Date(year, month - 1, day);
+          } else if (/^\d{2}-\d{2}-\d{4}$/.test(date)) {
+            const [day, month, year] = date.split("-").map(Number);
+            parsedDate = new Date(year, month - 1, day);
+          } else if (/^\d{1,2}\s+[A-Za-z]+\s+\d{4}$/.test(date)) {
+            parsedDate = new Date(date);
+          } else {
+            console.warn(`Unsupported date string format: ${date}`);
+            return null;
+          }
+        }
+      } else if (date instanceof Timestamp) {
+        parsedDate = date.toDate();
+      } else if (typeof date === "object" && "seconds" in date && typeof date.seconds === "number") {
+        parsedDate = new Date(date.seconds * 1000);
+      } else if (date instanceof Date) {
+        parsedDate = date;
       } else {
-        console.warn(`Unsupported date string format: ${date}`);
+        console.warn(`Invalid date type: ${JSON.stringify(date)}`);
         return null;
       }
-    } else if (date instanceof Date) {
-      parsedDate = date;
-    } else {
-      console.warn(`Invalid date type: ${JSON.stringify(date)}`);
-      return null;
-    }
 
-    if (isNaN(parsedDate.getTime())) {
-      console.warn(`Invalid date parsed: ${JSON.stringify(date)}`);
-      return null;
-    }
-
-    return `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, "0")}-${String(parsedDate.getDate()).padStart(2, "0")}`;
-  } catch (error) {
-    console.error(`Error parsing date: ${JSON.stringify(date)}`, error);
-    return null;
-  }
-};
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 768) {
-        setCalendarView("week")
-      } else {
-        setCalendarView("month")
+      if (isNaN(parsedDate.getTime())) {
+        console.warn(`Invalid date parsed: ${JSON.stringify(date)}`);
+        return null;
       }
-    }
 
-    handleResize()
-    window.addEventListener("resize", handleResize)
-    return () => window.removeEventListener("resize", handleResize)
-  }, [])
+      return `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, "0")}-${String(parsedDate.getDate()).padStart(2, "0")}`;
+    } catch (error) {
+      console.error(`Error parsing date: ${JSON.stringify(date)}`, error);
+      return null;
+    }
+  };
+
+  const getItemsForDate = (day: number) => {
+    const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const matchingStores = stores.filter((store) => {
+      const normalizedTraining = normalizeDate(store.trainingDate);
+      const normalizedLaunch = normalizeDate(store.launchDate);
+      return normalizedTraining === dateStr || normalizedLaunch === dateStr;
+    });
+    const matchingEvents = events.filter((event) => {
+      const normalizedEventDate = normalizeDate(event.date);
+      return normalizedEventDate === dateStr;
+    });
+    return { stores: matchingStores, events: matchingEvents };
+  };
 
   const getDaysInMonth = (date: Date) => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
@@ -114,10 +110,6 @@ const getStoresForDate = (day: number) => {
   });
   return matchingStores;
 };
-
-  
-
-  
 
 
   const navigateMonth = (direction: "prev" | "next") => {
@@ -180,8 +172,34 @@ const getStoresForDate = (day: number) => {
       }
     })
 
-    const hasEvents = Object.keys(trainingByProvince).length > 0 || Object.keys(launchByProvince).length > 0
+    
 
+const customByProvince: Record<string, number> = {};
+  events.forEach((event) => {
+    const normalizedEventDate = normalizeDate(event.date);
+    const provinceFull = event.province || "Unknown";
+    const province = provinceMap[provinceFull] || provinceFull;
+    if (normalizedEventDate === dateStr) {
+      customByProvince[province] = (customByProvince[province] || 0) + 1;
+    }
+  });
+
+  const hasEvents = Object.keys(trainingByProvince).length > 0 ||
+    Object.keys(launchByProvince).length > 0 ||
+    Object.keys(customByProvince).length > 0;
+
+  // Total count:
+  const totalCount = 
+    Object.values(trainingByProvince).reduce((a, b) => a + b, 0) +
+    Object.values(launchByProvince).reduce((a, b) => a + b, 0) +
+    Object.values(customByProvince).reduce((a, b) => a + b, 0);
+
+  // Provinces:
+  const allProvinces = new Set([
+    ...Object.keys(trainingByProvince),
+    ...Object.keys(launchByProvince),
+    ...Object.keys(customByProvince),
+  ]);
     days.push(
       <div
         key={day}
@@ -338,8 +356,7 @@ const getStoresForDate = (day: number) => {
         onClose={() => setSelectedStore(null)}
         users={users}
         currentUser={currentUser}
-        onToggleSetup={onToggleSetup}
-        onSetupConfirmation={onSetupConfirmation}
+
       />
     </div>
   )

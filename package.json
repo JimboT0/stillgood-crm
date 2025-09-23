@@ -37,6 +37,7 @@
     "@radix-ui/react-toggle": "latest",
     "@radix-ui/react-toggle-group": "latest",
     "@radix-ui/react-tooltip": "latest",
+    "@types/uuid": "^10.0.0",
     "@uploadthing/react": "^7.3.3",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
@@ -69,6 +70,7 @@
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "three": "latest",
+    "uuid": "^13.0.0",
     "vaul": "latest",
     "zod": "3.25.67"
   },

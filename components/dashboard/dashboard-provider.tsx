@@ -45,6 +45,8 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
   const [documents, setDocuments] = useState<Document[]>([])
   const [loading, setLoading] = useState(true)
 
+const isSuperadmin = currentUser?.role === "superadmin";
+
 
   useEffect(() => {
   if (stores.length > 0) {
@@ -84,12 +86,12 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
             console.log("DashboardProvider - User data fetched:", userData)
             setCurrentUser(userData)
           } else {
-            const isAdmin = firebaseUser.email?.includes("admin")
+            // const isAdmin = firebaseUser.email?.includes("admin")
             const newUser: User = {
               id: firebaseUser.uid,
               name: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "User",
               email: firebaseUser.email || "",
-              role: isAdmin ? "superadmin" : "salesperson",
+              role: isSuperadmin ? "superadmin" : "salesperson",
               createdAt: new Date(),
               updatedAt: new Date(),
             }
@@ -192,8 +194,8 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
           await storeService.update(updatedStore.id, updatedStore)
           console.log("DashboardProvider - Store updated:", updatedStore.id)
         } else {
-          const newStore = { ...updatedStore, salespersonId: currentUser?.id || "" }
-          delete newStore.id
+          const { id, ...storeData } = updatedStore
+          const newStore = { ...storeData, salespersonId: currentUser?.id || "" }
           const newId = await storeService.create(newStore)
           const createdStore = { ...newStore, id: newId, createdAt: new Date(), updatedAt: new Date() }
           setStores((prev) => [createdStore, ...prev])

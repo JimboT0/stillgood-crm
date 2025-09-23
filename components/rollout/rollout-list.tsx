@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StoreDetailModal } from "./store-detail-modal";
 import { Search, Filter, CheckCircle, Eye, Share, X, CheckCheck, Share2Icon, CheckSquare, FileText } from "lucide-react";
-import type { Store, User } from "@/lib/firebase/types";
+import type { Store, User, Event } from "@/lib/firebase/types"; // Add Event type
 import { Timestamp } from "firebase/firestore";
 import { formatDateTime } from "@/lib/utils/date-utils";
 import { ProvinceCell } from "@/components/cells/province-cell";
@@ -19,17 +19,41 @@ import { DocumentViewerModal } from "../modals/document-viewer-modal";
 
 interface RolloutListProps {
   stores: Store[];
+  events: Event[]; // Add events prop
   users: User[];
   currentUser: User | null;
   onToggleSetup: (storeId: string) => Promise<void>;
   onSetupConfirmation: (storeId: string) => Promise<void>;
   onToggleSocialSetup: (storeId: string) => Promise<void>;
-  updateCredentials: (storeId: string, credentials: Store['credentials']) => Promise<void>;
+  updateCredentials: (storeId: string, credentials: Store["credentials"]) => Promise<void>;
 }
 
-export function RolloutList({ stores, users, currentUser, onToggleSetup, onSetupConfirmation, onToggleSocialSetup, updateCredentials }: RolloutListProps) {
+// Define unified event types
+interface StoreEvent {
+  type: "store";
+  store: Store;
+  eventType: "training" | "launch";
+  eventDate: Date | null;
+}
+
+interface CustomEvent {
+  type: "custom";
+  event: Event;
+  eventDate: Date | null;
+}
+
+export function RolloutList({
+  stores,
+  events, // Add to destructuring
+  users,
+  currentUser,
+  onToggleSetup,
+  onSetupConfirmation,
+  onToggleSocialSetup,
+  updateCredentials,
+}: RolloutListProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "setup" | "confirmed">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "setup" | "confirmed" | "events">("all");
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [modalMode, setModalMode] = useState<"share" | "confirmSetup">("share");
   const [documentViewModal, setDocumentViewModal] = useState<{
@@ -47,91 +71,99 @@ export function RolloutList({ stores, users, currentUser, onToggleSetup, onSetup
   };
 
   const currentDate = new Date();
+  const comingMonthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 2, 0);
 
-  const filteredStores = stores.filter((store) => {
-    if (store.status === "closed") {
-      return true;
-    }
-
-    const matchesSearch =
-      store.tradingName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      store.streetAddress.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      store.province.toLowerCase().includes(searchTerm.toLowerCase());
-
-    let matchesStatus = true;
-    if (statusFilter === "pending") matchesStatus = !store.isSetup;
-    else if (statusFilter === "setup") matchesStatus = !!store.isSetup && !store.setupConfirmed;
-    else if (statusFilter === "confirmed") matchesStatus = !!store.setupConfirmed;
-
-    return matchesSearch && matchesStatus;
-  });
-
-  const upcomingStores = filteredStores
-    .filter((store) => {
-      const launchDate = store.launchDate instanceof Timestamp
-        ? store.launchDate.toDate()
-        : store.launchDate
-          ? new Date(store.launchDate)
-          : new Date(0);
-      return launchDate >= currentDate;
-    })
-    .sort((a, b) => {
-      const dateA = a.launchDate instanceof Timestamp
-        ? a.launchDate.toDate()
-        : new Date(a.launchDate ?? 0);
-      const dateB = b.launchDate instanceof Timestamp
-        ? b.launchDate.toDate()
-        : new Date(b.launchDate ?? 0);
-      return dateA.getTime() - dateB.getTime();
+  // Combine store and custom events
+  const allEvents: (StoreEvent | CustomEvent)[] = useMemo(() => {
+    const storeEvents: StoreEvent[] = stores.flatMap((store) => {
+      const eventsList: StoreEvent[] = [];
+      if (store.trainingDate) {
+        eventsList.push({
+          type: "store",
+          store,
+          eventType: "training",
+          eventDate: store.trainingDate instanceof Timestamp
+            ? store.trainingDate.toDate()
+            : new Date(store.trainingDate),
+        });
+      }
+      if (store.launchDate) {
+        eventsList.push({
+          type: "store",
+          store,
+          eventType: "launch",
+          eventDate: store.launchDate instanceof Timestamp
+            ? store.launchDate.toDate()
+            : new Date(store.launchDate),
+        });
+      }
+      return eventsList;
     });
 
-  const pastStores = filteredStores
-    .filter((store) => {
-      const launchDate = store.launchDate instanceof Timestamp
-        ? store.launchDate.toDate()
-        : store.launchDate
-          ? new Date(store.launchDate)
-          : new Date(0);
-      return launchDate <= currentDate;
-    })
-    .sort((a, b) => {
-      const dateA = a.launchDate instanceof Timestamp
-        ? a.launchDate.toDate()
-        : new Date(a.launchDate ?? 0);
-      const dateB = b.launchDate instanceof Timestamp
-        ? b.launchDate.toDate()
-        : new Date(b.launchDate ?? 0);
-      return dateA.getTime() - dateB.getTime();
-    });
+    const customEvents: CustomEvent[] = events.map((event) => ({
+      type: "custom",
+      event,
+      eventDate: event.date ? new Date(event.date) : null,
+    }));
+
+    return [...storeEvents, ...customEvents].filter((event) =>
+      searchTerm
+        ? event.type === "store"
+          ? event.store.tradingName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            event.store.streetAddress.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            event.store.province.toLowerCase().includes(searchTerm.toLowerCase())
+          : event.event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            event.event.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            event.event.province?.toLowerCase().includes(searchTerm.toLowerCase())
+        : true
+    );
+  }, [stores, events, searchTerm]);
+
+  // Filter events by status
+  const filteredEvents = useMemo(() => {
+    if (statusFilter === "all") return allEvents;
+    if (statusFilter === "pending") return allEvents.filter((event) => event.type === "store" && !event.store.isSetup);
+    if (statusFilter === "setup") return allEvents.filter((event) => event.type === "store" && event.store.isSetup && !event.store.setupConfirmed);
+    if (statusFilter === "confirmed") return allEvents.filter((event) => event.type === "store" && event.store.setupConfirmed);
+    if (statusFilter === "events") return allEvents.filter((event) => event.type === "custom");
+    return allEvents;
+  }, [allEvents, statusFilter]);
+
+  const upcomingEvents = filteredEvents
+    .filter((event) => event.eventDate && event.eventDate >= currentDate && event.eventDate <= comingMonthEnd)
+    .sort((a, b) => (a.eventDate && b.eventDate ? a.eventDate.getTime() - b.eventDate.getTime() : 0));
+
+  const pastEvents = filteredEvents
+    .filter((event) => event.eventDate && event.eventDate < currentDate)
+    .sort((a, b) => (a.eventDate && b.eventDate ? a.eventDate.getTime() - b.eventDate.getTime() : 0));
 
   const handleToggleSocialSetup = async (storeId: string, tradingName: string, isSocialSetup: boolean) => {
     try {
       await onToggleSocialSetup(storeId);
       toast.success(`"${tradingName}" social setup ${isSocialSetup ? "removed" : "confirmed"}!`, {
         style: {
-          background: '#fff',
-          color: '#111827',
-          border: '1px solid #f97316',
+          background: "#fff",
+          color: "#111827",
+          border: "1px solid #f97316",
         },
       });
     } catch (error) {
-      toast.error('Failed to toggle social setup', {
+      toast.error("Failed to toggle social setup", {
         style: {
-          background: '#fff',
-          color: '#111827',
-          border: '1px solid #f97316',
+          background: "#fff",
+          color: "#111827",
+          border: "1px solid #f97316",
         },
       });
     }
   };
-
 
   const handleOpenConfirmSetupModal = (store: Store) => {
     setSelectedStore(store);
     setModalMode("confirmSetup");
   };
 
-  const renderStoreTable = (stores: Store[], title: string) => (
+  const renderEventTable = (events: (StoreEvent | CustomEvent)[], title: string) => (
     <Card className="w-full mt-6">
       <CardHeader>
         <CardTitle>{title}</CardTitle>
@@ -141,7 +173,7 @@ export function RolloutList({ stores, users, currentUser, onToggleSetup, onSetup
         <Table className="w-full">
           <TableHeader>
             <TableRow>
-              <TableHead>Store</TableHead>
+              <TableHead>Name</TableHead>
               {isSuperadmin && <TableHead>Salesperson</TableHead>}
               <TableHead>Location</TableHead>
               <TableHead>Dates</TableHead>
@@ -151,136 +183,163 @@ export function RolloutList({ stores, users, currentUser, onToggleSetup, onSetup
             </TableRow>
           </TableHeader>
           <TableBody>
-            {stores.map((store) => (
-              <TableRow key={store.id}>
-                <StoreInfoCell tradingName={store.tradingName} streetAddress={store.streetAddress} />
-                <SalespersonCell
-                  isSuperadmin={isSuperadmin}
-                  salespersonId={store.salespersonId}
-                  users={users}
-                />
-                <ProvinceCell province={store.province} />
-                <LaunchTrainDateCell
-                  launchDate={store.launchDate}
-                  trainingDate={store.trainingDate}
-                />
+            {events.map((event, index) => (
+              <TableRow key={`${event.type === "store" ? event.store.id : event.event.id}-${event.eventType || "custom"}-${index}`}>
                 <TableCell>
-                  <div className="flex items-center">
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={!!store.isSocialSetup}
-                        onChange={() => handleToggleSocialSetup(store.id, store.tradingName, !!store.isSocialSetup)}
-                        disabled={store.isSocialSetup || (!isSuperadmin && !isMedia)}
-                        className="sr-only peer"
-                        aria-label="Social Setup Confirmed"
-                      />
-                      <div
-                        className={`w-11 h-6 rounded-full transition-colors duration-200
-                        ${!!store.isSocialSetup ? "bg-green-500" : "bg-red-500"}
-                        ${store.isSocialSetup ? "opacity-60" : ""}
-                        peer-disabled:opacity-60`}
-                      ></div>
-                      <div
-                        className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform duration-200
-                        ${!!store.isSocialSetup ? "translate-x-5" : ""}
-                        peer-disabled:opacity-60`}
-                      ></div>
-                    </label>
-                  </div>
+                  {event.type === "store" ? (
+                    <StoreInfoCell tradingName={event.store.tradingName} streetAddress={event.store.streetAddress} />
+                  ) : (
+                    <div>
+                      <div className="font-medium">{event.event.title}</div>
+                      <div className="text-sm text-gray-600">{event.event.description || "N/A"}</div>
+                    </div>
+                  )}
                 </TableCell>
                 <TableCell>
-                  {isSuperadmin ? (
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={!!store.credentials}
-                        onChange={() => isSuperadmin && handleOpenConfirmSetupModal(store)}
-                        disabled={!isSuperadmin}
-                        className="sr-only peer"
-                        aria-label="Setup Confirmed"
-                      />
-                      <div
-                        className={`w-11 h-6 rounded-full transition-colors duration-200
-                          ${!!store.credentials ? "bg-green-500" : "bg-red-500"}
-                          ${!isSuperadmin ? "opacity-60" : ""}
-                          peer-disabled:opacity-60`}
-                      ></div>
-                      <div
-                        className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform duration-200
-                          ${!!store.credentials ? "translate-x-5" : ""}
-                          peer-disabled:opacity-60`}
-                      ></div>
-                    </label>
+                  {event.type === "store" ? (
+                    <SalespersonCell
+                      isSuperadmin={isSuperadmin}
+                      salespersonId={event.store.salespersonId}
+                      users={users}
+                    />
                   ) : (
-                    <span className="text-sm text-gray-500">
-                      {!!store.credentials ? <CheckCheck className='text-green-500' size={16} /> : <X className='text-red-500' size={16} />}
+                    <span className="text-sm text-gray-500">N/A</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <ProvinceCell province={event.type === "store" ? event.store.province : event.event.province || "N/A"} />
+                </TableCell>
+                <TableCell>
+                  {event.type === "store" ? (
+                    <LaunchTrainDateCell
+                      launchDate={event.eventType === "launch" ? event.eventDate : null}
+                      trainingDate={event.eventType === "training" ? event.eventDate : null}
+                    />
+                  ) : (
+                    <span className="text-sm text-gray-600">
+                      {event.eventDate ? formatDateTime(event.eventDate) : "N/A"}
                     </span>
                   )}
                 </TableCell>
                 <TableCell>
+                  {event.type === "store" ? (
+                    <div className="flex items-center">
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={!!event.store.isSocialSetup}
+                          onChange={() => handleToggleSocialSetup(event.store.id, event.store.tradingName, !!event.store.isSocialSetup)}
+                          disabled={event.store.isSocialSetup || (!isSuperadmin && !isMedia)}
+                          className="sr-only peer"
+                          aria-label="Social Setup Confirmed"
+                        />
+                        <div
+                          className={`w-11 h-6 rounded-full transition-colors duration-200
+                            ${!!event.store.isSocialSetup ? "bg-green-500" : "bg-red-500"}
+                            ${event.store.isSocialSetup ? "opacity-60" : ""}
+                            peer-disabled:opacity-60`}
+                        ></div>
+                        <div
+                          className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform duration-200
+                            ${!!event.store.isSocialSetup ? "translate-x-5" : ""}
+                            peer-disabled:opacity-60`}
+                        ></div>
+                      </label>
+                    </div>
+                  ) : (
+                    <span className="text-sm text-gray-500">N/A</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {event.type === "store" ? (
+                    isSuperadmin ? (
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={!!event.store.credentials}
+                          onChange={() => isSuperadmin && handleOpenConfirmSetupModal(event.store)}
+                          disabled={!isSuperadmin}
+                          className="sr-only peer"
+                          aria-label="Setup Confirmed"
+                        />
+                        <div
+                          className={`w-11 h-6 rounded-full transition-colors duration-200
+                            ${!!event.store.credentials ? "bg-green-500" : "bg-red-500"}
+                            ${!isSuperadmin ? "opacity-60" : ""}
+                            peer-disabled:opacity-60`}
+                        ></div>
+                        <div
+                          className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform duration-200
+                            ${!!event.store.credentials ? "translate-x-5" : ""}
+                            peer-disabled:opacity-60`}
+                        ></div>
+                      </label>
+                    ) : (
+                      <span className="text-sm text-gray-500">
+                        {!!event.store.credentials ? <CheckCheck className="text-green-500" size={16} /> : <X className="text-red-500" size={16} />}
+                      </span>
+                    )
+                  ) : (
+                    <span className="text-sm text-gray-500">N/A</span>
+                  )}
+                </TableCell>
+                <TableCell>
                   <div className="flex flex-row items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedStore(store);
-                        setModalMode("share");
-                      }}
-                      className="text-gray-900 hover:text-blue-600"
-                    >
-                      <Eye size={16} />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedStore(store);
-                        setModalMode("confirmSetup");
-                      }}
-                      className="text-gray-500 hover:text-blue-600"
-                    >
-                      <Share size={16} />
-                    </Button>
-                    {store.slaDocument && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleViewDocument(store, "sla")}
-                        className="text-green-600 hover:text-green-700"
-                      >
-                        <FileText size={16} />
-                      </Button>
+                    {event.type === "store" ? (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedStore(event.store);
+                            setModalMode("share");
+                          }}
+                          className="text-gray-900 hover:text-blue-600"
+                        >
+                          <Eye size={16} />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedStore(event.store);
+                            setModalMode("confirmSetup");
+                          }}
+                          className="text-gray-500 hover:text-blue-600"
+                        >
+                          <Share size={16} />
+                        </Button>
+                        {event.store.slaDocument && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewDocument(event.store, "sla")}
+                            className="text-green-600 hover:text-green-700"
+                          >
+                            <FileText size={16} />
+                          </Button>
+                        )}
+                        {event.store.bankDocument && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewDocument(event.store, "bank")}
+                            className="text-blue-600 hover:text-blue-700"
+                          >
+                            <FileText size={16} />
+                          </Button>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-sm text-gray-500">N/A</span>
                     )}
-                    {store.bankDocument && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleViewDocument(store, "bank")}
-                        className="text-blue-600 hover:text-blue-700"
-                      >
-                        <FileText size={16} />
-                      </Button>
-                    )}
-                    {/* <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                    setSelectedStore(store);
-                    setModalMode("delay");
-                    }}
-                    className="text-orange-500 hover:text-orange-700"
-                  >
-                    Delay
-                  </Button> */}
                   </div>
-                  
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
-        {stores.length === 0 && (
+        {events.length === 0 && (
           <div className="text-center py-8">
             <CheckCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No {title.toLowerCase()} found</h3>
@@ -302,7 +361,7 @@ export function RolloutList({ stores, users, currentUser, onToggleSetup, onSetup
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
-            placeholder="Search rollout stores..."
+            placeholder="Search stores or events..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -310,36 +369,31 @@ export function RolloutList({ stores, users, currentUser, onToggleSetup, onSetup
         </div>
         <Select
           value={statusFilter}
-          onValueChange={(value: "all" | "pending" | "setup" | "confirmed") => setStatusFilter(value)}
+          onValueChange={(value: "all" | "pending" | "setup" | "confirmed" | "events") => setStatusFilter(value)}
         >
           <SelectTrigger className="w-full sm:w-48">
             <Filter className="w-4 h-4 mr-2" />
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Stores</SelectItem>
+            <SelectItem value="all">All</SelectItem>
             <SelectItem value="pending">Pending Setup</SelectItem>
             <SelectItem value="setup">Setup Complete</SelectItem>
             <SelectItem value="confirmed">Confirmed</SelectItem>
+            <SelectItem value="events">Custom Events</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {renderStoreTable(upcomingStores, "Upcoming Stores")}
-
+      {renderEventTable(upcomingEvents, "Upcoming Events")}
       <Button
         variant="default"
         onClick={() => setShowTables((prev) => !prev)}
         className="mt-4"
       >
-        {showTables ? "Hide Past Stores" : "Open Past Stores"}
+        {showTables ? "Hide Past Events" : "Show Past Events"}
       </Button>
-
-      {showTables && (
-        <>
-          {renderStoreTable(pastStores, "Past Stores")}
-        </>
-      )}
+      {showTables && renderEventTable(pastEvents, "Past Events")}
 
       {selectedStore && modalMode === "share" && (
         <StoreDetailsModal

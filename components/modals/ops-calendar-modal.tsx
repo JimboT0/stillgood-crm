@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { format, isSameDay, startOfDay } from "date-fns";
-import { enUS } from "date-fns/locale";
+import { enUS, is } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -381,6 +381,7 @@ export function OpsCalendar({ stores: initialStores = [] }: OpsCalendarProps) {
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [sessionsModalOpen, setSessionsModalOpen] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+      const isSuperadmin = currentUser?.role === "superadmin";
 
     // Set current user from Firebase auth
     useEffect(() => {
@@ -391,12 +392,12 @@ export function OpsCalendar({ stores: initialStores = [] }: OpsCalendarProps) {
                     let user = allUsers.find((u) => u.email === firebaseUser.email);
 
                     if (!user) {
-                        const isAdmin = firebaseUser.email?.includes("admin");
+                        // const isAdmin = firebaseUser.email?.includes("admin");
                         user = {
                             id: firebaseUser.uid,
                             name: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "User",
                             email: firebaseUser.email || "",
-                            role: isAdmin ? "superadmin" : "salesperson",
+                            role: isSuperadmin  ? "superadmin" : "salesperson",
                             createdAt: new Date(),
                             updatedAt: new Date(),
                         };

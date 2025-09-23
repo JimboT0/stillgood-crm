@@ -47,10 +47,9 @@ export function StoreCredModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
-        <DialogHeader>
+        <DialogTitle>
             {store.tradingName} - Credentials
-
-        </DialogHeader>
+        </DialogTitle>
         <div className="space-y-6">
 
               <div>

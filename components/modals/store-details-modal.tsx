@@ -18,8 +18,6 @@ interface StoreDetailsModalProps {
   onClose: () => void
   users: User[]
   currentUser: User | null
-  onToggleSetup: (storeId: string) => Promise<void>
-  onSetupConfirmation: (storeId: string) => Promise<void>
 }
 
 export function StoreDetailsModal({
@@ -28,8 +26,6 @@ export function StoreDetailsModal({
   onClose,
   users,
   currentUser,
-  onToggleSetup,
-  onSetupConfirmation,
 }: StoreDetailsModalProps) {
   if (!store) return null
 

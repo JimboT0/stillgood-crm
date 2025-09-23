@@ -7,7 +7,7 @@ interface ProvinceCellProps {
   className?: string
 }
 
-export const ProvinceCell: React.FC<ProvinceCellProps> = ({ province, className = "" }) => {
+export const ProvinceCell: React.FC<ProvinceCellProps> = ({ province }) => {
   const provinceMap: Record<string, string> = {
     Gauteng: "GP",
     "KwaZulu-Natal": "KZN",

@@ -11,6 +11,7 @@ export interface User {
 }
 
 export const PROVINCES = [
+  "_",
   "Eastern Cape",
   "Free State",
   "Gauteng",
@@ -35,6 +36,7 @@ export const storeTypes = [
 ] as const;
 
 export interface ContactPerson {
+  role: string;
   name: string;
   phone: string;
   email: string;
@@ -135,6 +137,16 @@ export interface Store {
   }>;
 }
 
+export interface Event {
+  id: string;
+  title: string;
+  description?: string;
+  date: Timestamp;
+  province?: province;
+  createdAt: Date;
+  updatedAt: Date;
+} 
+
 export interface StoreGroup {
   id: string;
   name: string;
@@ -182,6 +194,12 @@ export interface BagLog {
   removedByName: string;
 }
 
+export type StoreOpsView = Omit<
+  Store,
+  | "assignedUserId"
+  | "groupId"
+>;
+
 
 export interface Refunds {
   id: string
@@ -217,11 +235,3 @@ export interface TrainingDocument {
   createdAt: Date;
 }
 
-export interface Event {
-  id: string
-  title: string
-  description?: string
-  date: Timestamp
-  type: "training" | "launch" | "other"
-  province?: string
-}

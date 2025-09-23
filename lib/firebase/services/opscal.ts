@@ -1,6 +1,6 @@
 import { collection, doc, getDocs, getDoc, query, orderBy } from "firebase/firestore"
 import { db } from "../config"
-import type { StoreOpsView } from "../types"
+import type { Store, StoreOpsView } from "../types"
 import { parseFirestoreDate } from "@/lib/date-validation"
 
 // Helper function to remove undefined values
@@ -20,8 +20,7 @@ const removeUndefined = (obj: any): any => {
   return obj
 }
 
-// Convert Firestore data to StoreOpsView object
-const convertFirestoreToStoreOpsView = (doc: any): StoreOpsView => {
+const convertFirestoreToStore = (doc: any): StoreOpsView => {
   const data = doc.data()
   return {
     id: doc.id,
@@ -49,11 +48,11 @@ const convertFirestoreToStoreOpsView = (doc: any): StoreOpsView => {
 
 export const storeService = {
   // Fetch all stores from opsCalendar collection
-  async getAll(): Promise<StoreOpsView[]> {
+  async getAll(): Promise<Store[]> {
     try {
       const q = query(collection(db, "opsCalendar"), orderBy("createdAt", "desc"))
       const querySnapshot = await getDocs(q)
-      return querySnapshot.docs.map(convertFirestoreToStoreOpsView)
+      return querySnapshot.docs.map(convertFirestoreToStore)
     } catch (error) {
       console.error("Error getting opsCalendar stores:", error)
       return []
@@ -66,7 +65,7 @@ export const storeService = {
       const docRef = doc(db, "opsCalendar", id)
       const docSnap = await getDoc(docRef)
       if (docSnap.exists()) {
-        return convertFirestoreToStoreOpsView(docSnap)
+        return convertFirestoreToStore(docSnap)
       }
       return null
     } catch (error) {
