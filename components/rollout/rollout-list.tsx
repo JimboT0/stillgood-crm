@@ -70,7 +70,6 @@ export function RolloutList({
   const events = Array.isArray(eventsProp) ? eventsProp : [];
   const users = Array.isArray(usersProp) ? usersProp : [];
 
-  // Date normalization function (copied from RolloutCalendar)
   const normalizeDate = (date: any): string | null => {
     if (date === null || date === undefined) {
       console.warn("Date is null or undefined");

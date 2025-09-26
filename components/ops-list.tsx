@@ -13,6 +13,7 @@ import { DocumentViewerModal } from "./modals/document-viewer-modal"
 import { formatDateTimeForDisplay } from "@/lib/utils/date-formatter"
 import { addToCalendar } from "@/lib/utils/date-utils"
 import { StoreCredModal } from "./store-cred-modal"
+import { Timestamp } from "firebase/firestore"
 
 interface OpsListProps {
     stores: StoreOpsView[]
@@ -79,6 +80,53 @@ export function OpsList({
         setDocumentViewModal({ isOpen: true, store, documentType })
     }
 
+      const normalizeDate = (date: any): string | null => {
+        if (date === null || date === undefined) {
+          console.warn("Date is null or undefined");
+          return null;
+        }
+    
+        let parsedDate: Date;
+        try {
+          if (typeof date === "string") {
+            parsedDate = new Date(date);
+            if (isNaN(parsedDate.getTime())) {
+              if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(date)) {
+                const [month, day, year] = date.split("/").map(Number);
+                parsedDate = new Date(year, month - 1, day);
+              } else if (/^\d{2}-\d{2}-\d{4}$/.test(date)) {
+                const [day, month, year] = date.split("-").map(Number);
+                parsedDate = new Date(year, month - 1, day);
+              } else if (/^\d{1,2}\s+[A-Za-z]+\s+\d{4}$/.test(date)) {
+                parsedDate = new Date(date);
+              } else {
+                console.warn(`Unsupported date string format: ${date}`);
+                return null;
+              }
+            }
+          } else if (date instanceof Timestamp) {
+            parsedDate = date.toDate();
+          } else if (typeof date === "object" && "seconds" in date && typeof date.seconds === "number") {
+            parsedDate = new Date(date.seconds * 1000);
+          } else if (date instanceof Date) {
+            parsedDate = date;
+          } else {
+            console.warn(`Invalid date type: ${JSON.stringify(date)}`);
+            return null;
+          }
+    
+          if (isNaN(parsedDate.getTime())) {
+            console.warn(`Invalid date parsed: ${JSON.stringify(date)}`);
+            return null;
+          }
+    
+          return `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, "0")}-${String(parsedDate.getDate()).padStart(2, "0")}`;
+        } catch (error) {
+          console.error(`Error parsing date: ${JSON.stringify(date)}`, error);
+          return null;
+        }
+      };
+
     const handleOpenModal = (store: StoreOpsView, modal: "details" | "confirmSetup") => {
         console.log(`Opening modal: ${modal} for store ${store.id}`)
         if (modal === "details") {
@@ -108,39 +156,58 @@ export function OpsList({
     // Transform stores and events into a unified event list
     const allEvents: (StoreEvent | CustomEvent)[] = useMemo(() => {
         const storeEvents: StoreEvent[] = stores.flatMap((store) => {
-            const eventsList: StoreEvent[] = []
+            const eventsList: StoreEvent[] = [];
             if (store.trainingDate) {
                 eventsList.push({
                     store,
                     eventType: "training",
                     eventDate: new Date(store.trainingDate.seconds * 1000),
-                })
+                });
             }
             if (store.launchDate) {
                 eventsList.push({
                     store,
                     eventType: "launch",
                     eventDate: new Date(store.launchDate.seconds * 1000),
-                })
+                });
             }
-            return eventsList
-        })
+            return eventsList;
+        });
 
-        const customEvents: CustomEvent[] = events.map((event) => ({
-            event,
-            eventType: "custom",
-            eventDate: event.date ? new Date(event.date) : null,
-        }))
+        const customEvents: CustomEvent[] = events.map((event) => {
+            let eventDate: Date | null = null;
+            try {
+                eventDate = event.date ? new Date(event.date.seconds * 1000) : null;
+                if (eventDate && isNaN(eventDate.getTime())) {
+                    console.warn(`Invalid eventDate for event ${event.id}:`, event.date);
+                    eventDate = null;
+                }
+            } catch (error) {
+                console.error(`Error parsing date for event ${event.id}:`, error, event.date);
+                eventDate = null;
+            }
+            return {
+                event,
+                eventType: "custom",
+                eventDate,
+            };
+        });
+
+        console.log("Custom events:", customEvents.map(e => ({
+            id: e.event.id,
+            title: e.event.title,
+            eventDate: e.eventDate,
+        })));
 
         return [...storeEvents, ...customEvents].filter((event) =>
             searchTerm
                 ? ("store" in event
                     ? (event.store.tradingName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    (event.store.storeId || "").toLowerCase().includes(searchTerm.toLowerCase())
-                    : (event.event.title || "").toLowerCase().includes(searchTerm.toLowerCase()))
+                      (event.store.storeId || "").toLowerCase().includes(searchTerm.toLowerCase())
+                    : (event.event.title || "Untitled").toLowerCase().includes(searchTerm.toLowerCase()))
                 : true
-        )
-    }, [stores, events, searchTerm])
+        );
+    }, [stores, events, searchTerm]);
 
     // Categorize events
     const comingEvents = useMemo(() =>

@@ -14,6 +14,7 @@ import {
   DocumentSnapshot, } from "firebase/firestore"
 import type { Event, province } from "@/lib/firebase/types"
 import { safeDateToTimestamp } from "@/lib/utils"
+import { convertTimestampToDate } from "@/lib/utils/date-utils"
 
 
 // Fetch all events
@@ -40,23 +41,14 @@ const convertFirestoreToEvent = (doc: DocumentSnapshot): Event => {
   if (!data) {
     throw new Error("Document data is undefined")
   }
-  const getISOString = (field: any) => {
-    if (field && typeof field.toDate === "function") {
-      return field.toDate().toISOString()
-    }
-    if (typeof field === "string") {
-      return new Date(field).toISOString()
-    }
-    return ""
-  }
   return {
     id: doc.id,
     title: data.title,
     description: data.description,
-    date: getISOString(data.date),
+    date: data.date,
     province: data.province,
-    createdAt: getISOString(data.createdAt),
-    updatedAt: getISOString(data.updatedAt),
+    createdAt: data.createdAt,
+    updatedAt: data.updatedAt,
   } as Event
 }
 

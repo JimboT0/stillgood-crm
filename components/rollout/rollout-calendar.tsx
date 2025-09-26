@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, JSX } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -9,6 +9,16 @@ import { StoreDetailsModal } from "@/components/modals/store-details-modal"
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react"
 import type { StoreOpsView, User } from "@/lib/firebase/types"
 import { Timestamp } from "firebase/firestore"
+
+interface Event {
+  id: string
+  title: string
+  description?: string
+  date: string | Date | Timestamp | { seconds: number }
+  province?: string
+  createdAt: Date
+  updatedAt: Date
+}
 
 interface RolloutCalendarProps {
   stores: StoreOpsView[] | null | undefined

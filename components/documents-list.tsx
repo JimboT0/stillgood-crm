@@ -1,585 +1,995 @@
+
 "use client";
 
-import { useState, useRef } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, Eye, Mail, MessageCircle, X, Upload, Copy } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
+import { Download, Eye, Upload, Trash2, Plus, File, Loader2, Pencil } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
-import { documentService } from "@/lib/firebase/services/document";
-import { storageService } from "@/lib/firebase/services/storage";
-import messages from "@/lib/messages.json";
 import Select from "react-select";
-import type { Document, TrainingItem, Store, User } from "@/lib/firebase/types";
+import { documentService } from "@/lib/firebase/services/document";
+import type { Document, User, Subcategory } from "@/lib/firebase/types";
+import { useDashboardData } from "./dashboard/dashboard-provider";
 
 interface DocumentsListProps {
   documents: Document[];
-  stores: Store[];
-  isAdmin?: boolean;
+  isSuperadmin?: boolean;
   currentUser: User | null;
   refreshData: () => Promise<void>;
 }
 
 const PACKAGE_TYPES = [
-  { value: "pnp_franchise", label: "PnP Franchise" },
-  { value: "pnp_corporate", label: "PnP Corporate" },
-  { value: "spar_franchise", label: "Spar Franchise" },
-  { value: "spar_corporate", label: "Spar Corporate" },
-  { value: "other", label: "Other" },
+  { value: "pnp_franchise", label: "PnP Franchise", description: "Documents for Pick n Pay franchise stores" },
+  { value: "pnp_corporate", label: "PnP Corporate", description: "Documents for Pick n Pay corporate stores" },
+  { value: "spar_franchise", label: "Spar Franchise", description: "Documents for Spar franchise stores" },
+  { value: "spar_corporate", label: "Spar Corporate", description: "Documents for Spar corporate stores" },
+  { value: "independent", label: "Independent", description: "Documents for independent stores" },
+  { value: "other", label: "Other", description: "Miscellaneous documents" },
 ] as const;
 
-async function sendDocument({
-  document,
-  item,
-  recipient,
-  method,
-}: {
-  document: Document;
-  item?: TrainingItem;
-  recipient: string;
-  method: "email" | "whatsapp";
-}) {
+async function uploadDocument(
+  file: File,
+  types: Document["type"][],
+  subcategories: string[],
+  name: string,
+  description: string | null,
+  userId: string
+): Promise<Document[]> {
   try {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    toast({
-      title: "Success",
-      description: `Document ${item ? item.name : document.name} sent via ${method} to ${recipient}`,
-    });
-  } catch (error) {
-    console.error("DocumentsList - sendDocument error:", error);
-    toast({
-      title: "Error",
-      description: "Failed to send document",
-      variant: "destructive",
-    });
-  }
-}
-
-async function sendWhatsAppGroupMessage({
-  document,
-  phoneNumbers,
-  message,
-}: {
-  document: Document;
-  phoneNumbers: string[];
-  message: string;
-}) {
-  try {
-    if (phoneNumbers.length === 0) {
-      throw new Error("No phone numbers available");
+    console.log("uploadDocument - Validating inputs:", { file: file?.name, types, subcategories, name, userId });
+    if (!file) throw new Error("No file selected");
+    if (!name.trim()) throw new Error("Document name is required");
+    if (types.length === 0) throw new Error("At least one package type is required");
+    if (!userId) throw new Error("User ID is missing");
+    if (!["image/jpeg", "image/png", "application/pdf"].includes(file.type)) {
+      throw new Error("Only JPG, PNG, or PDF files are allowed");
     }
-    const encodedMessage = encodeURIComponent(message);
-    const phoneList = phoneNumbers.join(",");
-    const whatsappUrl = `https://wa.me/?phone=${phoneList}&text=${encodedMessage}`;
-    window.open(whatsappUrl, "_blank");
-    toast({
-      title: "Success",
-      description: `Opened WhatsApp group message for ${document.name}`,
-    });
-  } catch (error) {
-    console.error("DocumentsList - sendWhatsAppGroupMessage error:", error);
-    toast({
-      title: "Error",
-      description: "Failed to open WhatsApp group message",
-      variant: "destructive",
-    });
-  }
-}
-
-async function downloadAllItems(packageName: string, items: TrainingItem[]) {
-  try {
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    toast({
-      title: "Success",
-      description: `Downloaded all items in ${packageName} as zip`,
-    });
-    return `/documents/${packageName}/all.zip`;
-  } catch (error) {
-    console.error("DocumentsList - downloadAllItems error:", error);
-    toast({
-      title: "Error",
-      description: "Failed to download package",
-      variant: "destructive",
-    });
-  }
-}
-
-async function uploadDocument(file: File, type: Document["type"], name: string, userId: string, storeIds: string[]) {
-  try {
-    console.log("DocumentsList - Uploading document:", { name, type, file: file.name, userId, storeIds });
-    const path = `documents/${type}/${Date.now()}_${file.name}`;
-    const url = await storageService.uploadFile(file, path);
-    const document: Omit<Document, "id"> = {
-      name,
-      size: file.size,
-      type,
-      storeIds,
-      url,
-      createdAt: new Date(),
-    };
-    const docId = await documentService.create(document);
-    console.log("DocumentsList - Document uploaded:", { docId, url, storeIds });
-    toast({
-      title: "Success",
-      description: "Document uploaded successfully",
-    });
-    return { id: docId, ...document };
-  } catch (error) {
-    console.error("DocumentsList - uploadDocument error:", error);
-    toast({
-      title: "Error",
-      description: "Failed to upload document",
-      variant: "destructive",
-    });
+    if (file.size > 10 * 1024 * 1024) {
+      throw new Error("File size exceeds 10MB limit");
+    }
+    console.log("uploadDocument - Validation passed");
+    const path = `documents/${types[0]}/${subcategories[0] || "default"}/${Date.now()}_${file.name}`;
+    console.log("uploadDocument - Starting upload to Storage:", { path, name, description, types, subcategories, userId });
+    const signedUrl = await documentService.uploadFile(file, path);
+    console.log("uploadDocument - Storage upload successful:", signedUrl);
+    const createdDocs: Document[] = [];
+    for (const type of types) {
+      const subs = subcategories.length > 0 ? subcategories : [null];
+      for (const subcategory of subs) {
+        const document: Omit<Document, "id"> = {
+          name,
+          description,
+          size: file.size,
+          type,
+          subcategory,
+          url: signedUrl,
+          uploadedAt: new Date(),
+          uploadedBy: userId,
+        };
+        console.log("uploadDocument - Creating Firestore document:", { type, subcategory, document });
+        const docId = await documentService.create(document);
+        console.log("uploadDocument - Firestore document created:", docId);
+        createdDocs.push({ id: docId, ...document });
+      }
+    }
+    console.log("uploadDocument - Success, IDs:", createdDocs.map((doc) => doc.id));
+    toast({ title: "Success", description: `Uploaded ${name} to ${types.join(", ")}` });
+    return createdDocs;
+  } catch (error: any) {
+    console.error("uploadDocument - Error:", { message: error.message, code: error.code });
+    if (error.code === "auth/quota-exceeded") {
+      toast({ title: "Error", description: "Authentication quota exceeded. Please try again later.", variant: "destructive" });
+    } else {
+      toast({ title: "Error", description: error.message || "Failed to upload document", variant: "destructive" });
+    }
     throw error;
   }
 }
 
-export default function DocumentsList({ documents, stores, isAdmin = false, currentUser, refreshData }: DocumentsListProps) {
-  const [recipient, setRecipient] = useState("");
-  const [sendOpen, setSendOpen] = useState(false);
-  const [sendMethod, setSendMethod] = useState<"email" | "whatsapp" | null>(null);
-  const [sendingDoc, setSendingDoc] = useState<Document | null>(null);
-  const [sendingItem, setSendingItem] = useState<TrainingItem | null>(null);
-  const [selectedPackage, setSelectedPackage] = useState<Document | null>(null);
+async function deleteDocuments(documents: Document[], allDocuments: Document[], user: User | null) {
+  try {
+    if (!user) {
+      throw new Error("Must be authenticated to delete documents");
+    }
+    console.log("deleteDocuments - Starting:", { docIds: documents.map((doc) => doc.id), userEmail: user.email });
+    const deletedDocIds: string[] = [];
+    for (const doc of documents) {
+      const otherDocsWithSameUrl = allDocuments.filter(
+        (d) => d.url === doc.url && d.id !== doc.id
+      );
+      if (otherDocsWithSameUrl.length === 0) {
+        const path = decodeURIComponent(doc.url.split('/o/')[1]?.split('?')[0] || doc.url);
+        await documentService.deleteFile(path).catch((error) => {
+          console.warn("deleteDocuments - Failed to delete from Storage:", path, error);
+        });
+        console.log("deleteDocuments - Deleted from Storage:", path);
+      } else {
+        console.log("deleteDocuments - Skipped Storage deletion, URL used by other documents:", doc.url);
+      }
+      await documentService.delete(doc.id);
+      console.log("deleteDocuments - Deleted from Firestore:", doc.id);
+      deletedDocIds.push(doc.id);
+    }
+    console.log("deleteDocuments - Success, deleted IDs:", deletedDocIds);
+    toast({ title: "Success", description: `Deleted ${deletedDocIds.length} document(s)` });
+    return deletedDocIds;
+  } catch (error: any) {
+    console.error("deleteDocuments - Error:", { message: error.message, code: error.code });
+    if (error.code === "auth/quota-exceeded") {
+      toast({ title: "Error", description: "Authentication quota exceeded. Please try again later.", variant: "destructive" });
+    } else {
+      toast({ title: "Error", description: error.message || "Failed to delete documents", variant: "destructive" });
+    }
+    throw error;
+  }
+}
+
+export default function DocumentsList({ documents, refreshData }: DocumentsListProps) {
   const [uploadOpen, setUploadOpen] = useState(false);
-  const [uploadPackageType, setUploadPackageType] = useState<Document["type"]>("pnp_franchise");
+  const [subcategoryModalOpen, setSubcategoryModalOpen] = useState(false);
+  const [newSubcategoryName, setNewSubcategoryName] = useState("");
+  const [newSubcategoryDescription, setNewSubcategoryDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [docName, setDocName] = useState("");
-  const [selectedStoreIds, setSelectedStoreIds] = useState<{ value: string; label: string }[]>([]);
+  const [docDescription, setDocDescription] = useState("");
+  const [selectedPackageTypes, setSelectedPackageTypes] = useState<{ value: Document["type"]; label: string; description: string }[]>([]);
+  const [selectedSubcategories, setSelectedSubcategories] = useState<{ value: string; label: string }[]>([]);
+  const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
+  const [selectedTabPackageType, setSelectedTabPackageType] = useState<Document["type"]>("pnp_franchise");
+  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
+  const [subcategoriesError, setSubcategoriesError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isEditMode, setIsEditMode] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { currentUser } = useDashboardData();
+  const isSuperadmin = currentUser?.role === "superadmin";
 
-  console.log("DocumentsList - Props:", { documents, stores, currentUser, isAdmin });
+  // Validate form for enabling/disabling the Upload button
+  const isUploadDisabled = !currentUser || !file || !docName.trim() || selectedPackageTypes.length === 0;
 
-  const handleSend = async () => {
-    if (!sendingDoc || !recipient || !sendMethod) {
-      toast({
-        title: "Error",
-        description: "Missing required fields for sending document",
-        variant: "destructive",
-      });
-      return;
-    }
-    await sendDocument({
-      document: sendingDoc,
-      item: sendingItem ?? undefined,
-      recipient,
-      method: sendMethod,
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  useEffect(() => {
+    const fetchSubcategories = async () => {
+      console.time("fetchSubcategories");
+      if (!currentUser) {
+        console.log("DocumentsList - Skipping fetchSubcategories: No authenticated user");
+        setSubcategories([]);
+        setSubcategoriesError("Please log in to view subcategories");
+        setLoading(false);
+        console.timeEnd("fetchSubcategories");
+        return;
+      }
+      try {
+        setLoading(true);
+        const subcategoryPromises = PACKAGE_TYPES.map(async (pkg) => {
+          console.log("DocumentsList - Fetching subcategories for:", pkg.value);
+          const subs = await documentService.getSubcategories(pkg.value) || [];
+          return subs;
+        });
+        const subcategoriesArrays = await Promise.all(subcategoryPromises);
+        const fetchedSubcategories = subcategoriesArrays.flat();
+        setSubcategories(fetchedSubcategories);
+        setSubcategoriesError(null);
+        console.log("DocumentsList - Subcategories:", fetchedSubcategories);
+      } catch (error: any) {
+        console.error("DocumentsList - Error fetching subcategories:", { message: error.message, code: error.code });
+        setSubcategories([]);
+        setSubcategoriesError("Failed to load subcategories: " + (error.message || "Permission denied"));
+      } finally {
+        setLoading(false);
+        console.timeEnd("fetchSubcategories");
+      }
+    };
+    fetchSubcategories();
+  }, [currentUser]);
+
+  useEffect(() => {
+    console.log("DocumentsList - State updated:", {
+      currentUser: currentUser ? { id: currentUser.id, email: currentUser.email, role: currentUser.role } : null,
+      documents: documents.length,
+      isUploadDisabled,
+      file: file ? file.name : null,
+      docName,
+      selectedPackageTypes: selectedPackageTypes.map((t) => t.value),
+      selectedSubcategories: selectedSubcategories.map((s) => s.value),
     });
-    setSendOpen(false);
-    setRecipient("");
-    setSendingDoc(null);
-    setSendingItem(null);
-    setSendMethod(null);
-  };
+  }, [currentUser, documents, isUploadDisabled, file, docName, selectedPackageTypes, selectedSubcategories]);
+
+  // Cache subcategory options to prevent recalculation
+  const subcategoryOptions = useMemo(() => {
+    return subcategories
+      .filter((sub) => selectedPackageTypes.some((pkg) => pkg.value === sub.packageType))
+      .map((sub) => ({
+        value: sub.name,
+        label: sub.name,
+      }));
+  }, [subcategories, selectedPackageTypes]);
 
   const handleUpload = async () => {
-    if (!file || !docName || !uploadPackageType || !currentUser?.id) {
-      toast({
-        title: "Error",
-        description: "Please provide a file, name, type, and ensure you are logged in",
-        variant: "destructive",
+    console.log("handleUpload - Button clicked");
+    if (isUploadDisabled) {
+      console.log("handleUpload - Failed: Button is disabled", {
+        hasCurrentUser: !!currentUser,
+        hasFile: !!file,
+        hasDocName: !!docName.trim(),
+        hasPackageTypes: selectedPackageTypes.length > 0,
       });
+      toast({ title: "Error", description: "Please fill all required fields: file, name, and package type.", variant: "destructive" });
       return;
     }
-    if (currentUser?.role !== "superadmin") {
-      toast({
-        title: "Error",
-        description: "Only superadmins can upload documents",
-        variant: "destructive",
-      });
+    if (!currentUser) {
+      console.log("handleUpload - Failed: No current user");
+      toast({ title: "Error", description: "Please log in to upload.", variant: "destructive" });
       return;
     }
-    await uploadDocument(file, uploadPackageType, docName, currentUser.id, selectedStoreIds.map((s) => s.value));
-    setUploadOpen(false);
-    setFile(null);
-    setDocName("");
-    setUploadPackageType("pnp_franchise");
-    setSelectedStoreIds([]);
-    await refreshData();
-  };
-
-  const handleWhatsAppGroupMessage = (doc: Document) => {
-    const packageType = doc.type as keyof typeof messages;
-    const messageConfig = messages[packageType];
-    if (!messageConfig) {
-      toast({
-        title: "Error",
-        description: "No WhatsApp message configuration for this document type",
-        variant: "destructive",
-      });
+    if (!file) {
+      console.log("handleUpload - Failed: No file selected");
+      toast({ title: "Error", description: "Please select a file to upload.", variant: "destructive" });
       return;
     }
-
-    const phoneNumbers = messageConfig.phones || [];
-    const message = messageConfig.message
-      .replace("{username}", "_____")
-      .replace("{password}", "_____")
-      .replace("{orderusername}", "_____")
-      .replace("{orderpassword}", "_____");
-
-    if (phoneNumbers.length === 0) {
-      toast({
-        title: "Error",
-        description: "No phone numbers available for WhatsApp messaging",
-        variant: "destructive",
-      });
+    if (!docName.trim()) {
+      console.log("handleUpload - Failed: Document name is empty");
+      toast({ title: "Error", description: "Please enter a document name.", variant: "destructive" });
       return;
     }
-    sendWhatsAppGroupMessage({ document: doc, phoneNumbers, message });
-  };
-
-  const getWhatsAppMessage = (doc: Document) => {
-    const packageType = doc.type as keyof typeof messages;
-    const messageConfig = messages[packageType];
-    if (!messageConfig) {
-      return "No message configuration available.";
+    if (selectedPackageTypes.length === 0) {
+      console.log("handleUpload - Failed: No package types selected");
+      toast({ title: "Error", description: "Please select at least one package type.", variant: "destructive" });
+      return;
     }
-    return messageConfig.message
-      .replace("{username}", "_____")
-      .replace("{password}", "_____")
-      .replace("{orderusername}", "_____")
-      .replace("{orderpassword}", "_____");
-  };
-
-  const handleCopyMessage = (doc: Document) => {
-    const message = getWhatsAppMessage(doc);
-    navigator.clipboard.writeText(message).then(() => {
-      toast({
-        title: "Success",
-        description: "Message copied to clipboard",
-      });
-    }).catch(() => {
-      toast({
-        title: "Error",
-        description: "Failed to copy message",
-        variant: "destructive",
-      });
+    if (!currentUser.id) {
+      console.log("handleUpload - Failed: Missing user ID");
+      toast({ title: "Error", description: "User authentication error: Missing user ID.", variant: "destructive" });
+      return;
+    }
+    if (typeof currentUser.id !== "string") {
+      console.log("handleUpload - Failed: User ID is not a string", { id: currentUser.id });
+      toast({ title: "Error", description: "User authentication error: Invalid user ID.", variant: "destructive" });
+      return;
+    }
+    console.log("handleUpload - Starting:", {
+      file: file.name,
+      docName,
+      docDescription,
+      packageTypes: selectedPackageTypes.map((t) => t.value),
+      subcategories: selectedSubcategories.map((s) => s.value),
+      userEmail: currentUser.email,
+      userId: currentUser.id,
     });
-  };
-
-  // Map document type to store type
-  const getMatchingStoreType = (docType: Document["type"]): string => {
-    switch (docType) {
-      case "pnp_franchise":
-        return "picknpay_franchise";
-      case "pnp_corporate":
-        return "picknpay_corporate";
-      case "spar_franchise":
-        return "spar_franchise";
-      case "spar_corporate":
-        return "spar_corporate";
-      case "other":
-        return "independent";
-      default:
-        return "";
+    try {
+      await uploadDocument(
+        file,
+        selectedPackageTypes.map((t) => t.value),
+        selectedSubcategories.map((s) => s.value),
+        docName,
+        docDescription || null,
+        currentUser.id
+      );
+      console.log("handleUpload - Upload completed successfully");
+      setUploadOpen(false);
+      setFile(null);
+      setDocName("");
+      setDocDescription("");
+      setSelectedPackageTypes([]);
+      setSelectedSubcategories([]);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+        console.log("handleUpload - File input reset");
+      }
+      await refreshData();
+    } catch (error: any) {
+      console.error("handleUpload - Error:", { message: error.message, code: error.code });
+      toast({ title: "Error", description: `Upload failed: ${error.message || "Unknown error"}`, variant: "destructive" });
     }
   };
 
-  // Filter stores by document type
-  const filteredStores = selectedPackage
-    ? stores.filter((store) => {
-        const matchingStoreType = getMatchingStoreType(selectedPackage.type);
-        return !matchingStoreType || store.storeType === matchingStoreType;
-      })
-    : [];
+  const handleDebugUpload = async () => {
+    console.log("handleDebugUpload - Debug button clicked");
+    toast({ title: "Debug Upload", description: "Attempting debug upload (bypassing disabled state)...", variant: "default" });
+    if (!currentUser || !currentUser.id || typeof currentUser.id !== "string") {
+      console.log("handleDebugUpload - Failed: Invalid user", { currentUser });
+      toast({ title: "Error", description: "Debug upload failed: Invalid user.", variant: "destructive" });
+      return;
+    }
+    console.log("handleDebugUpload - Starting:", {
+      file: file ? file.name : null,
+      docName,
+      docDescription,
+      packageTypes: selectedPackageTypes.map((t) => t.value),
+      subcategories: selectedSubcategories.map((s) => s.value),
+      userEmail: currentUser.email,
+      userId: currentUser.id,
+    });
+    try {
+      await uploadDocument(
+        file || new File([""], "dummy.pdf", { type: "application/pdf" }),
+        selectedPackageTypes.map((t) => t.value) || ["other"],
+        selectedSubcategories.map((s) => s.value),
+        docName || "Debug Document",
+        docDescription || null,
+        currentUser.id
+      );
+      console.log("handleDebugUpload - Upload completed successfully");
+      toast({ title: "Success", description: "Debug upload completed.", variant: "default" });
+    } catch (error: any) {
+      console.error("handleDebugUpload - Error:", { message: error.message, code: error.code });
+      toast({ title: "Error", description: `Debug upload failed: ${error.message || "Unknown error"}`, variant: "destructive" });
+    }
+  };
 
-  // Filter documents by selected package type
-  const filteredDocuments = documents.filter((doc) =>
-    PACKAGE_TYPES.some((pkg) => pkg.value === doc.type)
-  );
+  const handleDeleteSelected = async (docs?: Document[]) => {
+    if (!currentUser) {
+      console.log("handleDeleteSelected - Failed: No current user");
+      toast({ title: "Error", description: "Please log in to delete.", variant: "destructive" });
+      return;
+    }
+    if (!currentUser.id || typeof currentUser.id !== "string") {
+      console.log("handleDeleteSelected - Failed: Invalid user ID", { id: currentUser.id });
+      toast({ title: "Error", description: "User authentication error: Invalid user ID.", variant: "destructive" });
+      return;
+    }
+    const docsToDelete = docs || documents.filter((doc) => selectedDocIds.includes(doc.id));
+    if (docsToDelete.length === 0) {
+      console.log("handleDeleteSelected - Failed: No documents selected");
+      toast({ title: "Error", description: "No documents selected for deletion.", variant: "destructive" });
+      return;
+    }
+    console.log("handleDeleteSelected - Starting:", { selectedDocIds: docsToDelete.map((doc) => doc.id), userEmail: currentUser.email });
+    try {
+      await deleteDocuments(docsToDelete, documents, currentUser);
+      console.log("handleDeleteSelected - Deletion completed successfully");
+      setSelectedDocIds([]);
+      await refreshData();
+    } catch (error: any) {
+      console.error("handleDeleteSelected - Error:", { message: error.message, code: error.code });
+      toast({ title: "Error", description: `Delete failed: ${error.message || "Unknown error"}`, variant: "destructive" });
+    }
+  };
+
+  const handleCreateSubcategory = async () => {
+    if (!currentUser) {
+      console.log("handleCreateSubcategory - Failed: No current user");
+      toast({ title: "Error", description: "Please log in to create subcategories.", variant: "destructive" });
+      return;
+    }
+    if (!newSubcategoryName || !selectedTabPackageType) {
+      console.log("handleCreateSubcategory - Failed: Missing subcategory name or package type");
+      toast({ title: "Error", description: "Missing subcategory name or package type.", variant: "destructive" });
+      return;
+    }
+    if (!currentUser.id || typeof currentUser.id !== "string") {
+      console.log("handleCreateSubcategory - Failed: Invalid user ID", { id: currentUser.id });
+      toast({ title: "Error", description: "User authentication error: Invalid user ID.", variant: "destructive" });
+      return;
+    }
+    try {
+      const subcategory: Omit<Subcategory, "id"> = {
+        name: newSubcategoryName,
+        description: newSubcategoryDescription || null,
+        packageType: selectedTabPackageType,
+        createdBy: currentUser.id,
+        createdAt: new Date(),
+      };
+      console.log("handleCreateSubcategory - Creating:", subcategory);
+      const subcategoryId = await documentService.createSubcategory(subcategory);
+      console.log("handleCreateSubcategory - Subcategory created:", subcategoryId);
+      setSubcategories((prev) => [
+        ...prev,
+        { id: subcategoryId, ...subcategory },
+      ]);
+      setNewSubcategoryName("");
+      setNewSubcategoryDescription("");
+      setSubcategoryModalOpen(false);
+      toast({ title: "Success", description: `Created subcategory "${newSubcategoryName}"` });
+    } catch (error: any) {
+      console.error("handleCreateSubcategory - Error:", { message: error.message, code: error.code });
+      if (error.code === "auth/quota-exceeded") {
+        toast({ title: "Error", description: "Authentication quota exceeded. Please try again later.", variant: "destructive" });
+      } else {
+        toast({ title: "Error", description: error.message || "Failed to create subcategory", variant: "destructive" });
+      }
+    }
+  };
+
+  const handleDeleteSubcategory = async (subcategoryId: string, subcategoryName: string) => {
+    if (!currentUser) {
+      console.log("handleDeleteSubcategory - Failed: No current user");
+      toast({ title: "Error", description: "Please log in to delete subcategories.", variant: "destructive" });
+      return;
+    }
+    if (!currentUser.id || typeof currentUser.id !== "string") {
+      console.log("handleDeleteSubcategory - Failed: Invalid user ID", { id: currentUser.id });
+      toast({ title: "Error", description: "User authentication error: Invalid user ID.", variant: "destructive" });
+      return;
+    }
+    const subDocs = documents.filter((doc) => doc.subcategory === subcategoryName && doc.type === selectedTabPackageType);
+    if (subDocs.length > 0) {
+      console.log("handleDeleteSubcategory - Failed: Subcategory contains documents", { subcategoryId, subcategoryName, docCount: subDocs.length });
+      toast({ title: "Error", description: `Cannot delete "${subcategoryName}" because it contains ${subDocs.length} document(s).`, variant: "destructive" });
+      return;
+    }
+    try {
+      console.log("handleDeleteSubcategory - Deleting:", { subcategoryId, subcategoryName });
+      await documentService.deleteSubcategory(subcategoryId);
+      console.log("handleDeleteSubcategory - Subcategory deleted:", subcategoryId);
+      setSubcategories((prev) => prev.filter((sub) => sub.id !== subcategoryId));
+      toast({ title: "Success", description: `Deleted subcategory "${subcategoryName}"` });
+    } catch (error: any) {
+      console.error("handleDeleteSubcategory - Error:", { message: error.message, code: error.code });
+      if (error.code === "auth/quota-exceeded") {
+        toast({ title: "Error", description: "Authentication quota exceeded. Please try again later.", variant: "destructive" });
+      } else {
+        toast({ title: "Error", description: `Failed to delete subcategory "${subcategoryName}": ${error.message || "Unknown error"}`, variant: "destructive" });
+      }
+    }
+  };
+
+  const handleView = async (url: string, name: string) => {
+    if (!currentUser) {
+      console.log("handleView - Failed: No current user");
+      toast({ title: "Error", description: "Please log in to view.", variant: "destructive" });
+      return;
+    }
+    if (!currentUser.id || typeof currentUser.id !== "string") {
+      console.log("handleView - Failed: Invalid user ID", { id: currentUser.id });
+      toast({ title: "Error", description: "User authentication error: Invalid user ID.", variant: "destructive" });
+      return;
+    }
+    try {
+      const path = decodeURIComponent(url.split('/o/')[1]?.split('?')[0] || url);
+      console.log("handleView - Fetching URL for:", path);
+      const signedUrl = await documentService.getSignedUrl(path);
+      console.log("handleView - Signed URL fetched:", signedUrl);
+      window.open(signedUrl, "_blank");
+    } catch (error: any) {
+      console.error("handleView - Error:", { message: error.message, code: error.code });
+      if (error.code === "auth/quota-exceeded") {
+        toast({ title: "Error", description: "Authentication quota exceeded. Please try again later.", variant: "destructive" });
+      } else {
+        toast({ title: "Error", description: `Cannot view ${name}: ${error.message || "Permission denied"}`, variant: "destructive" });
+      }
+    }
+  };
+
+  const handleDownload = async (url: string, name: string) => {
+    if (!currentUser) {
+      console.log("handleDownload - Failed: No current user");
+      toast({ title: "Error", description: "Please log in to download.", variant: "destructive" });
+      return;
+    }
+    if (!currentUser.id || typeof currentUser.id !== "string") {
+      console.log("handleDownload - Failed: Invalid user ID", { id: currentUser.id });
+      toast({ title: "Error", description: "User authentication error: Invalid user ID.", variant: "destructive" });
+      return;
+    }
+    try {
+      const path = decodeURIComponent(url.split('/o/')[1]?.split('?')[0] || url);
+      console.log("handleDownload - Fetching URL for:", path);
+      const signedUrl = await documentService.getSignedUrl(path);
+      console.log("handleDownload - Signed URL fetched:", signedUrl);
+      const response = await fetch(signedUrl);
+      if (!response.ok) throw new Error("Access denied");
+      const blob = await response.blob();
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = name;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      console.log("handleDownload - Download completed:", name);
+    } catch (error: any) {
+      console.error("handleDownload - Error:", { message: error.message, code: error.code });
+      if (error.code === "auth/quota-exceeded") {
+        toast({ title: "Error", description: "Authentication quota exceeded. Please try again later.", variant: "destructive" });
+      } else {
+        toast({ title: "Error", description: `Cannot download ${name}: ${error.message || "Permission denied"}`, variant: "destructive" });
+      }
+    }
+  };
+
+  const handleCheckboxChange = (docId: string) => {
+    console.log("handleCheckboxChange - Toggled document ID:", docId);
+    setSelectedDocIds((prev) =>
+      prev.includes(docId) ? prev.filter((id) => id !== docId) : [...prev, docId]
+    );
+  };
 
   return (
     <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Documents Packages</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Document Packages</h1>
+        {currentUser && isSuperadmin && (
+          <Button
+            variant={isEditMode ? "default" : "outline"}
+            onClick={() => {
+              console.log("Edit mode toggled:", !isEditMode);
+              setIsEditMode(!isEditMode);
+            }}
+          >
+            <Pencil className="w-4 h-4 mr-2" />
+            {isEditMode ? "Exit Edit Mode" : "Enter Edit Mode"}
+          </Button>
+        )}
+      </div>
+      {!currentUser && <p className="text-red-500 mb-4">Please log in to access documents.</p>}
+      {subcategoriesError && <p className="text-red-500 mb-4">{subcategoriesError}</p>}
 
-      <Tabs defaultValue="pnp_franchise" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          {PACKAGE_TYPES.map((pkg) => (
-            <TabsTrigger key={pkg.value} value={pkg.value}>
-              {pkg.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        {PACKAGE_TYPES.map((pkg) => (
-          <TabsContent key={pkg.value} value={pkg.value} className="mt-6">
-            {currentUser?.role === "superadmin" && (
-              <div className="mb-8">
-                <h2 className="text-xl font-semibold mb-4">Upload to {pkg.label} (Superadmin Only)</h2>
-                <Button
-                  onClick={() => {
-                    setUploadPackageType(pkg.value);
-                    setUploadOpen(true);
-                  }}
-                  className="mb-4"
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload Document
-                </Button>
+      {currentUser && isSuperadmin && isEditMode && (
+        <div className="mb-6 flex gap-4 flex-wrap">
+          <Button
+            variant="destructive"
+            onClick={() => handleDeleteSelected()}
+            disabled={selectedDocIds.length === 0}
+          >
+            <Trash2 className="w-4 h-4 mr-2" /> Delete Selected ({selectedDocIds.length})
+          </Button>
+          <Button
+            onClick={() => {
+              console.log("Opening subcategory modal");
+              setSubcategoryModalOpen(true);
+            }}
+            disabled={!selectedTabPackageType}
+          >
+            <Plus className="w-4 h-4 mr-2" /> Create Subcategory
+          </Button>
+        </div>
+      )}
+
+      {isMobile ? (
+        <div className="mb-6">
+          <Select
+            options={PACKAGE_TYPES}
+            value={PACKAGE_TYPES.find((pkg) => pkg.value === selectedTabPackageType)}
+            onChange={(option) => {
+              console.log("Mobile package type changed:", option?.value);
+              setSelectedTabPackageType(option?.value || "pnp_franchise");
+            }}
+            placeholder="Select package type..."
+            className="w-full"
+            inputId="package-type-mobile"
+            aria-labelledby="package-type-mobile-label"
+          />
+          <p className="text-gray-600 mt-2">{PACKAGE_TYPES.find((pkg) => pkg.value === selectedTabPackageType)?.description}</p>
+          {currentUser && isSuperadmin && isEditMode && (
+            <div className="mt-4 flex gap-4">
+              <Button
+                onClick={() => {
+                  console.log("Opening upload modal with package type:", selectedTabPackageType);
+                  setUploadOpen(true);
+                  setSelectedPackageTypes([PACKAGE_TYPES.find((pkg) => pkg.value === selectedTabPackageType)!]);
+                }}
+                disabled={!currentUser}
+              >
+                <Upload className="w-4 h-4 mr-2" /> Upload Document
+              </Button>
+              <Button
+                onClick={handleDebugUpload}
+                variant="outline"
+              >
+                Debug Upload
+              </Button>
+            </div>
+          )}
+          <div className="grid grid-cols-1 gap-6 mt-6">
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin text-gray-600" />
+              </div>
+            ) : (
+              subcategories
+                .filter((sub) => sub.packageType === selectedTabPackageType)
+                .map((sub) => {
+                  const subDocs = documents.filter(
+                    (doc) => doc.type === selectedTabPackageType && doc.subcategory === sub.name
+                  );
+                  if (subDocs.length === 0) return null; // Return nothing for empty subcategories
+                  return (
+                    <div key={sub.id}>
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-lg font-semibold">{sub.name}</h3>
+                        {currentUser && isSuperadmin && isEditMode && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-red-500"
+                            onClick={() => handleDeleteSubcategory(sub.id, sub.name)}
+                          >
+                            <Trash2 className="w-3 h-3 mr-1 text-red-500" /> Delete
+                          </Button>
+                        )}
+                      </div>
+                      <p className="text-gray-600 mb-2">{sub.description || "No description provided"}</p>
+                      {subDocs.map((doc) => (
+                        <Card key={doc.id}>
+                          <CardHeader>
+                            <div className="flex items-center justify-between">
+                              <CardTitle className="truncate">{doc.name}</CardTitle>
+                              {currentUser && isSuperadmin && isEditMode && (
+                                <input
+                                  type="checkbox"
+                                  checked={selectedDocIds.includes(doc.id)}
+                                  onChange={() => handleCheckboxChange(doc.id)}
+                                  className="ml-2"
+                                />
+                              )}
+                            </div>
+                            <CardDescription>
+                              <div className="mb-2">
+                                <div className="w-full h-32 flex items-center justify-center border rounded bg-gray-100">
+                                  <File className="w-12 h-12 text-gray-400" />
+                                </div>
+                              </div>
+                              {Math.round(doc.size / 1024)} KB | {PACKAGE_TYPES.find((pkg) => pkg.value === doc.type)?.label} | {doc.subcategory || "No subcategory"}
+                              <br />
+                              {doc.description || "No description provided"}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="flex flex-col gap-2">
+                            <div className="flex gap-2 flex-wrap">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={!currentUser}
+                                onClick={() => handleView(doc.url, doc.name)}
+                              >
+                                <Eye className="w-3 h-3 mr-1" /> View
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={!currentUser}
+                                onClick={() => handleDownload(doc.url, doc.name)}
+                              >
+                                <Download className="w-3 h-3 mr-1" /> Download
+                              </Button>
+                              {currentUser && isSuperadmin && isEditMode && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-red-500"
+                                  onClick={() => handleDeleteSelected([doc])}
+                                >
+                                  <Trash2 className="w-3 h-3 mr-1 text-red-500" /> Delete
+                                </Button>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  );
+                })
+            )}
+            {!loading && subcategories.length === 0 && (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin text-gray-600" />
               </div>
             )}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredDocuments
-                .filter((doc) => doc.type === pkg.value)
-                .map((doc) => {
-                  const isTraining = doc.type === "training";
-                  return (
-                    <Card key={doc.id}>
-                      <CardHeader>
-                        <CardTitle className="truncate">{doc.name}</CardTitle>
-                        <CardDescription>
-                          {Math.round(doc.size / 1024)} KB | {pkg.label}
-                          <br />
-                          Associated Stores: {doc.storeIds.length > 0 ? doc.storeIds.map((id) => stores.find((s) => s.id === id)?.tradingName || id).join(", ") : "None"}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="flex flex-col gap-2">
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() =>
-                              isTraining
-                                ? setSelectedPackage(doc)
-                                : window.open(doc.url, "_blank")
-                            }
-                          >
-                            <Eye className="w-3 h-3 mr-1" /> {isTraining ? "View Items" : "View"}
-                          </Button>
-                          <Button size="sm" variant="outline" asChild>
-                            <a href={doc.url} download>
-                              <Download className="w-3 h-3 mr-1" /> Download
-                            </a>
-                          </Button>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setSendingDoc(doc);
-                              setSendingItem(null);
-                              setSendMethod("email");
-                              setSendOpen(true);
-                            }}
-                          >
-                            <Mail className="w-3 h-3 mr-1" /> Email
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleWhatsAppGroupMessage(doc)}
-                          >
-                            <MessageCircle className="w-3 h-3 mr-1" /> WhatsApp Group
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              {filteredDocuments.filter((doc) => doc.type === pkg.value).length === 0 && (
-                <div className="text-center py-8 col-span-full">
-                  <p className="text-gray-600">
-                    No documents in this package. {currentUser?.role === "superadmin" ? "Upload one above." : ""}
-                  </p>
+          </div>
+        </div>
+      ) : (
+        <Tabs
+          defaultValue="pnp_franchise"
+          className="w-full"
+          onValueChange={(value) => {
+            console.log("Tab package type changed:", value);
+            setSelectedTabPackageType(value as Document["type"]);
+          }}
+        >
+          <TabsList className="grid w-full grid-cols-6">
+            {PACKAGE_TYPES.map((pkg) => (
+              <TabsTrigger key={pkg.value} value={pkg.value}>
+                {pkg.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          {PACKAGE_TYPES.map((pkg) => (
+            <TabsContent key={pkg.value} value={pkg.value} className="mt-6">
+              <p className="text-gray-600 mb-4">{pkg.description}</p>
+              {currentUser && isSuperadmin && isEditMode && (
+                <div className="mb-8 flex gap-4">
+                  <Button
+                    onClick={() => {
+                      console.log("Opening upload modal with package type:", pkg.value);
+                      setUploadOpen(true);
+                      setSelectedPackageTypes([pkg]);
+                    }}
+                    disabled={!currentUser}
+                  >
+                    <Upload className="w-4 h-4 mr-2" /> Upload Document
+                  </Button>
+                  <Button
+                    onClick={handleDebugUpload}
+                    variant="outline"
+                  >
+                    Debug Upload
+                  </Button>
                 </div>
               )}
-            </div>
-          </TabsContent>
-        ))}
-      </Tabs>
+              {loading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin text-gray-600" />
+                </div>
+              ) : (
+                subcategories
+                  .filter((sub) => sub.packageType === pkg.value)
+                  .map((sub) => {
+                    const subDocs = documents.filter(
+                      (doc) => doc.type === pkg.value && doc.subcategory === sub.name
+                    );
+                    if (subDocs.length === 0) return null; // Return nothing for empty subcategories
+                    return (
+                      <div key={sub.id}>
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="text-lg font-semibold">{sub.name}</h3>
+                          {currentUser && isSuperadmin && isEditMode && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-red-500"
+                              onClick={() => handleDeleteSubcategory(sub.id, sub.name)}
+                            >
+                              <Trash2 className="w-3 h-3 mr-1 text-red-500" /> Delete
+                            </Button>
+                          )}
+                        </div>
+                        <p className="text-gray-600 mb-2">{sub.description || "No description provided"}</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {subDocs.map((doc) => (
+                            <Card key={doc.id}>
+                              <CardHeader>
+                                <div className="flex items-center justify-between">
+                                  <CardTitle className="truncate">{doc.name}</CardTitle>
+                                  {currentUser && isSuperadmin && isEditMode && (
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedDocIds.includes(doc.id)}
+                                      onChange={() => handleCheckboxChange(doc.id)}
+                                      className="ml-2"
+                                    />
+                                  )}
+                                </div>
+                                <CardDescription>
+                                  <div className="mb-2">
+                                    <div className="w-full h-32 flex items-center justify-center border rounded bg-gray-100">
+                                      <File className="w-12 h-12 text-gray-400" />
+                                    </div>
+                                  </div>
+                                  {Math.round(doc.size / 1024)} KB | {pkg.label} | {doc.subcategory || "No subcategory"}
+                                  <br />
+                                  {doc.description || "No description provided"}
+                                </CardDescription>
+                              </CardHeader>
+                              <CardContent className="flex flex-col gap-2">
+                                <div className="flex gap-2 flex-wrap">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={!currentUser}
+                                    onClick={() => handleView(doc.url, doc.name)}
+                                  >
+                                    <Eye className="w-3 h-3 mr-1" /> View
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={!currentUser}
+                                    onClick={() => handleDownload(doc.url, doc.name)}
+                                  >
+                                    <Download className="w-3 h-3 mr-1" /> Download
+                                  </Button>
+                                  {currentUser && isSuperadmin && isEditMode && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-red-500"
+                                      onClick={() => handleDeleteSelected([doc])}
+                                    >
+                                      <Trash2 className="w-3 h-3 mr-1 text-red-500" /> Delete
+                                    </Button>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })
+              )}
+              {!loading && subcategories.length === 0 && (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin text-gray-600" />
+                </div>
+              )}
+            </TabsContent>
+          ))}
+        </Tabs>
+      )}
 
-      {/* Unified Send Dialog */}
-      <Dialog open={sendOpen} onOpenChange={setSendOpen}>
+      <Dialog open={uploadOpen} onOpenChange={(open) => {
+        console.log("Upload dialog open changed:", open);
+        setUploadOpen(open);
+        if (!open) {
+          setFile(null);
+          setDocName("");
+          setDocDescription("");
+          setSelectedPackageTypes([]);
+          setSelectedSubcategories([]);
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+            console.log("File input reset");
+          }
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              Send {sendingItem ? `${sendingDoc?.name}/${sendingItem.name}` : sendingDoc?.name} via{" "}
-              {sendMethod === "email" ? "Email" : "WhatsApp"}
-            </DialogTitle>
+            <DialogTitle>Upload Document</DialogTitle>
+            <DialogDescription>Upload a new document by providing the required details below.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="recipient">
-                Recipient {sendMethod === "email" ? "Email" : "Phone Number"}
-              </Label>
+              <Label htmlFor="doc-name" id="doc-name-label">Document Name</Label>
               <Input
-                id="recipient"
-                value={recipient}
-                onChange={(e) => setRecipient(e.target.value)}
-                placeholder={`Enter ${sendMethod === "email" ? "email address" : "phone number"}`}
-              />
-            </div>
-          </div>
-          <Button onClick={handleSend}>Send {sendMethod === "email" ? "Email" : "WhatsApp"}</Button>
-        </DialogContent>
-      </Dialog>
-
-      {/* Upload Document Dialog (Superadmin Only) */}
-      <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Upload New Document (Superadmin Only)</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="docName">Document Name</Label>
-              <Input
-                id="docName"
+                id="doc-name"
                 value={docName}
-                onChange={(e) => setDocName(e.target.value)}
+                onChange={(e) => {
+                  setDocName(e.target.value);
+                  console.log("Document name updated:", e.target.value);
+                }}
                 placeholder="Enter document name"
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="docType">Package Type</Label>
-              <Input
-                id="docType"
-                value={uploadPackageType}
-                readOnly
-                className="bg-gray-100"
+              <Label htmlFor="doc-description" id="doc-description-label">Description (Optional)</Label>
+              <Textarea
+                id="doc-description"
+                value={docDescription}
+                onChange={(e) => {
+                  setDocDescription(e.target.value);
+                  console.log("Document description updated:", e.target.value);
+                }}
+                placeholder="Enter document description"
+                maxLength={500}
               />
             </div>
-            {/* <div className="grid gap-2">
-              <Label htmlFor="storeSelect">Select Stores</Label>
+            <div className="grid gap-2">
+              <Label id="doc-type-label">Package Types</Label>
               <Select
                 isMulti
-                options={stores.map((store) => ({
-                  value: store.id,
-                  label: `${store.tradingName} (${store.storeType || "Unknown"})`,
-                }))}
-                value={selectedStoreIds}
-                onChange={(selected) => setSelectedStoreIds(selected as { value: string; label: string }[])}
-                placeholder="Select one or more stores..."
-                className="w-full"
+                options={PACKAGE_TYPES}
+                value={selectedPackageTypes}
+                onChange={(options) => {
+                  setSelectedPackageTypes(options as { value: Document["type"]; label: string; description: string }[]);
+                  console.log("Package types updated:", options);
+                }}
+                placeholder="Select package types..."
+                inputId="doc-type"
+                aria-labelledby="doc-type-label"
               />
-            </div> */}
+            </div>
             <div className="grid gap-2">
-              <Label htmlFor="file">File</Label>
+              <Label id="subcategories-label">Subcategories (Optional)</Label>
+              <Select
+                isMulti
+                options={subcategoryOptions}
+                value={selectedSubcategories}
+                onChange={(options) => {
+                  setSelectedSubcategories(options as { value: string; label: string }[]);
+                  console.log("Subcategories updated:", options);
+                }}
+                placeholder="Select subcategories..."
+                inputId="subcategories"
+                aria-labelledby="subcategories-label"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="doc-file" id="doc-file-label">File (JPG, PNG, PDF)</Label>
               <Input
-                id="file"
+                id="doc-file"
                 type="file"
+                accept="image/jpeg,image/png,application/pdf"
                 ref={fileInputRef}
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                onChange={(e) => {
+                  const selectedFile = e.target.files?.[0] || null;
+                  console.log("File input changed:", selectedFile ? selectedFile.name : "No file selected");
+                  setFile(selectedFile);
+                }}
+              />
+            </div>
+          </div>
+          <div className="flex gap-4">
+            <button
+              onClick={() => {
+                console.log("Upload button clicked");
+                toast({ title: "Attempting upload", description: "Processing your upload request...", variant: "default" });
+                handleUpload();
+              }}
+              disabled={isUploadDisabled}
+              className={`px-4 py-2 rounded-md font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed ${isUploadDisabled ? "opacity-50" : ""}`}
+            >
+              Upload
+            </button>
+            <button
+              onClick={handleDebugUpload}
+              className="px-4 py-2 rounded-md font-medium text-gray-700 bg-gray-200 hover:bg-gray-300"
+            >
+              Debug Upload
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={subcategoryModalOpen} onOpenChange={(open) => {
+        console.log("Subcategory dialog open changed:", open);
+        setSubcategoryModalOpen(open);
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Subcategory</DialogTitle>
+            <DialogDescription>Create a new subcategory for organizing documents.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="subcategory-name" id="subcategory-name-label">Subcategory Name</Label>
+              <Input
+                id="subcategory-name"
+                value={newSubcategoryName}
+                onChange={(e) => {
+                  setNewSubcategoryName(e.target.value);
+                  console.log("Subcategory name updated:", e.target.value);
+                }}
+                placeholder="Enter subcategory name (e.g., Videos, Staff Docs)"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="subcategory-description" id="subcategory-description-label">Description (Optional)</Label>
+              <Textarea
+                id="subcategory-description"
+                value={newSubcategoryDescription}
+                onChange={(e) => {
+                  setNewSubcategoryDescription(e.target.value);
+                  console.log("Subcategory description updated:", e.target.value);
+                }}
+                placeholder="Enter subcategory description"
+                maxLength={500}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label id="package-type-label">Package Type</Label>
+              <Select
+                options={PACKAGE_TYPES}
+                value={PACKAGE_TYPES.find((pkg) => pkg.value === selectedTabPackageType)}
+                onChange={(option) => {
+                  console.log("Subcategory package type changed:", option?.value);
+                  setSelectedTabPackageType(option?.value || "pnp_franchise");
+                }}
+                placeholder="Select package type..."
+                inputId="package-type"
+                aria-labelledby="package-type-label"
               />
             </div>
           </div>
           <Button
-            onClick={handleUpload}
-            disabled={currentUser?.role !== "superadmin"}
+            onClick={() => {
+              console.log("Create subcategory button clicked");
+              handleCreateSubcategory();
+            }}
+            disabled={!newSubcategoryName || !selectedTabPackageType}
           >
-            Upload
+            Create
           </Button>
-        </DialogContent>
-      </Dialog>
-
-      {/* Training Package Items Page */}
-      <Dialog open={!!selectedPackage} onOpenChange={(open) => !open && setSelectedPackage(null)}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader className="sticky top-0 bg-white z-10 py-4 border-b">
-            <div className="flex justify-between items-center">
-              <DialogTitle>{selectedPackage?.name} - Training Package</DialogTitle>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleWhatsAppGroupMessage(selectedPackage!)}
-                >
-                  <MessageCircle className="w-3 h-3 mr-1" />
-                  WhatsApp Group
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleCopyMessage(selectedPackage!)}
-                >
-                  <Copy className="w-3 h-3 mr-1" />
-                  Copy Message
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  asChild
-                  onClick={() =>
-                    selectedPackage?.items &&
-                    downloadAllItems(selectedPackage.name, selectedPackage.items)
-                  }
-                >
-                  <a href={selectedPackage ? `/documents/${selectedPackage.name}/all.zip` : "#"} download>
-                    <Download className="w-3 h-3 mr-1" /> Download All
-                  </a>
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setSelectedPackage(null)}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </DialogHeader>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4 p-4">
-            {selectedPackage?.items?.map((item) => (
-              <Card key={item.name}>
-                <CardHeader>
-                  <CardTitle className="truncate">{item.name}</CardTitle>
-                  <CardDescription>{Math.round(item.size / 1024)} KB</CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-2">
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => window.open(item.url, "_blank")}
-                    >
-                      <Eye className="w-3 h-3 mr-1" /> View
-                    </Button>
-                    <Button size="sm" variant="outline" asChild>
-                      <a href={item.url} download>
-                        <Download className="w-3 h-3 mr-1" /> Download
-                      </a>
-                    </Button>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setSendingDoc(selectedPackage);
-                        setSendingItem(item);
-                        setSendMethod("email");
-                        setSendOpen(true);
-                      }}
-                    >
-                      <Mail className="w-3 h-3 mr-1" /> Email
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleWhatsAppGroupMessage(selectedPackage)}
-                    >
-                      <MessageCircle className="w-3 h-3 mr-1" /> WhatsApp Group
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            {!selectedPackage?.items?.length && (
-              <p className="text-gray-600">No items found in this training package.</p>
-            )}
-          </div>
-          <div className="mt-6 p-4 border-t">
-            <h3 className="text-lg font-semibold mb-4">WhatsApp Message</h3>
-            <div className="p-4 bg-gray-50 rounded-md">
-              <pre className="text-sm text-gray-600 whitespace-pre-wrap">
-                {selectedPackage ? getWhatsAppMessage(selectedPackage) : "Select a package to view the message."}
-              </pre>
-            </div>
-          </div>
         </DialogContent>
       </Dialog>
     </div>

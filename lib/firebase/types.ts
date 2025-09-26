@@ -1,6 +1,7 @@
 import { Timestamp } from "firebase/firestore";
 
 export interface User {
+  uid(file: File, arg1: ("pnp_franchise" | "pnp_corporate" | "spar_franchise" | "spar_corporate" | "independent" | "other")[], arg2: string[], docName: string, arg4: string | null, uid: any): unknown;
   id: string;
   name: string;
   email: string;
@@ -63,14 +64,27 @@ export interface ContractTerms {
   notes?: string;
 }
 
+// lib/firebase/types.ts
 export interface Document {
   id: string;
   name: string;
-  type: string;
+  description: string | null; // New field for document description
+  size: number;
+  type: "pnp_franchise" | "pnp_corporate" | "spar_franchise" | "spar_corporate" | "independent" | "other" | "bank" | "sla";
+  subcategory: string | null;
   url: string;
-  storeId: string;
-  uploadedBy: string;
   uploadedAt: Date;
+  uploadedBy: string;
+}
+
+
+export interface Subcategory {
+  id: string;
+  name: string;
+  description: string | null;
+  packageType: string;
+  createdBy: string;
+  createdAt: Date;
 }
 
 export interface NewLeadDetails {
@@ -141,7 +155,7 @@ export interface Event {
   id: string;
   title: string;
   description?: string;
-  date: Timestamp;
+  date: Timestamp | null;
   province?: province;
   createdAt: Date;
   updatedAt: Date;
@@ -215,23 +229,5 @@ export interface Refunds {
   type: "bag costs" | "printing" | "travel" | "consulting" | "marketing" | "stationery" | "entertainment" | "other"
   submittedAt: Date
   status: "pending" | "accepted" | "paid" | "declined"
-}
-
-
-export interface TrainingItem {
-  name: string;
-  size: number;
-  url: string; // URL to Firebase Storage file
-}
-
-export interface TrainingDocument {
-  id: string; // Firestore document ID
-  name: string;
-  size: number;
-  type: "training" | "pnp_franchise" | "pnp_corporate" | "spar_franchise" | "spar_corporate" | "other";
-  credentials?: Credential[];
-  items?: TrainingItem[]; // For training packages
-  url: string; // Firebase Storage URL for non-training documents
-  createdAt: Date;
 }
 

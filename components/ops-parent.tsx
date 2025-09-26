@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
@@ -56,7 +57,7 @@ export function OpsParent({ stores: initialStores = [], events: initialEvents = 
   }>({
     name: "",
     description: "",
-    province: "",
+    province: "" as province,
     eventDate: "",
   })
   const isSuperadmin = currentUser?.role === "superadmin";
@@ -82,7 +83,7 @@ export function OpsParent({ stores: initialStores = [], events: initialEvents = 
 
           setCurrentUser(user)
         } catch (error) {
-          console.error("Error loading user:", error)
+          console.error("[OpsParent] Error loading user:", error)
           setCurrentUser({
             id: firebaseUser.uid,
             name: firebaseUser.displayName || "User",
@@ -114,8 +115,8 @@ export function OpsParent({ stores: initialStores = [], events: initialEvents = 
           storesData.map((s) => ({
             id: s.id,
             tradingName: s.tradingName,
-            trainingDate: JSON.stringify(s.trainingDate),
-            launchDate: JSON.stringify(s.launchDate),
+            trainingDate: s.trainingDate ? { seconds: s.trainingDate.seconds, nanoseconds: s.trainingDate.nanoseconds } : null,
+            launchDate: s.launchDate ? { seconds: s.launchDate.seconds, nanoseconds: s.launchDate.nanoseconds } : null,
           }))
         )
         console.log(
@@ -125,7 +126,7 @@ export function OpsParent({ stores: initialStores = [], events: initialEvents = 
             title: e.title,
             description: e.description,
             province: e.province,
-            date: JSON.stringify(e.date),
+            date: e.date ? { seconds: e.date.seconds, nanoseconds: e.date.nanoseconds } : null,
           }))
         )
         setStores(storesData)
@@ -178,33 +179,59 @@ export function OpsParent({ stores: initialStores = [], events: initialEvents = 
   }, [stores, events])
 
   // Handle event creation
-  const handleCreateEvent = async () => {
-    if (!currentUser || currentUser.role !== "superadmin") return
-    try {
-      const eventDate = new Date(newEvent.eventDate)
-      if (isNaN(eventDate.getTime())) {
-        console.error("Invalid event date")
-        return
-      }
-
-      const newCustomEvent: Event = {
-        id: `event_${Date.now()}`,
-        title: newEvent.name,
-        description: newEvent.description,
-        province: newEvent.province,
-        date: Timestamp.fromDate(eventDate),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
-
-      await eventService.create(newCustomEvent)
-      setEvents((prev) => [...prev, newCustomEvent])
-      setIsCreateEventModalOpen(false)
-      setNewEvent({ name: "", description: "", province: "", eventDate: "" })
-    } catch (error) {
-      console.error("Error creating event:", error)
+const handleCreateEvent = async () => {
+  if (!currentUser || currentUser.role !== "superadmin") return;
+  try {
+    console.log("[OpsParent] Creating event with date:", newEvent.eventDate);
+    const eventDate = new Date(newEvent.eventDate);
+    if (isNaN(eventDate.getTime())) {
+      console.error("[OpsParent] Invalid event date:", newEvent.eventDate);
+      alert("Invalid event date. Please select a valid date.");
+      return;
     }
+    const newCustomEvent: Omit<Event, "id"> = {
+      title: newEvent.name,
+      description: newEvent.description,
+      province: newEvent.province,
+      date: Timestamp.fromDate(eventDate),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    const eventId = await eventService.create(newCustomEvent);
+    console.log("[OpsParent] Event created with ID:", eventId);
+    const updatedEvents = await eventService.getAll();
+    setEvents(updatedEvents);
+    setIsCreateEventModalOpen(false);
+    setNewEvent({ name: "", description: "", province: "" as province, eventDate: "" });
+  } catch (error) {
+    console.error("[OpsParent] Error creating event:", error);
+    alert("Failed to create event. Please try again.");
   }
+};
+
+useEffect(() => {
+  const loadData = async () => {
+    if (!currentUser) return;
+    setLoading(true);
+    try {
+      console.log("[OpsParent] Loading data for user:", currentUser.email);
+      const storesData = await storeService.getAll();
+      const eventsData = await eventService.getAll();
+      console.log("[OpsParent] Loaded stores:", storesData);
+      console.log("[OpsParent] Loaded events:", eventsData);
+      setStores(storesData);
+      setEvents(eventsData);
+    } catch (error) {
+      console.error("[OpsParent] Error loading data:", error);
+      setStores([]);
+      setEvents([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadData();
+}, [currentUser]);
 
   // Placeholder functions for actions
   const handleToggleSetup = async (storeId: string) => {
@@ -364,7 +391,7 @@ export function OpsParent({ stores: initialStores = [], events: initialEvents = 
               <select
                 id="province"
                 value={newEvent.province}
-                onChange={(e) => setNewEvent({ ...newEvent, province: e.target.value })}
+                onChange={(e) => setNewEvent({ ...newEvent, province: e.target.value as province })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
               >
                 {allProvinces.map((province) => (
