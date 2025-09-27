@@ -72,6 +72,7 @@ export interface Document {
   size: number;
   type: "pnp_franchise" | "pnp_corporate" | "spar_franchise" | "spar_corporate" | "independent" | "other" | "bank" | "sla";
   subcategory: string | null;
+  storeId: string;
   url: string;
   uploadedAt: Date;
   uploadedBy: string;

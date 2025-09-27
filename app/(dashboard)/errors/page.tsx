@@ -22,15 +22,6 @@ export default function ErrorsPage() {
     return salesperson?.name || "Unknown"
   }
 
-  const getSalespersonInitials = (salespersonId: string) => {
-    const salesperson = users.find((user) => user.id === salespersonId)
-    return (
-      salesperson?.name
-        .split(" ")
-        .map((n) => n[0])
-        .join("") || "?"
-    )
-  }
 
   const handleClearErrorClick = (storeId: string, storeName: string) => {
     if (window.confirm(`Are you sure you want to clear the error for "${storeName}"?`)) {

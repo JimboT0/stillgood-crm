@@ -459,6 +459,7 @@ export function StoreEditModal({
         id: store?.id || "",
         tradingName: formData.tradingName || "",
         streetAddress: formData.streetAddress || "",
+        newleaddetails: formData.newleaddetails || [],
         province: formData.province || "",
         status: isMovingToClosed ? "closed" : formData.status || "lead",
         salespersonId: formData.salespersonId || currentUserId,
@@ -1246,7 +1247,7 @@ export function StoreEditModal({
                     </label>
                     {(slaFile || formData.slaDocument) && (
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">{slaFile?.name || formData.slaDocument?.name}</span>
+                        <span className="text-[10px] text-gray-600">{slaFile?.name || formData.slaDocument?.name}</span>
                         <Button
                           type="button"
                           variant="ghost"

@@ -37,7 +37,7 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
-  PenBox,
+  MessageCircle,
   DollarSignIcon,
   HandCoins,
   Superscript,
@@ -126,6 +126,12 @@ const navigationItems = [
     url: "/commissions",
     icon: PercentDiamond,
     roles: ["superadmin"],
+  },
+  {
+    title: "Messages",
+    url: "/messages",
+    icon: MessageCircle,
+    roles: ["superadmin", "operations", "salesperson"],
   },
   //   {
   //   title: "Refunds",

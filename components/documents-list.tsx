@@ -66,6 +66,7 @@ async function uploadDocument(
           description,
           size: file.size,
           type,
+          storeId: "", 
           subcategory,
           url: signedUrl,
           uploadedAt: new Date(),
