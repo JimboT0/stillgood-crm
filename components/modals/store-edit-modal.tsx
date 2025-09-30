@@ -185,10 +185,6 @@ export function StoreEditModal({
       newErrors.bankConfirmationEmail = "Invalid email format"
     }
 
-    if (formData.whatsappGroupLink && !/^https:\/\/(chat\.whatsapp\.com|wa\.me)\/.+$/.test(formData.whatsappGroupLink)) {
-      newErrors.whatsappGroupLink = "Invalid WhatsApp group link format"
-    }
-
     // Validate status only if isMovingToClosed is true and status is "closed"
     if (isMovingToClosed && formData.status !== "closed") {
       // Show toaster notification instead of error in errors object

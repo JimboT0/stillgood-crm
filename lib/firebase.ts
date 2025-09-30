@@ -120,6 +120,7 @@ export interface Store {
   pushedToRollout?: boolean
   pushedToRolloutAt?: Date
   pushedToRolloutBy?: string
+  whatsappGroupLink?: string
   createdAt: Date
   updatedAt: Date
 }
