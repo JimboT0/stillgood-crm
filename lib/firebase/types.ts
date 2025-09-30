@@ -141,6 +141,7 @@ export interface Store {
   groupId?: string;
   createdAt: Date;
   updatedAt: Date;
+  whatsappGroupLink?: string;
   credentials?: Array<{
     username: string;
     password: string;

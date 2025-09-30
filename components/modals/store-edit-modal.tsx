@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { EditCard, Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Plus, Trash2, Upload, FileText, Users, X, AlertCircle, FastForward, Mail, BaggageClaimIcon, ShoppingBag } from "lucide-react"
+import { Plus, Trash2, Upload, FileText, Users, X, AlertCircle, FastForward, Mail, BaggageClaimIcon, ShoppingBag, MessageCircle } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { storeService } from "@/lib/firebase/services/store"
 import { fileService } from "@/lib/firebase/services/file"
@@ -99,6 +99,7 @@ export function StoreEditModal({
         trainingDate,
         launchDate,
         bankConfirmationEmail: store.bankConfirmationEmail || "",
+        whatsappGroupLink: store.whatsappGroupLink || "",
       })
       setContactPersons(store.contactPersons || [])
       setProducts(
@@ -143,6 +144,7 @@ export function StoreEditModal({
         trainingDate: null,
         launchDate: null,
         bankConfirmationEmail: "",
+        whatsappGroupLink: "",
       })
       setContactPersons([])
       setProducts([])
@@ -181,6 +183,10 @@ export function StoreEditModal({
       newErrors.bankConfirmationEmail = "Bank confirmation email is required when moving to closed"
     } else if (formData.bankConfirmationEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.bankConfirmationEmail)) {
       newErrors.bankConfirmationEmail = "Invalid email format"
+    }
+
+    if (formData.whatsappGroupLink && !/^https:\/\/(chat\.whatsapp\.com|wa\.me)\/.+$/.test(formData.whatsappGroupLink)) {
+      newErrors.whatsappGroupLink = "Invalid WhatsApp group link format"
     }
 
     // Validate status only if isMovingToClosed is true and status is "closed"
@@ -434,6 +440,9 @@ export function StoreEditModal({
           id: `sla-${Date.now()}`,
           name: slaFile.name,
           type: "sla",
+          description: "",
+          size: slaFile.size,
+          subcategory: null,
           url,
           storeId: store?.id || `new-${Date.now()}`,
           uploadedBy: currentUserId,
@@ -448,6 +457,9 @@ export function StoreEditModal({
           id: `bank-${Date.now()}`,
           name: bankFile.name,
           type: "bank",
+          description: "",
+          size: bankFile.size,
+          subcategory: null,
           url,
           storeId: store?.id || `new-${Date.now()}`,
           uploadedBy: currentUserId,
@@ -502,6 +514,7 @@ export function StoreEditModal({
         keyAccountManager: formData.keyAccountManager || "",
         assignedOpsUsers: formData.assignedOpsUsers || [],
         groupId: formData.groupId || undefined,
+        whatsappGroupLink: formData.whatsappGroupLink || "",
         createdAt: store?.createdAt || new Date(),
         updatedAt: new Date(),
       }
@@ -733,6 +746,22 @@ export function StoreEditModal({
                     </SelectContent>
                   </Select>
                   <p className="text-sm text-gray-500 mt-1">Assign this store to a group for multi-store owners</p>
+                </div>
+
+                <div>
+                  <Label htmlFor="whatsappGroupLink" className="flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4" />
+                    WhatsApp Group Link (Optional)
+                  </Label>
+                  <Input
+                    id="whatsappGroupLink"
+                    value={formData.whatsappGroupLink || ""}
+                    onChange={(e) => handleInputChange("whatsappGroupLink", e.target.value)}
+                    placeholder="Enter WhatsApp group link (e.g., https://chat.whatsapp.com/...)"
+                    className={errors.whatsappGroupLink ? "border-red-500" : ""}
+                  />
+                  {errors.whatsappGroupLink && <p className="text-red-500 text-sm mt-1">{errors.whatsappGroupLink}</p>}
+                  <p className="text-sm text-gray-500 mt-1">Provide a link to the store's WhatsApp group</p>
                 </div>
 
                 <div>
@@ -1364,4 +1393,3 @@ export function StoreEditModal({
     </Dialog>
   )
 }
-

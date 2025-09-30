@@ -163,6 +163,25 @@ export function StoreDetailsModal({
             </CardContent>
           </Card>
 
+          <Card>
+            <div>
+              {store.whatsappGroupLink? (
+                <a
+                  href={store.whatsappGroupLink}
+                  className="text-blue-500 hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {store.whatsappGroupLink}
+                </a>
+              ) : (
+                <p className="text-sm text-gray-600">No WhatsApp group link available</p>
+              )}
+            </div>
+
+            
+          </Card>
+
           {/* Contact Persons */}
           {store.contactPersons && store.contactPersons.length > 0 && (
             <Card>

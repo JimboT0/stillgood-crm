@@ -91,7 +91,7 @@ export default function MessagesPage() {
 
       {/* Short Description */}
       <p className="text-gray-600 mb-6">
-        View and copy messages securely. Click the copy button to copy the message content to your clipboard.
+        View and copy messages. Click the copy button to copy the message content to your clipboard.
       </p>
 
       {/* Error Message */}
