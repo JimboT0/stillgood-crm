@@ -316,38 +316,67 @@ export function RolloutCalendar({
               Events for {selectedDay} {monthName}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            {selectedDay &&
-              getStoresForDate(selectedDay).map((store) => {
+            <div className="space-y-4">
+            {selectedDay && (
+              <>
+              {/* Stores for the selected day */}
+              {getStoresForDate(selectedDay).map((store) => {
                 const normalizedTrainingDate = normalizeDate(store.trainingDate ?? null)
                 const normalizedLaunchDate = normalizeDate(store.launchDate ?? null)
                 const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(selectedDay).padStart(2, "0")}`
                 return (
-                  <div
-                    key={store.id}
-                    className="p-2 rounded cursor-pointer hover:bg-gray-100"
-                    onClick={() => {
-                      setSelectedStore(store)
-                      setIsSubModalOpen(false)
-                    }}
-                  >
-                    <div className="font-medium">{store.tradingName}</div>
-                    <div className="flex gap-2 mt-1">
-                      {normalizedTrainingDate === dateStr && (
-                        <Badge variant="outline" className="bg-green-50 text-green-700">
-                          Training
-                        </Badge>
-                      )}
-                      {normalizedLaunchDate === dateStr && (
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                          Launch
-                        </Badge>
-                      )}
-                    </div>
+                <div
+                  key={`store-${store.id}`}
+                  className="p-2 rounded cursor-pointer hover:bg-gray-100"
+                  onClick={() => {
+                  setSelectedStore(store)
+                  setIsSubModalOpen(false)
+                  }}
+                >
+                  <div className="font-medium">{store.tradingName}</div>
+                  <div className="flex gap-2 mt-1">
+                  {normalizedTrainingDate === dateStr && (
+                    <Badge variant="outline" className="bg-green-50 text-green-700">
+                    Training
+                    </Badge>
+                  )}
+                  {normalizedLaunchDate === dateStr && (
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                    Launch
+                    </Badge>
+                  )}
                   </div>
+                </div>
                 )
               })}
-          </div>
+
+              {/* Events for the selected day */}
+              {events
+                .filter((event) => normalizeDate(event.date) === `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(selectedDay).padStart(2, "0")}`)
+                .map((event) => (
+                <div
+                  key={`event-${event.id}`}
+                  className="p-2 rounded bg-gray-50 border cursor-default"
+                >
+                  <div className="font-medium">{event.title}</div>
+                  {event.description && (
+                  <div className="text-xs text-gray-600 mt-1">{event.description}</div>
+                  )}
+                  <div className="flex gap-2 mt-1">
+                  <Badge variant="outline" className="bg-purple-50 text-purple-700">
+                    Event
+                  </Badge>
+                  {event.province && (
+                    <Badge variant="outline" className="bg-gray-100 text-gray-700">
+                    {event.province}
+                    </Badge>
+                  )}
+                  </div>
+                </div>
+                ))}
+              </>
+            )}
+            </div>
         </DialogContent>
       </Dialog>
 

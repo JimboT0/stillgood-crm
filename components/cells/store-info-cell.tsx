@@ -18,15 +18,13 @@ export const StoreInfoCell: React.FC<StoreInfoCellProps> = ({ tradingName, stree
       <span className="space-y-1 flex flex-col">
         <span
           className="font-medium text-gray-900 max-w-[200px] truncate cursor-pointer hover:text-gray-700 transition-colors"
-          title={tradingName}
         >
-          {truncateText(tradingName, 70)} {tradingName}
+          {truncateText(tradingName, 70)} 
         </span>
         <span
           className="text-sm text-gray-500 max-w-[200px] truncate cursor-pointer hover:text-gray-600 transition-colors"
-          title={streetAddress}
         >
-          {truncateText(streetAddress, 70)}{streetAddress}
+          {truncateText(streetAddress, 70)}
         </span>
       </span>
     </TableCell>
