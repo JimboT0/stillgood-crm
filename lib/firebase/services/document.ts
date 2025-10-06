@@ -16,6 +16,7 @@ import { getAuth } from "firebase/auth";
 import { db } from "../config";
 import app from "@/lib/firebase/config";
 import type { Document, Subcategory } from "../types";
+import { uploadBytesResumable } from "firebase/storage";
 
 const storage = getStorage(app);
 
@@ -224,30 +225,30 @@ export const documentService = {
     }
   },
 
-  async uploadFile(file: File, path: string): Promise<string> {
-    const auth = getAuth();
-    const user = auth.currentUser;
-    console.log("uploadFile - Path:", path);
-    console.log("uploadFile - User:", user?.uid, "Email:", user?.email);
-    console.log("uploadFile - File:", file.name, file.type, file.size);
-    if (user) {
-      await user.getIdToken(true);
-      console.log("uploadFile - Token refreshed for user:", user.email);
-    } else {
-      throw new Error("uploadFile - No authenticated user");
-    }
-    const storageRef = ref(storage, path);
-    try {
-      await uploadBytes(storageRef, file);
-      console.log("uploadFile - Upload successful");
-      const signedUrl = await getDownloadURL(storageRef);
-      console.log("uploadFile - Signed URL:", signedUrl);
-      return signedUrl;
-    } catch (error: any) {
-      console.error("uploadFile - Error:", error.code, error.message);
-      throw new Error(`Upload failed: ${error.message}`);
-    }
-  },
+
+async uploadFile(file: File, path: string): Promise<string> {
+  const auth = getAuth();
+  const user = auth.currentUser;
+
+  if (!user) {
+    throw new Error("uploadFile - No authenticated user");
+  }
+
+  await user.getIdToken(true);
+
+  const storageRef = ref(storage, path);
+  try {
+    const metadata = { contentType: file.type };
+    await uploadBytesResumable(storageRef, file, metadata);
+
+    const signedUrl = await getDownloadURL(storageRef);
+    return signedUrl;
+  } catch (error: any) {
+    console.error("uploadFile - Error:", error.code, error.message);
+    throw new Error(`Upload failed: ${error.message}`);
+  }
+},
+
 
   async getSignedUrl(path: string): Promise<string> {
     const auth = getAuth();

@@ -392,7 +392,7 @@ export default function RefundsPage() {
                         </div>
                       )}
                     </div>
-                    <p className="text-xs text-slate-500">Upload supporting documents (PDF, JPG, PNG - Max 10MB)</p>
+                    <p className="text-xs text-slate-500">Upload supporting documents (PDF, JPG, PNG - Max 50MB)</p>
                   </div>
                 </div>
               </div>

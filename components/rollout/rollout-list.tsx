@@ -70,6 +70,7 @@ export function RolloutList({
   const events = Array.isArray(eventsProp) ? eventsProp : [];
   const users = Array.isArray(usersProp) ? usersProp : [];
 
+  // Date normalization function (copied from RolloutCalendar)
   const normalizeDate = (date: any): string | null => {
     if (date === null || date === undefined) {
       console.warn("Date is null or undefined");
@@ -133,46 +134,28 @@ export function RolloutList({
 
   // Combine store and custom events, matching RolloutCalendar's date range
   const allEvents: (StoreEvent | CustomEvent)[] = useMemo(() => {
-    const storeEvents: StoreEvent[] = stores.flatMap((store) => {
-      const eventsList: StoreEvent[] = [];
-      const normalizedTrainingDate = normalizeDate(store.trainingDate);
-      const normalizedLaunchDate = normalizeDate(store.launchDate);
+const storeEvents: StoreEvent[] = stores.flatMap((store) => {
+  const eventsList: StoreEvent[] = [];
+  const normalizedTrainingDate = normalizeDate(store.trainingDate);
+  const normalizedLaunchDate = normalizeDate(store.launchDate);
 
-      // Convert normalized dates to Date objects for filtering
-      const trainingDate = normalizedTrainingDate ? new Date(normalizedTrainingDate) : null;
-      const launchDate = normalizedLaunchDate ? new Date(normalizedLaunchDate) : null;
+  const trainingDate = normalizedTrainingDate ? new Date(normalizedTrainingDate) : null;
+  const launchDate = normalizedLaunchDate ? new Date(normalizedLaunchDate) : null;
 
-      // Only include events within the calendar date range
-      if (trainingDate && trainingDate >= calendarStart && trainingDate <= calendarEnd) {
-        eventsList.push({
-          type: "store",
-          store,
-          eventType: "training",
-          eventDate: trainingDate,
-        });
-      }
-      if (launchDate && launchDate >= calendarStart && launchDate <= calendarEnd) {
-        eventsList.push({
-          type: "store",
-          store,
-          eventType: "launch",
-          eventDate: launchDate,
-        });
-      }
-      return eventsList;
-    });
+  if (trainingDate) {
+    eventsList.push({ type: "store", store, eventType: "training", eventDate: trainingDate });
+  }
+  if (launchDate) {
+    eventsList.push({ type: "store", store, eventType: "launch", eventDate: launchDate });
+  }
+  return eventsList;
+});
 
-    const customEvents: CustomEvent[] = events
-      .filter((event) => {
-        const normalizedEventDate = normalizeDate(event.date);
-        const eventDate = normalizedEventDate ? new Date(normalizedEventDate) : null;
-        return eventDate && eventDate >= calendarStart && eventDate <= calendarEnd;
-      })
-      .map((event) => ({
-        type: "custom",
-        event,
-        eventDate: event.date ? new Date(normalizeDate(event.date)!) : null,
-      }));
+const customEvents: CustomEvent[] = events.map((event) => ({
+  type: "custom",
+  event,
+  eventDate: event.date ? new Date(normalizeDate(event.date)!) : null,
+}));
 
     // Apply search term filter
     return [...storeEvents, ...customEvents].filter((event) =>
@@ -210,12 +193,11 @@ export function RolloutList({
     .filter((event) => event.eventDate && event.eventDate > currentDate && event.eventDate <= calendarEnd)
     .sort((a, b) => (a.eventDate && b.eventDate ? a.eventDate.getTime() - b.eventDate.getTime() : 0));
 
-  const pastEvents = filteredEvents
-    .filter((event) => {
-      const eventDate = event.eventDate;
-      return eventDate && eventDate <= yesterday && eventDate >= calendarStart;
-    })
-    .sort((a, b) => (a.eventDate && b.eventDate ? a.eventDate.getTime() - b.eventDate.getTime() : 0));
+const pastEvents = filteredEvents
+  .filter((event) => event.eventDate && event.eventDate < currentDate)
+  .sort((a, b) =>
+    a.eventDate && b.eventDate ? b.eventDate.getTime() - a.eventDate.getTime() : 0
+  );
 
   const handleToggleSocialSetup = async (storeId: string, tradingName: string, isSocialSetup: boolean) => {
     try {

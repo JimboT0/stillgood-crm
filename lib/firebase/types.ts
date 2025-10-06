@@ -216,20 +216,3 @@ export type StoreOpsView = Omit<
   | "groupId"
 >;
 
-
-export interface Refunds {
-  id: string
-  userId: string
-  email: string
-  amount: number
-  bank: string
-  vat: boolean
-  invoiceUrl?: string
-  urgency: "low" | "medium" | "high"
-  supplierName: string
-  accountNumber: string
-  type: "bag costs" | "printing" | "travel" | "consulting" | "marketing" | "stationery" | "entertainment" | "other"
-  submittedAt: Date
-  status: "pending" | "accepted" | "paid" | "declined"
-}
-

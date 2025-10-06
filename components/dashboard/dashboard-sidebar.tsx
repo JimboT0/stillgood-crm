@@ -43,6 +43,7 @@ import {
   Superscript,
   PercentDiamond,
   DeleteIcon,
+  FlagIcon,
 } from "lucide-react"
 import { useDashboardData } from "@/components/dashboard/dashboard-provider"
 import { signOut } from "firebase/auth"
@@ -125,6 +126,12 @@ const navigationItems = [
     title: "0 Comm",
     url: "/commissions",
     icon: PercentDiamond,
+    roles: ["superadmin"],
+  },
+  {
+    title: "Performance",
+    url: "/performance",
+    icon: FlagIcon,
     roles: ["superadmin"],
   },
   {

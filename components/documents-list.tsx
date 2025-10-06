@@ -29,6 +29,7 @@ const PACKAGE_TYPES = [
   { value: "spar_franchise", label: "Spar Franchise", description: "Documents for Spar franchise stores" },
   { value: "spar_corporate", label: "Spar Corporate", description: "Documents for Spar corporate stores" },
   { value: "independent", label: "Independent", description: "Documents for independent stores" },
+  { value: "internal", label: "Internal", description: "Documents for internal use" },
   { value: "other", label: "Other", description: "Miscellaneous documents" },
 ] as const;
 
@@ -46,11 +47,11 @@ async function uploadDocument(
     if (!name.trim()) throw new Error("Document name is required");
     if (types.length === 0) throw new Error("At least one package type is required");
     if (!userId) throw new Error("User ID is missing");
-    if (!["image/jpeg", "image/png", "application/pdf"].includes(file.type)) {
-      throw new Error("Only JPG, PNG, or PDF files are allowed");
+    if (!["image/jpeg", "image/png", "application/pdf", "video/mp4"].includes(file.type)) {
+      throw new Error("Only JPG, PNG, PDF, or MP4 files are allowed");
     }
-    if (file.size > 10 * 1024 * 1024) {
-      throw new Error("File size exceeds 10MB limit");
+    if (file.size > 100 * 1024 * 1024) {
+      throw new Error("File size exceeds 100MB limit");
     }
     console.log("uploadDocument - Validation passed");
     const path = `documents/${types[0]}/${subcategories[0] || "default"}/${Date.now()}_${file.name}`;
@@ -688,7 +689,7 @@ export default function DocumentsList({ documents, refreshData }: DocumentsListP
             setSelectedTabPackageType(value as Document["type"]);
           }}
         >
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             {PACKAGE_TYPES.map((pkg) => (
               <TabsTrigger key={pkg.value} value={pkg.value}>
                 {pkg.label}
@@ -896,11 +897,11 @@ export default function DocumentsList({ documents, refreshData }: DocumentsListP
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="doc-file" id="doc-file-label">File (JPG, PNG, PDF)</Label>
+              <Label htmlFor="doc-file" id="doc-file-label">File (JPG, PNG, PDF, MP4)</Label>
               <Input
                 id="doc-file"
                 type="file"
-                accept="image/jpeg,image/png,application/pdf"
+                accept="image/jpeg,image/png,application/pdf,video/mp4"
                 ref={fileInputRef}
                 onChange={(e) => {
                   const selectedFile = e.target.files?.[0] || null;
