@@ -135,8 +135,8 @@ const navigationItems = [
     roles: ["superadmin"],
   },
   {
-    title: "Messages",
-    url: "/messages",
+    title: "Training & Intro",
+    url: "/training",
     icon: MessageCircle,
     roles: ["superadmin", "operations", "salesperson"],
   },
@@ -157,7 +157,7 @@ const navigationItems = [
 ]
 
 export function DashboardSidebar() {
-  const { currentUser, counts } = useDashboardData()
+  const { currentUser } = useDashboardData()
   const pathname = usePathname()
   const router = useRouter()
   const { state, toggleSidebar } = useSidebar()
@@ -209,7 +209,6 @@ export function DashboardSidebar() {
             <SidebarMenu>
               {filteredItems.map((item) => {
                 const isActive = pathname === item.url
-                const count = counts && typeof item.getCount === "function" ? item.getCount(counts) : undefined
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={isActive} tooltip={isCollapsed ? item.title : undefined}>
@@ -218,9 +217,6 @@ export function DashboardSidebar() {
                         {!isCollapsed && (
                           <>
                             <span>{item.title}</span>
-                            {typeof count === "number" && (
-                              <span className="ml-auto text-xs font-semibold bg-gray-100 rounded px-2 py-0.5">{count}</span>
-                            )}
                           </>
                         )}
                       </Link>
