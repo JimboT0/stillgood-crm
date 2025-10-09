@@ -5,7 +5,7 @@ export const messageData: { id: number; title: string; description: string; cont
     title: "still good group intro message",
     description: "Introduction message for whatsapp group - Pre-training",
     content: `
-Good morning, thank you for your time. We’re excited to launch still good at  ! 
+Good morning, thank you for your time. We’re excited to launch still good with you! 
 
 Could you please add the following managers to the group: 
 •⁠  ⁠Store manager 

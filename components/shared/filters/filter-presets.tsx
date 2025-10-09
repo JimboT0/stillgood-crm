@@ -90,36 +90,6 @@ export function FilterPresets({ currentFilters, onLoadPreset, className = "" }: 
         </Select>
       )}
 
-      {/* Save Preset */}
-      {hasActiveFilters && (
-        <Popover open={isOpen} onOpenChange={setIsOpen}>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Save className="w-4 h-4 mr-2" />
-              Save Preset
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-80">
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-medium">Save Filter Preset</h4>
-                <p className="text-sm text-gray-600">Save current filters for quick access</p>
-              </div>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Preset name"
-                  value={presetName}
-                  onChange={(e) => setPresetName(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSavePreset()}
-                />
-                <Button onClick={handleSavePreset} disabled={!presetName.trim()}>
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
-      )}
 
       {/* Active Filters Count */}
       {hasActiveFilters && (

@@ -99,12 +99,12 @@ export interface NewLeadDetails {
 
 export interface Store {
   id: string;
-  newleaddetails: NewLeadDetails[];
-  tradingName: string;
-  streetAddress: string;
-  province: string;
-  status: "new" | "lead" | "cold" | "warm" | "closed" | "pending setup" | "rollout" | "completed";
-  salespersonId: string;
+  newleaddetails?: NewLeadDetails[];
+  tradingName?: string;
+  streetAddress?: string;
+  province?: string;
+  status?: "new" | "lead" | "cold" | "warm" | "closed" | "pending setup" | "rollout" | "completed";
+  salespersonId?: string;
   assignedUserId?: string;
   assignedOpsIds?: string[]; 
   isSetup?: boolean;
@@ -141,8 +141,8 @@ export interface Store {
   keyAccountManager?: string;
   assignedOpsUsers?: string[];
   groupId?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
   whatsappGroupLink?: string;
   credentials?: Array<{
     username: string;

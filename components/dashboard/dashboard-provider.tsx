@@ -47,20 +47,17 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
 
 const isSuperadmin = currentUser?.role === "superadmin";
 
-
   useEffect(() => {
-  if (stores.length > 0) {
-    const filteredStores = stores.filter(
-      (store) => store.status === "closed" || store.status === "rollout"
-    );
-    const emails = filteredStores
-      .flatMap((store) => store.contactPersons?.map((person) => person.email))
-      .filter(Boolean);
-    console.log("Contact person emails for closed/rollout stores:", emails);
-  }
-}, [stores]);
-
-  
+    if (stores.length > 0) {
+      const filteredStores = stores.filter(
+        (store) => store.status === "closed" || store.status === "rollout"
+      );
+      const emails = filteredStores
+        .flatMap((store) => store.contactPersons?.map((person) => person.email))
+        .filter(Boolean);
+      console.log("Contact person emails for closed/rollout stores:", emails);
+    }
+  }, [stores]);
 
   useEffect(() => {
     if (!auth) {
@@ -86,7 +83,6 @@ const isSuperadmin = currentUser?.role === "superadmin";
             console.log("DashboardProvider - User data fetched:", userData)
             setCurrentUser(userData)
           } else {
-            // const isAdmin = firebaseUser.email?.includes("admin")
             const newUser: User = {
               id: firebaseUser.uid,
               name: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "User",
@@ -293,12 +289,56 @@ const isSuperadmin = currentUser?.role === "superadmin";
         setStores((prev) => prev.map((s) => (s.id === storeId ? { ...s, ...cleanUpdates } : s)))
         await storeService.update(storeId, cleanUpdates)
         console.log("DashboardProvider - Store pushed to rollout:", { storeId })
+
+        // Notify via n8n webhook with enhanced store data
+        const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL as string;
+        console.log("DashboardProvider - Preparing webhook call to:", webhookUrl)
+        const store = stores.find((s) => s.id === storeId)
+        if (store) {
+          const payload = {
+            storeId: store.id,
+            storeName: store.tradingName || 'Unknown',
+            status: store.status || 'Unknown',
+            province: store.province || 'Unknown', // Added province field
+            trainingDate: trainingDate.toISOString(),
+            launchDate: launchDate.toISOString(),
+            contactPersons: store.contactPersons?.map(person => ({
+              name: person.name || 'Unknown',
+              email: person.email || 'Unknown'
+            })) || [],
+            pushedToRolloutBy: currentUser?.id || 'Unknown',
+            pushedToRolloutAt: updates.pushedToRolloutAt.toISOString(),
+          }
+          console.log("DashboardProvider - Webhook payload:", JSON.stringify(payload, null, 2))
+          const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          })
+          console.log("DashboardProvider - Webhook response status:", response.status, response.statusText)
+          if (!response.ok) {
+            const errorText = await response.text().catch(() => 'No response body')
+            console.error("DashboardProvider - Webhook failed:", { status: response.status, statusText: response.statusText, errorText })
+            throw new Error(`Webhook failed with status ${response.status}: ${errorText}`)
+          }
+          console.log("DashboardProvider - Webhook sent successfully to n8n")
+        } else {
+          console.error("DashboardProvider - Store not found for webhook:", { storeId })
+          throw new Error(`Store with ID ${storeId} not found for webhook`)
+        }
       } catch (error) {
-        console.error("DashboardProvider - Error pushing to rollout:", error, { storeId, trainingDate, launchDate })
+        console.error("DashboardProvider - Error pushing to rollout or sending webhook:", error, { storeId, trainingDate, launchDate })
+        toast.error(`Failed to push to rollout or notify via webhook: ${error instanceof Error ? error.message : String(error)}`, {
+          style: {
+            background: "#fff",
+            color: "#111827",
+            border: "1px solid #f97316",
+          },
+        })
         await loadData()
       }
     },
-    [currentUser?.id, loadData],
+    [currentUser?.id, loadData, stores],
   )
 
   const handleMarkAsError = useCallback(

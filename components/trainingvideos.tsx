@@ -196,7 +196,7 @@ export default function TrainingVideos() {
             <h3 className="text-lg font-semibold text-gray-700 p-6 bg-gray-50">
               {subcategory} ({subcategoryMessages.length})
             </h3>
-            <div className="grid grid-cols-1 gap-6 p-6">
+            <div className="grid grid-cols-3 gap-6 p-6">
               {subcategoryMessages.map((message) => (
                 <div
                   key={message.id}

@@ -165,7 +165,7 @@ export function StoreDetailsModal({
 
           <Card>
             <div>
-              {store.whatsappGroupLink? (
+              {store.whatsappGroupLink ? (
                 <a
                   href={store.whatsappGroupLink}
                   className="text-blue-500 hover:underline"
@@ -175,11 +175,11 @@ export function StoreDetailsModal({
                   {store.whatsappGroupLink}
                 </a>
               ) : (
-                <p className="text-sm text-gray-600">No WhatsApp group link available</p>
+                <p className="text-sm text-gray-600">No WhatsApp channel link available</p>
               )}
             </div>
 
-            
+
           </Card>
 
           {/* Contact Persons */}
@@ -281,6 +281,23 @@ export function StoreDetailsModal({
               </CardContent>
             </Card>
           )}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Contract</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <p>
+                  <span className="text-gray-600">CreatedAt:</span> {formatDateTimeForDisplay(store.createdAt ?? null)}
+                </p>
+                  <div>
+                    <p className="text-gray-600">Notes:</p>
+                    <p className="text-sm bg-gray-50 p-3 rounded-lg">{formatDateTimeForDisplay(store.createdAt ?? null)}</p>
+                  </div>
+                
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </DialogContent>
     </Dialog>

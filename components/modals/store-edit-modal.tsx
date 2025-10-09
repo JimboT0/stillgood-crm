@@ -747,7 +747,7 @@ export function StoreEditModal({
                 <div>
                   <Label htmlFor="whatsappGroupLink" className="flex items-center gap-2">
                     <MessageCircle className="w-4 h-4" />
-                    WhatsApp Group Link (Optional)
+                    WhatsApp Channel Link (Marketing)
                   </Label>
                   <Input
                     id="whatsappGroupLink"
