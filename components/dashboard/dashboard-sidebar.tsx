@@ -44,6 +44,7 @@ import {
   PercentDiamond,
   DeleteIcon,
   FlagIcon,
+  BriefcaseBusiness,
 } from "lucide-react"
 import { useDashboardData } from "@/components/dashboard/dashboard-provider"
 import { signOut } from "firebase/auth"
@@ -98,7 +99,7 @@ const navigationItems = [
     title: "Bag Management",
     url: "/bags",
     icon: Package,
-    roles: ["superadmin", "operations", "salesperson"],
+    roles: ["superadmin", "operations", "salesperson", "media"],
     getCount: (counts: Record<string, number>) => counts.bags,
   },
   {
@@ -126,6 +127,12 @@ const navigationItems = [
     title: "0 Comm",
     url: "/commissions",
     icon: PercentDiamond,
+    roles: ["superadmin"],
+  },
+    {
+    title: "Corporate",
+    url: "/corporate",
+    icon: BriefcaseBusiness,
     roles: ["superadmin"],
   },
   {

@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StoreDetailModal } from "./store-detail-modal";
 import { Search, Filter, CheckCircle, Eye, Share, X, CheckCheck, FileText } from "lucide-react";
-import type { Store, User, Event } from "@/lib/firebase/types";
+import type { Store, User, Event, StoreOpsView } from "@/lib/firebase/types";
 import { Timestamp } from "firebase/firestore";
 import { formatDateTime } from "@/lib/utils/date-utils";
 import { ProvinceCell } from "@/components/cells/province-cell";

@@ -295,11 +295,11 @@ const isSuperadmin = currentUser?.role === "superadmin";
         console.log("DashboardProvider - Preparing webhook call to:", webhookUrl)
         const store = stores.find((s) => s.id === storeId)
         if (store) {
-          const payload = {
+            const payload = {
             storeId: store.id,
             storeName: store.tradingName || 'Unknown',
             status: store.status || 'Unknown',
-            province: store.province || 'Unknown', // Added province field
+            province: store.province || 'Unknown',
             trainingDate: trainingDate.toISOString(),
             launchDate: launchDate.toISOString(),
             contactPersons: store.contactPersons?.map(person => ({
@@ -308,7 +308,26 @@ const isSuperadmin = currentUser?.role === "superadmin";
             })) || [],
             pushedToRolloutBy: currentUser?.id || 'Unknown',
             pushedToRolloutAt: updates.pushedToRolloutAt.toISOString(),
-          }
+
+            bankConfirmation: store.bankConfirmation || false,
+            hasBankConfirmation: !!store.bankConfirmation, 
+            signedSla: store.signedSla || false,
+            hasSignedSla: !!store.signedSla,
+            hasCollectionTimes: store.collectionTimes && store.collectionTimes,
+            numberOfProducts: store.products ? store.products.length : 0,
+
+            missingInfo: (() => {
+              const missing: string[] = [];
+              if (!store.signedSla) missing.push("SLA");
+              if (!store.bankConfirmation) missing.push("Bank Confirmation");
+              if (!store.collectionTimes) missing.push("Collection Times");
+              if (!store.products || store.products.length === 0) missing.push("Products");
+              return missing.length > 0
+              ? `Your store is missing: ${missing.join(", ")}. Please update before launch.`
+              : "All docs loaded, well done!";
+            })(),
+            }
+            
           console.log("DashboardProvider - Webhook payload:", JSON.stringify(payload, null, 2))
           const response = await fetch(webhookUrl, {
             method: 'POST',

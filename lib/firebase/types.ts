@@ -29,9 +29,7 @@ export type province = (typeof PROVINCES)[number];
 
 export const storeTypes = [
   { value: "picknpay_franchise", label: "PicknPay Franchise", prefix: "PF" },
-  { value: "picknpay_corporate", label: "PicknPay Corporate", prefix: "PC" },
   { value: "spar_franchise", label: "Spar Franchise", prefix: "SF" },
-  { value: "spar_corporate", label: "Spar Corporate", prefix: "SC" },
   { value: "food_lovers_market", label: "Food Lovers Market", prefix: "FL" },
   { value: "independent", label: "Independent", prefix: "IN" },
 ] as const;
@@ -214,7 +212,6 @@ export interface BagLog {
 
 export type StoreOpsView = Omit<
   Store,
-  | "assignedUserId"
   | "groupId"
 >;
 
