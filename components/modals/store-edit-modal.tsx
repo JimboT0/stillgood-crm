@@ -1,6 +1,6 @@
-
 "use client"
 
+import { v4 as uuidv4 } from 'uuid';
 import { useState, useEffect, useCallback } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -64,11 +64,15 @@ export function StoreEditModal({
   const [showDuplicateModal, setShowDuplicateModal] = useState(false)
   const [potentialDuplicates, setPotentialDuplicates] = useState<Store[]>([])
   const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false)
+  const [checkTradingName, setCheckTradingName] = useState("")
+  const [checkProvince, setCheckProvince] = useState("")
+  const [shouldCheck, setShouldCheck] = useState(false)
+  const [hasChecked, setHasChecked] = useState(false)
 
   // Initialize DuplicateCheck
   const { checkDuplicates, isChecking } = DuplicateCheck({
-    tradingName: formData.tradingName || "",
-    province: formData.province || "",
+    tradingName: checkTradingName,
+    province: checkProvince,
     currentStoreId: store?.id,
     onDuplicatesFound: (duplicates) => {
       setPotentialDuplicates(duplicates)
@@ -99,6 +103,19 @@ export function StoreEditModal({
     if (isOpen) {
       loadGroups()
       loadOpsUsers()
+    }
+  }, [isOpen])
+
+  // Reset states when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setHasChecked(false)
+      setShouldCheck(false)
+      setCheckTradingName("")
+      setCheckProvince("")
+      setShowDuplicateModal(false)
+      setPotentialDuplicates([])
+      setIsCheckingDuplicates(false)
     }
   }, [isOpen])
 
@@ -231,6 +248,160 @@ export function StoreEditModal({
     return newErrors
   }
 
+
+const performSave = useCallback(async () => {
+  setIsUploading(true);
+  setUploadError(null);
+
+  try {
+    let slaDocument: Document | undefined = formData.slaDocument;
+    let bankDocument: Document | undefined = formData.bankDocument;
+
+    if (slaFile) {
+      const extension = slaFile.name.split(".").pop()?.toLowerCase() || "file";
+      const path = `stores/${store?.id || `new-${Date.now()}`}/sla.${extension}`;
+      const url = await fileService.uploadFile(slaFile, path);
+      slaDocument = {
+        id: `sla-${Date.now()}`,
+        name: slaFile.name,
+        type: "sla",
+        description: "",
+        size: slaFile.size,
+        subcategory: null,
+        url,
+        storeId: store?.id || `new-${Date.now()}`,
+        uploadedBy: currentUserId,
+        uploadedAt: new Date(),
+      };
+    }
+    if (bankFile) {
+      const extension = bankFile.name.split(".").pop()?.toLowerCase() || "file";
+      const path = `stores/${store?.id || `new-${Date.now()}`}/bank.${extension}`;
+      const url = await fileService.uploadFile(bankFile, path);
+      bankDocument = {
+        id: `bank-${Date.now()}`,
+        name: bankFile.name,
+        type: "bank",
+        description: "",
+        size: bankFile.size,
+        subcategory: null,
+        url,
+        storeId: store?.id || `new-${Date.now()}`,
+        uploadedBy: currentUserId,
+        uploadedAt: new Date(),
+      };
+    }
+
+    // Generate a unique ID if none exists
+    const storeId = store?.id || uuidv4();
+
+    const storeData: Store = {
+      id: storeId, // Use the generated or existing ID
+      tradingName: formData.tradingName || "",
+      streetAddress: formData.streetAddress || "",
+      newleaddetails: formData.newleaddetails || [],
+      province: formData.province || "",
+      status: isMovingToClosed ? "closed" : formData.status || "lead",
+      salespersonId: formData.salespersonId || currentUserId,
+      isSetup: formData.isSetup || false,
+      setupConfirmed: formData.setupConfirmed || false,
+      setupConfirmedBy: formData.setupConfirmedBy || "",
+      setupConfirmedAt: formData.setupConfirmedAt || undefined,
+      trainingDate: formData.trainingDate || null,
+      launchDate: formData.launchDate || null,
+      pushedToRollout: formData.pushedToRollout || false,
+      pushedToRolloutAt: formData.pushedToRolloutAt || undefined,
+      pushedToRolloutBy: formData.pushedToRolloutBy || "",
+      hasErrors: formData.hasErrors || false,
+      errorDescription: formData.errorDescription || "",
+      errorSetBy: formData.errorSetBy || "",
+      errorSetAt: formData.errorSetAt || undefined,
+      slaDocument,
+      bankDocument,
+      bankConfirmationEmail: formData.bankConfirmationEmail || "",
+      signedSla: !!slaDocument,
+      bankConfirmation: !!bankDocument,
+      isKeyStore: formData.isKeyStore || false,
+      storeType: formData.storeType || "",
+      storeId: formData.storeId || "",
+      contactPersons: contactPersons.length > 0 ? contactPersons : [],
+      products: products.length > 0 ? products : [],
+      collectionTimes: Object.values(collectionTimes).some(
+        (time) => (time as { from: string; to: string }).from || (time as { from: string; to: string }).to
+      )
+        ? collectionTimes
+        : {
+            mondayFriday: { from: "", to: "" },
+            saturday: { from: "", to: "" },
+            sunday: { from: "", to: "" },
+            publicHoliday: { from: "", to: "" },
+          },
+      contractTerms: formData.contractTerms || { months: undefined, notes: "" },
+      notes: formData.notes || "",
+      isKeyAccount: formData.isKeyAccount || false,
+      keyAccountManager: formData.keyAccountManager || "",
+      assignedOpsUsers: formData.assignedOpsUsers || [],
+      groupId: formData.groupId || undefined,
+      whatsappGroupLink: formData.whatsappGroupLink || "",
+      createdAt: store?.createdAt || new Date(),
+      updatedAt: new Date(),
+    };
+
+    console.log("[handleSave] Saving store data:", storeData);
+    let savedStoreId: string;
+    if (store?.id) {
+      await storeService.update(store.id, storeData);
+      savedStoreId = store.id;
+    } else {
+      savedStoreId = await storeService.create(storeData);
+      storeData.id = savedStoreId;
+      if (formData.groupId) {
+        try {
+          await groupService.addStoreToGroup(formData.groupId, savedStoreId);
+        } catch (groupError) {
+          console.error("[handleSave] Error adding store to group:", groupError);
+        }
+      }
+      onSave(storeData);
+      onClose();
+      window.location.reload();
+      return;
+    }
+
+    if (formData.groupId && savedStoreId) {
+      try {
+        await groupService.addStoreToGroup(formData.groupId, savedStoreId);
+      } catch (groupError) {
+        console.error("[handleSave] Error adding store to group:", groupError);
+      }
+    }
+
+    onSave(storeData);
+    onClose();
+  } catch (error: any) {
+    console.error("[handleSave] Error saving store:", error);
+    const errorMessage = error.message || "Failed to save store or upload documents. Please try again.";
+    setUploadError(errorMessage);
+
+    try {
+      const errorStoreData: Partial<Store> = {
+        id: store?.id || "",
+        hasErrors: true,
+        errorDescription: errorMessage,
+        errorSetBy: currentUserId,
+        errorSetAt: new Date(),
+        updatedAt: new Date(),
+      };
+      if (store?.id) {
+        await storeService.update(store.id, errorStoreData);
+      }
+    } catch (updateError) {
+      console.error("[handleSave] Error updating store with error information:", updateError);
+    }
+  } finally {
+    setIsUploading(false);
+  }
+}, [formData, contactPersons, collectionTimes, products, slaFile, bankFile, store, currentUserId, onSave, onClose, isMovingToClosed]);
   const handleInputChange = (field: string, value: any) => {
     console.log("[handleInputChange] Field:", field, "Value:", value)
     if (field === "trainingDate" || field === "launchDate") {
@@ -448,165 +619,43 @@ export function StoreEditModal({
       return
     }
 
-    // For new stores, check for duplicates before saving
+    // For new stores, trigger duplicate check
     if (!store?.id) {
-      setIsCheckingDuplicates(true)
-      const hasDuplicates = await checkDuplicates()
-      setIsCheckingDuplicates(false)
-      if (hasDuplicates) {
-        return // Wait for user to confirm in DuplicateConfirmationModal
-      }
-    }
-
-    setIsUploading(true)
-    setUploadError(null)
-
-    try {
-      let slaDocument: Document | undefined = formData.slaDocument
-      let bankDocument: Document | undefined = formData.bankDocument
-
-      if (slaFile) {
-        const extension = slaFile.name.split(".").pop()?.toLowerCase() || "file"
-        const path = `stores/${store?.id || `new-${Date.now()}`}/sla.${extension}`
-        const url = await fileService.uploadFile(slaFile, path)
-        slaDocument = {
-          id: `sla-${Date.now()}`,
-          name: slaFile.name,
-          type: "sla",
-          description: "",
-          size: slaFile.size,
-          subcategory: null,
-          url,
-          storeId: store?.id || `new-${Date.now()}`,
-          uploadedBy: currentUserId,
-          uploadedAt: new Date(),
-        }
-      }
-      if (bankFile) {
-        const extension = bankFile.name.split(".").pop()?.toLowerCase() || "file"
-        const path = `stores/${store?.id || `new-${Date.now()}`}/bank.${extension}`
-        const url = await fileService.uploadFile(bankFile, path)
-        bankDocument = {
-          id: `bank-${Date.now()}`,
-          name: bankFile.name,
-          type: "bank",
-          description: "",
-          size: bankFile.size,
-          subcategory: null,
-          url,
-          storeId: store?.id || `new-${Date.now()}`,
-          uploadedBy: currentUserId,
-          uploadedAt: new Date(),
-        }
-      }
-
-      const storeData: Store = {
-        id: store?.id || "",
-        tradingName: formData.tradingName || "",
-        streetAddress: formData.streetAddress || "",
-        newleaddetails: formData.newleaddetails || [],
-        province: formData.province || "",
-        status: isMovingToClosed ? "closed" : formData.status || "lead",
-        salespersonId: formData.salespersonId || currentUserId,
-        isSetup: formData.isSetup || false,
-        setupConfirmed: formData.setupConfirmed || false,
-        setupConfirmedBy: formData.setupConfirmedBy || "",
-        setupConfirmedAt: formData.setupConfirmedAt || undefined,
-        trainingDate: formData.trainingDate || null,
-        launchDate: formData.launchDate || null,
-        pushedToRollout: formData.pushedToRollout || false,
-        pushedToRolloutAt: formData.pushedToRolloutAt || undefined,
-        pushedToRolloutBy: formData.pushedToRolloutBy || "",
-        hasErrors: formData.hasErrors || false,
-        errorDescription: formData.errorDescription || "",
-        errorSetBy: formData.errorSetBy || "",
-        errorSetAt: formData.errorSetAt || undefined,
-        slaDocument,
-        bankDocument,
-        bankConfirmationEmail: formData.bankConfirmationEmail || "",
-        signedSla: !!slaDocument,
-        bankConfirmation: !!bankDocument,
-        isKeyStore: formData.isKeyStore || false,
-        storeType: formData.storeType || "",
-        storeId: formData.storeId || "",
-        contactPersons: contactPersons.length > 0 ? contactPersons : [],
-        products: products.length > 0 ? products : [],
-        collectionTimes: Object.values(collectionTimes).some(
-          (time) => (time as { from: string; to: string }).from || (time as { from: string; to: string }).to
-        )
-          ? collectionTimes
-          : {
-              mondayFriday: { from: "", to: "" },
-              saturday: { from: "", to: "" },
-              sunday: { from: "", to: "" },
-              publicHoliday: { from: "", to: "" },
-            },
-        contractTerms: formData.contractTerms || { months: undefined, notes: "" },
-        notes: formData.notes || "",
-        isKeyAccount: formData.isKeyAccount || false,
-        keyAccountManager: formData.keyAccountManager || "",
-        assignedOpsUsers: formData.assignedOpsUsers || [],
-        groupId: formData.groupId || undefined,
-        whatsappGroupLink: formData.whatsappGroupLink || "",
-        createdAt: store?.createdAt || new Date(),
-        updatedAt: new Date(),
-      }
-
-      console.log("[handleSave] Saving store data:", storeData)
-      let savedStoreId: string
-      if (store?.id) {
-        await storeService.update(store.id, storeData)
-        savedStoreId = store.id
+      if (hasChecked) {
+        await performSave()
       } else {
-        savedStoreId = await storeService.create(storeData)
-        storeData.id = savedStoreId
-        if (formData.groupId) {
-          try {
-            await groupService.addStoreToGroup(formData.groupId, savedStoreId)
-          } catch (groupError) {
-            console.error("[handleSave] Error adding store to group:", groupError)
-          }
-        }
-        onSave(storeData)
-        onClose()
-        window.location.reload()
+        setCheckTradingName(formData.tradingName || "")
+        setCheckProvince(formData.province || "")
+        setShouldCheck(true)
+        setHasChecked(true)
         return
       }
-
-      if (formData.groupId && savedStoreId) {
-        try {
-          await groupService.addStoreToGroup(formData.groupId, savedStoreId)
-        } catch (groupError) {
-          console.error("[handleSave] Error adding store to group:", groupError)
-        }
-      }
-
-      onSave(storeData)
-      onClose()
-    } catch (error: any) {
-      console.error("[handleSave] Error saving store:", error)
-      const errorMessage = error.message || "Failed to save store or upload documents. Please try again."
-      setUploadError(errorMessage)
-
-      try {
-        const errorStoreData: Partial<Store> = {
-          id: store?.id || "",
-          hasErrors: true,
-          errorDescription: errorMessage,
-          errorSetBy: currentUserId,
-          errorSetAt: new Date(),
-          updatedAt: new Date(),
-        }
-        if (store?.id) {
-          await storeService.update(store.id, errorStoreData)
-        }
-      } catch (updateError) {
-        console.error("[handleSave] Error updating store with error information:", updateError)
-      }
-    } finally {
-      setIsUploading(false)
+    } else {
+      await performSave()
     }
   }
+
+  // Effect to perform duplicate check and proceed to save if no duplicates
+  useEffect(() => {
+    if (shouldCheck && checkTradingName && checkProvince) {
+      setShouldCheck(false)
+      const doCheckAndSave = async () => {
+        setIsCheckingDuplicates(true)
+        try {
+          const hasDuplicates = await checkDuplicates()
+          if (!hasDuplicates) {
+            await performSave()
+          }
+          // If hasDuplicates, the modal will be shown via onDuplicatesFound callback
+        } catch (error) {
+          console.error("[doCheckAndSave] Error during duplicate check:", error)
+        } finally {
+          setIsCheckingDuplicates(false)
+        }
+      }
+      doCheckAndSave()
+    }
+  }, [shouldCheck, checkTradingName, checkProvince, checkDuplicates, performSave])
 
   const getValueBagGroup = (storeType: string): 'pnp' | 'spar' | 'standard' => {
     if (storeType.includes('picknpay')) return 'pnp'
@@ -803,9 +852,9 @@ export function StoreEditModal({
                           if (el) el.style.display = el.style.display === "none" ? "block" : "none"
                         }}
                       >
-                        {Array.isArray(formData.assignedOpsIds) && formData.assignedOpsIds.length > 0
+                        {Array.isArray(formData.assignedOpsUsers) && formData.assignedOpsUsers.length > 0
                           ? opsUsers
-                              .filter((user) => formData.assignedOpsIds?.includes(user.id))
+                              .filter((user) => formData.assignedOpsUsers?.includes(user.id))
                               .map((user) => user.name || user.email || user.id)
                               .join(", ")
                           : "No operations users assigned."}
@@ -825,13 +874,13 @@ export function StoreEditModal({
                             <input
                               type="checkbox"
                               id={`ops-user-${user.id}`}
-                              checked={Array.isArray(formData.assignedOpsIds) && formData.assignedOpsIds.includes(user.id)}
+                              checked={Array.isArray(formData.assignedOpsUsers) && formData.assignedOpsUsers.includes(user.id)}
                               onChange={(e) => {
-                                const current = Array.isArray(formData.assignedOpsIds) ? formData.assignedOpsIds : []
+                                const current = Array.isArray(formData.assignedOpsUsers) ? formData.assignedOpsUsers : []
                                 const newValue = e.target.checked
                                   ? [...current, user.id]
                                   : current.filter((id) => id !== user.id)
-                                handleInputChange("assignedOpsIds", newValue)
+                                handleInputChange("assignedOpsUsers", newValue)
                               }}
                               className="h-4 w-4 text-orange-500 border-gray-300 rounded"
                             />
@@ -1381,9 +1430,9 @@ export function StoreEditModal({
             <Button
               onClick={handleSave}
               className="bg-orange-500 hover:bg-orange-600"
-              disabled={isUploading || isChecking}
+              disabled={isUploading || isChecking || isCheckingDuplicates}
             >
-              {isUploading || isChecking ? (
+              {isUploading || isChecking || isCheckingDuplicates ? (
                 <span className="flex items-center gap-2">
                   <svg
                     className="animate-spin h-5 w-5 text-white"
@@ -1394,7 +1443,7 @@ export function StoreEditModal({
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                   </svg>
-                  {isChecking ? "Checking..." : "Saving..."}
+                  {isCheckingDuplicates ? "Checking..." : isChecking ? "Checking..." : "Saving..."}
                 </span>
               ) : store?.id ? (
                 "Update"

@@ -296,36 +296,19 @@ const isSuperadmin = currentUser?.role === "superadmin";
         const store = stores.find((s) => s.id === storeId)
         if (store) {
             const payload = {
-            storeId: store.id,
             storeName: store.tradingName || 'Unknown',
-            status: store.status || 'Unknown',
             province: store.province || 'Unknown',
             trainingDate: trainingDate.toISOString(),
             launchDate: launchDate.toISOString(),
-            contactPersons: store.contactPersons?.map(person => ({
-              name: person.name || 'Unknown',
-              email: person.email || 'Unknown'
-            })) || [],
-            pushedToRolloutBy: currentUser?.id || 'Unknown',
+            pushedToRolloutBy: currentUser?.name || 'Unknown',
             pushedToRolloutAt: updates.pushedToRolloutAt.toISOString(),
 
             bankConfirmation: store.bankConfirmation || false,
             hasBankConfirmation: !!store.bankConfirmation, 
             signedSla: store.signedSla || false,
             hasSignedSla: !!store.signedSla,
-            hasCollectionTimes: store.collectionTimes && store.collectionTimes,
-            numberOfProducts: store.products ? store.products.length : 0,
-
-            missingInfo: (() => {
-              const missing: string[] = [];
-              if (!store.signedSla) missing.push("SLA");
-              if (!store.bankConfirmation) missing.push("Bank Confirmation");
-              if (!store.collectionTimes) missing.push("Collection Times");
-              if (!store.products || store.products.length === 0) missing.push("Products");
-              return missing.length > 0
-              ? `Your store is missing: ${missing.join(", ")}. Please update before launch.`
-              : "All docs loaded, well done!";
-            })(),
+            hasCollectionTimes: Array.isArray(store.collectionTimes) && store.collectionTimes.some((v) => typeof v === "number" && !isNaN(v)),
+            hasProducts: !!(store.products && store.products.length > 0),
             }
             
           console.log("DashboardProvider - Webhook payload:", JSON.stringify(payload, null, 2))

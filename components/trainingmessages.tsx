@@ -41,13 +41,13 @@ export default function VideoMessagesPage({ stores, currentUser, selectedStore, 
       "Stores Prop Details:",
       stores && Array.isArray(stores)
         ? stores.map((s) => ({
-            id: s.id,
-            tradingName: s.tradingName || "Missing tradingName",
-            products: s.products || "No products",
-            collectionTimes: s.collectionTimes || "No collection times",
-            credentials: s.credentials || "No credentials",
-            missingFields: getMissingFields(s),
-          }))
+          id: s.id,
+          tradingName: s.tradingName || "Missing tradingName",
+          products: s.products || "No products",
+          collectionTimes: s.collectionTimes || "No collection times",
+          credentials: s.credentials || "No credentials",
+          missingFields: getMissingFields(s),
+        }))
         : "No stores available"
     );
     console.log("Selected Store:", selectedStore);
@@ -145,7 +145,7 @@ Let me know if you have any questions.`,
 
     const today = new Date();
     const dayOfWeek = today.toLocaleString("en-US", { weekday: "long" }).toLowerCase();
-    
+
     let collectionTime = store.collectionTimes?.mondayFriday;
     if (dayOfWeek === "saturday") {
       collectionTime = store.collectionTimes?.saturday;
@@ -182,8 +182,8 @@ Let me know if you have any questions.`,
 
     const bagSection = availableBags.length > 0
       ? availableBags
-          .map((bag) => `${bag.emoji} ${bag.name.charAt(0).toUpperCase() + bag.name.slice(1)} Bag\n• ${bag.description}\n• Packing value: ${bag.estimatedValue}`)
-          .join("\n\n")
+        .map((bag) => `${bag.emoji} ${bag.name.charAt(0).toUpperCase() + bag.name.slice(1)} Bag\n• ${bag.description}\n• Packing value: ${bag.estimatedValue}`)
+        .join("\n\n")
       : "No specific bags configured for this store.";
 
     const credentials = store.credentials?.[0];
@@ -275,27 +275,27 @@ Let me know if you have any questions.`;
           {selectedStore && (
             <div className={`mb-4 p-4 border-l-4 rounded-md ${getMissingFields(selectedStore).length > 0 ? "bg-yellow-50 border-yellow-400" : "bg-green-50 border-green-400"}`}>
               <div className="flex items-center gap-2">
-              <p className="text-sm text-gray-800">
-                {getMissingFields(selectedStore).length > 0 ? (
-                <>
-                  <AlertTriangle size={20} className="text-yellow-600" />
-                  <strong>{selectedStore.tradingName}</strong> is missing the following:{" "}
-                  {getMissingFields(selectedStore).map((field, idx) => (
-                  <span key={field} className="text-yellow-700 font-semibold">
-                    {field}
-                    {idx < getMissingFields(selectedStore).length - 1 ? ", " : ""}
-                  </span>
-                  ))}
-                  .
-                </>
-                ) : (
-                <>
-                  <span className="text-green-700 font-semibold">
-                  <strong>{selectedStore.tradingName}</strong> has all required fields (Products, Collection Times, Credentials).
-                  </span>
-                </>
-                )}
-              </p>
+                <p className="text-sm text-gray-800">
+                  {getMissingFields(selectedStore).length > 0 ? (
+                    <>
+                      <AlertTriangle size={20} className="text-yellow-600" />
+                      <strong>{selectedStore.tradingName}</strong> is missing the following:{" "}
+                      {getMissingFields(selectedStore).map((field, idx) => (
+                        <span key={field} className="text-yellow-700 font-semibold">
+                          {field}
+                          {idx < getMissingFields(selectedStore).length - 1 ? ", " : ""}
+                        </span>
+                      ))}
+                      .
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-green-700 font-semibold">
+                        <strong>{selectedStore.tradingName}</strong> has all required fields (Products, Collection Times, Credentials).
+                      </span>
+                    </>
+                  )}
+                </p>
               </div>
             </div>
           )}
@@ -325,7 +325,8 @@ Let me know if you have any questions.`;
                   </SelectTrigger>
                   <SelectContent>
                     {stores
-                      .filter((store) => store.tradingName.toLowerCase().includes(searchQuery.toLowerCase()))
+                      .filter((store) => (store.tradingName ?? "").toLowerCase().includes(searchQuery.toLowerCase()))
+                      .filter((store) => store.id && store.id.trim() !== "") // Ensure id is non-empty
                       .map((store) => (
                         <SelectItem key={store.id} value={store.id}>
                           <div className="flex items-center gap-2">
@@ -338,9 +339,6 @@ Let me know if you have any questions.`;
                           </div>
                         </SelectItem>
                       ))}
-                    {stores.filter((store) => store.tradingName.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
-                      <p className="text-sm text-gray-500 p-2">No stores match your search.</p>
-                    )}
                   </SelectContent>
                 </Select>
               ) : (
