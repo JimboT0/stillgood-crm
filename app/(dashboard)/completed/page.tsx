@@ -7,45 +7,42 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle } from "lucide-react"
 import { formatDateTime } from "@/lib/utils/date-utils"
-import { LaunchTrainDateCell, ProvinceCell, SalespersonCell } from "@/components/cells"
-import StoreFilters from "@/components/filters/store-filter"
+import { LaunchTrainDateCell, ProvinceCell, SalespersonCell, StoreInfoCell } from "@/components/cells"
 
 export default function CompletedPage() {
   const { stores, users, currentUser } = useDashboardData()
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedProvince, setSelectedProvince] = useState("all")
-  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
-    from: undefined,
-    to: undefined,
-  })
 
-  const completedStores = stores.filter((store) => store.isSetup && store.setupConfirmed)
+
+  const completedStores = stores.filter((store) => {
+    const launchDate =
+      store.launchDate instanceof Date
+        ? store.launchDate
+        : store.launchDate?.seconds !== undefined
+        ? new Date(store.launchDate.seconds * 1000)
+        : undefined
+
+    return store.pushedToRollout === true && launchDate !== undefined && launchDate < new Date()
+  })
 
   const isSuperAdmin = currentUser?.role === "superadmin"
 
   // Filter stores based on search, province, and date range
   const filteredStores = completedStores.filter((store) => {
-    const matchesSearch = store.tradingName.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch = store.tradingName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false
     const matchesProvince = selectedProvince === "all" || store.province === selectedProvince
-    const storeDate = store.launchDate instanceof Date ? store.launchDate : new Date(store.launchDate?.seconds * 1000)
-    const matchesDate =
-      !dateRange.from ||
-      !dateRange.to ||
-      (storeDate >= dateRange.from && storeDate <= dateRange.to)
-    return matchesSearch && matchesProvince && matchesDate
+    const storeDate =
+      store.launchDate instanceof Date
+        ? store.launchDate
+        : store.launchDate?.seconds !== undefined
+        ? new Date(store.launchDate.seconds * 1000)
+        : undefined
+    return matchesSearch && matchesProvince 
   })
 
   return (
     <div className="space-y-6 w-full">
-      <StoreFilters
-        stores={stores}
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        selectedProvince={selectedProvince}
-        setSelectedProvince={setSelectedProvince}
-        dateRange={dateRange}
-        setDateRange={setDateRange}
-      />
 
       {/* Completed Stores Table */}
       <Card className="w-full">
@@ -65,23 +62,24 @@ export default function CompletedPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredStores.map((store) => (
-                <TableRow key={store.id}>
-                  <TableCell>
-                    <div className="font-medium">{store.tradingName}</div>
-                    <div className="text-sm text-gray-500">{store.streetAddress}</div>
-                  </TableCell>
-                  {isSuperAdmin ? <SalespersonCell
-                    isSuperadmin={isSuperAdmin}
-                    salespersonId={store.salespersonId}
-                    users={users}
-                  /> :null}
-                  <ProvinceCell province={store.province} />
-                  <LaunchTrainDateCell
-                    launchDate={store.launchDate}
-                    trainingDate={store.trainingDate}
-                    formatDateTime={formatDateTime}
-                  />
+              {filteredStores.map((store, idx) => (
+                <TableRow key={store.id ?? `store-row-${idx}`}>
+                    <StoreInfoCell
+                      tradingName={store.tradingName ?? ""}
+                      streetAddress={store.streetAddress ?? ""}
+                    />
+                  {isSuperAdmin ? (
+                      <SalespersonCell
+                        isSuperadmin={isSuperAdmin}
+                        salespersonId={store.salespersonId ?? ""}
+                        users={users}
+                      />
+                  ) : null}
+                    <ProvinceCell province={store.province ?? ""} />
+                    <LaunchTrainDateCell
+                      launchDate={store.launchDate}
+                      trainingDate={store.trainingDate}
+                    />
                   <TableCell>
                     <Badge className="bg-green-100 text-green-800 h">
                       <CheckCircle className="w-3 h-7 mr-1" />

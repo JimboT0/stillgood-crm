@@ -181,11 +181,9 @@ export function StoreDetailModal({
         <div className="space-y-6">
           
             <>
-              {isSuperadmin && (
+              {isSuperadmin && !store.credentials?.[0] && (
                 <div>
-                  <h3 className="text-lg font-medium mb-2">
-                    {store.credentials?.[0] ? "Edit Credentials" : "Upload Credentials"}
-                  </h3>
+                  <h3 className="text-lg font-medium mb-2">Upload Credentials</h3>
                   <form onSubmit={handleUploadCredentials} className="space-y-4">
                     <Input
                       type="text"
@@ -243,7 +241,7 @@ export function StoreDetailModal({
                       <Upload size={16} />
                       {mode === "confirmSetup" && !store.setupConfirmed
                         ? "Upload Credentials & Confirm Setup"
-                        : "Update Credentials"}
+                        : "Upload Credentials"}
                     </Button>
                   </form>
                 </div>
@@ -258,6 +256,11 @@ export function StoreDetailModal({
                   <div className="space-y-4">
                     <pre className="bg-gray-100 p-4 rounded-md text-sm whitespace-pre-wrap">
                       {`Login to admin.stillgood.co.za\n
+
+*** For Owner/Manager ONLY***
+AdminUsername: ${store.credentials[0].username ?? "UNDEFINED"}
+AdminPassword: ${store.credentials[0].password ?? "UNDEFINED"}
+*** *** *** *** *** \n
 
 Load Bags\n
 BagAdminUsername: ${store.credentials[0].bagusername ?? "UNDEFINED"}

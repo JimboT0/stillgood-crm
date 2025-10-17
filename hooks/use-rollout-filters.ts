@@ -20,8 +20,7 @@ export function useRolloutFilters(stores: Store[], users: User[]) {
       setupStatus: (store: Store, value: string) => {
         if (value === "all") return true
         if (value === "pending") return !store.isSetup
-        if (value === "setup") return store.isSetup && !store.setupConfirmed
-        if (value === "confirmed") return store.setupConfirmed
+        if (value === "confirmed") return !!store.setupConfirmed
         return true
       },
     },

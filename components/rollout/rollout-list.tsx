@@ -3,13 +3,13 @@
 
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StoreDetailModal } from "./store-detail-modal";
 import { Search, Filter, CheckCircle, Eye, Share, X, CheckCheck, FileText } from "lucide-react";
-import type { Store, User, Event, StoreOpsView } from "@/lib/firebase/types";
+import type { Store, User, Event } from "@/lib/firebase/types";
 import { Timestamp } from "firebase/firestore";
 import { formatDateTime } from "@/lib/utils/date-utils";
 import { ProvinceCell } from "@/components/cells/province-cell";
@@ -53,7 +53,7 @@ export function RolloutList({
   updateCredentials,
 }: RolloutListProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "setup" | "confirmed" | "events">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "socials_setup" | "socials_not_setup" | "admin_setup" | "admin_not_setup" | "today" | "this_week" | "this_month">("all");
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [modalMode, setModalMode] = useState<"share" | "confirmSetup">("share");
   const [documentViewModal, setDocumentViewModal] = useState<{
@@ -70,7 +70,7 @@ export function RolloutList({
   const events = Array.isArray(eventsProp) ? eventsProp : [];
   const users = Array.isArray(usersProp) ? usersProp : [];
 
-  // Date normalization function (copied from RolloutCalendar)
+  // Date normalization function (unchanged)
   const normalizeDate = (date: any): string | null => {
     if (date === null || date === undefined) {
       console.warn("Date is null or undefined");
@@ -125,61 +125,101 @@ export function RolloutList({
 
   const currentDate = new Date();
   const todayStr = normalizeDate(currentDate);
-  // Match RolloutCalendar: include current and next month
-  const calendarStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-  const calendarEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 2, 0);
-  // Yesterday for past events filter
-  const yesterday = new Date(currentDate);
-  yesterday.setDate(currentDate.getDate() - 1);
+  // Define date ranges for filters
+  const weekStart = new Date(currentDate);
+  weekStart.setDate(currentDate.getDate() - currentDate.getDay()); // Start of current week (Sunday)
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6); // End of current week (Saturday)
+  const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+  const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
-  // Combine store and custom events, matching RolloutCalendar's date range
+  // Combine store and custom events
   const allEvents: (StoreEvent | CustomEvent)[] = useMemo(() => {
-const storeEvents: StoreEvent[] = stores.flatMap((store) => {
-  const eventsList: StoreEvent[] = [];
-  const normalizedTrainingDate = normalizeDate(store.trainingDate);
-  const normalizedLaunchDate = normalizeDate(store.launchDate);
+    const storeEvents: StoreEvent[] = stores.flatMap((store) => {
+      const eventsList: StoreEvent[] = [];
+      const normalizedTrainingDate = normalizeDate(store.trainingDate);
+      const normalizedLaunchDate = normalizeDate(store.launchDate);
 
-  const trainingDate = normalizedTrainingDate ? new Date(normalizedTrainingDate) : null;
-  const launchDate = normalizedLaunchDate ? new Date(normalizedLaunchDate) : null;
+      const trainingDate = normalizedTrainingDate ? new Date(normalizedTrainingDate) : null;
+      const launchDate = normalizedLaunchDate ? new Date(normalizedLaunchDate) : null;
 
-  if (trainingDate) {
-    eventsList.push({ type: "store", store, eventType: "training", eventDate: trainingDate });
-  }
-  if (launchDate) {
-    eventsList.push({ type: "store", store, eventType: "launch", eventDate: launchDate });
-  }
-  return eventsList;
-});
+      if (trainingDate) {
+        eventsList.push({ type: "store", store, eventType: "training", eventDate: trainingDate });
+      }
+      if (launchDate) {
+        eventsList.push({ type: "store", store, eventType: "launch", eventDate: launchDate });
+      }
+      return eventsList;
+    });
 
-const customEvents: CustomEvent[] = events.map((event) => ({
-  type: "custom",
-  event,
-  eventDate: event.date ? new Date(normalizeDate(event.date)!) : null,
-}));
+    const customEvents: CustomEvent[] = events.map((event) => ({
+      type: "custom",
+      event,
+      eventDate: event.date ? new Date(normalizeDate(event.date)!) : null,
+    }));
 
     // Apply search term filter
-    return [...storeEvents, ...customEvents].filter((event) =>
-      searchTerm
-        ? event.type === "store"
-          ? event.store.tradingName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            event.store.streetAddress.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            event.store.province.toLowerCase().includes(searchTerm.toLowerCase())
-          : event.event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (event.event.description?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
-            (event.event.province?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
-        : true
-    );
-  }, [stores, events, searchTerm, calendarStart, calendarEnd]);
+    return [...storeEvents, ...customEvents].filter((event) => {
+      if (!searchTerm) return true;
+      const term = searchTerm.toLowerCase();
 
-  // Filter events by status
+      if (event.type === "store") {
+        return (
+          (event.store.tradingName?.toLowerCase().includes(term) ?? false) ||
+          (event.store.streetAddress?.toLowerCase().includes(term) ?? false) ||
+          (event.store.province?.toLowerCase().includes(term) ?? false)
+        );
+      }
+
+      return (
+        (event.event.title?.toLowerCase().includes(term) ?? false) ||
+        (event.event.description?.toLowerCase().includes(term) ?? false) ||
+        (event.event.province?.toLowerCase().includes(term) ?? false)
+      );
+    });
+  }, [stores, events, searchTerm]);
+
+  // Filter events by status and date
   const filteredEvents = useMemo(() => {
-    if (statusFilter === "all") return allEvents;
-    if (statusFilter === "pending") return allEvents.filter((event) => event.type === "store" && !event.store.isSetup);
-    if (statusFilter === "setup") return allEvents.filter((event) => event.type === "store" && event.store.isSetup && !event.store.setupConfirmed);
-    if (statusFilter === "confirmed") return allEvents.filter((event) => event.type === "store" && event.store.setupConfirmed);
-    if (statusFilter === "events") return allEvents.filter((event) => event.type === "custom");
-    return allEvents;
-  }, [allEvents, statusFilter]);
+    return allEvents.filter((event) => {
+      if (statusFilter === "all") return true;
+      if (event.type === "custom" && statusFilter !== "all") return false; // Custom events only shown in "all"
+
+      const eventDateStr = event.eventDate ? normalizeDate(event.eventDate) : null;
+      const eventDate = eventDateStr ? new Date(eventDateStr) : null;
+
+      if (statusFilter === "socials_setup") {
+        return event.type === "store" && event.store.isSocialSetup;
+      }
+      if (statusFilter === "socials_not_setup") {
+        return event.type === "store" && !event.store.isSocialSetup;
+      }
+      if (statusFilter === "admin_setup") {
+        return event.type === "store" && event.store.credentials;
+      }
+      if (statusFilter === "admin_not_setup") {
+        return event.type === "store" && !event.store.credentials;
+      }
+      if (statusFilter === "today") {
+        return eventDateStr === todayStr;
+      }
+      if (statusFilter === "this_week") {
+        return (
+          eventDate &&
+          eventDate >= weekStart &&
+          eventDate <= weekEnd
+        );
+      }
+      if (statusFilter === "this_month") {
+        return (
+          eventDate &&
+          eventDate >= monthStart &&
+          eventDate <= monthEnd
+        );
+      }
+      return true;
+    });
+  }, [allEvents, statusFilter, todayStr, weekStart, weekEnd, monthStart, monthEnd]);
 
   // Split into today's, upcoming, and past events
   const todaysEvents = filteredEvents
@@ -190,14 +230,12 @@ const customEvents: CustomEvent[] = events.map((event) => ({
     .sort((a, b) => (a.eventDate && b.eventDate ? a.eventDate.getTime() - b.eventDate.getTime() : 0));
 
   const upcomingEvents = filteredEvents
-    .filter((event) => event.eventDate && event.eventDate > currentDate && event.eventDate <= calendarEnd)
+    .filter((event) => event.eventDate && event.eventDate > currentDate)
     .sort((a, b) => (a.eventDate && b.eventDate ? a.eventDate.getTime() - b.eventDate.getTime() : 0));
 
-const pastEvents = filteredEvents
-  .filter((event) => event.eventDate && event.eventDate < currentDate)
-  .sort((a, b) =>
-    a.eventDate && b.eventDate ? b.eventDate.getTime() - a.eventDate.getTime() : 0
-  );
+  const pastEvents = filteredEvents
+    .filter((event) => event.eventDate && event.eventDate < currentDate)
+    .sort((a, b) => (a.eventDate && b.eventDate ? b.eventDate.getTime() - a.eventDate.getTime() : 0));
 
   const handleToggleSocialSetup = async (storeId: string, tradingName: string, isSocialSetup: boolean) => {
     try {
@@ -247,42 +285,41 @@ const pastEvents = filteredEvents
           <TableBody>
             {events.map((event, index) => (
               <TableRow key={`${event.type === "store" ? event.store.id : event.event.id}-${event.eventType || "custom"}-${index}`}>
-                <TableCell>
                   {event.type === "store" ? (
-                    <StoreInfoCell tradingName={event.store.tradingName} streetAddress={event.store.streetAddress} />
+                    <StoreInfoCell tradingName={event.store.tradingName || ""} streetAddress={event.store.streetAddress || ""} />
                   ) : (
-                    <div>
+                    <TableCell>
                       <div className="font-medium">{event.event.title}</div>
                       <div className="text-sm text-gray-600">{event.event.description || "N/A"}</div>
-                    </div>
+                    </TableCell>
                   )}
-                </TableCell>
-                <TableCell>
+
                   {event.type === "store" ? (
                     <SalespersonCell
                       isSuperadmin={isSuperadmin}
-                      salespersonId={event.store.salespersonId}
+                      salespersonId={event.store.salespersonId || ""}
                       users={users}
                     />
                   ) : (
                     <span className="text-sm text-gray-500">N/A</span>
                   )}
-                </TableCell>
-                <TableCell>
+
                   <ProvinceCell province={event.type === "store" ? event.store.province : event.event.province || "N/A"} />
-                </TableCell>
-                <TableCell>
+
+  
                   {event.type === "store" ? (
                     <LaunchTrainDateCell
                       launchDate={event.eventType === "launch" ? event.eventDate : null}
                       trainingDate={event.eventType === "training" ? event.eventDate : null}
                     />
                   ) : (
-                    <span className="text-sm text-gray-600">
-                      {event.eventDate ? formatDateTime(event.eventDate) : "N/A"}
-                    </span>
+                    <TableCell>
+                      <span className="text-sm text-gray-600">
+                        {event.eventDate ? formatDateTime(event.eventDate) : "N/A"}
+                      </span>
+                    </TableCell>
                   )}
-                </TableCell>
+   
                 <TableCell>
                   {event.type === "store" ? (
                     <div className="flex items-center">
@@ -290,7 +327,7 @@ const pastEvents = filteredEvents
                         <input
                           type="checkbox"
                           checked={!!event.store.isSocialSetup}
-                          onChange={() => handleToggleSocialSetup(event.store.id, event.store.tradingName, !!event.store.isSocialSetup)}
+                          onChange={() => handleToggleSocialSetup(event.store.id, event.store.tradingName || "", !!event.store.isSocialSetup)}
                           disabled={event.store.isSocialSetup || (!isSuperadmin && !isMedia)}
                           className="sr-only peer"
                           aria-label="Social Setup Confirmed"
@@ -431,7 +468,7 @@ const pastEvents = filteredEvents
         </div>
         <Select
           value={statusFilter}
-          onValueChange={(value: "all" | "pending" | "setup" | "confirmed" | "events") => setStatusFilter(value)}
+          onValueChange={(value: "all" | "socials_setup" | "socials_not_setup" | "admin_setup" | "admin_not_setup" | "today" | "this_week" | "this_month") => setStatusFilter(value)}
         >
           <SelectTrigger className="w-full sm:w-48">
             <Filter className="w-4 h-4 mr-2" />
@@ -439,10 +476,13 @@ const pastEvents = filteredEvents
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All</SelectItem>
-            <SelectItem value="pending">Pending Setup</SelectItem>
-            <SelectItem value="setup">Setup Complete</SelectItem>
-            <SelectItem value="confirmed">Confirmed</SelectItem>
-            <SelectItem value="events">Custom Events</SelectItem>
+            <SelectItem value="socials_setup">Socials Setup</SelectItem>
+            <SelectItem value="socials_not_setup">Socials Not Setup</SelectItem>
+            <SelectItem value="admin_setup">Admin Setup</SelectItem>
+            <SelectItem value="admin_not_setup">Admin Not Setup</SelectItem>
+            <SelectItem value="today">Today</SelectItem>
+            <SelectItem value="this_week">This Week</SelectItem>
+            <SelectItem value="this_month">This Month</SelectItem>
           </SelectContent>
         </Select>
       </div>

@@ -22,6 +22,7 @@ export const PROVINCES = [
   "Northern Cape",
   "North West",
   "Western Cape",
+  "Garden Route",
 ] as const;
 
 export type province = (typeof PROVINCES)[number];
@@ -119,6 +120,8 @@ export interface Store {
   pushedToRolloutAt?: Date;
   pushedToRolloutBy?: string;
   hasErrors?: boolean;
+  retrainingRequired?: boolean;
+  errors: Error[];
   errorDescription?: string;
   errorSetBy?: string;
   errorSetAt?: Date;
@@ -191,6 +194,14 @@ export interface BagInventory {
   lastUpdated: Date;
   updatedBy: string;
   updatedByName: string;
+}
+
+export interface Error {
+  id: string;
+  urgency: 1 | 2 | 3 | 4 | 5;
+  issueDescription: string;
+  issueType: "expired & spoiled" | "unexpired & spoiled" | "incorrect category" | "undervalue" | "damaged" | "invalid" | string;
+  issueTime: Date;
 }
 
 export interface BagLog {

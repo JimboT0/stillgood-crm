@@ -80,52 +80,52 @@ export function OpsList({
         setDocumentViewModal({ isOpen: true, store, documentType })
     }
 
-      const normalizeDate = (date: any): string | null => {
+    const normalizeDate = (date: any): string | null => {
         if (date === null || date === undefined) {
-          console.warn("Date is null or undefined");
-          return null;
+            console.warn("Date is null or undefined");
+            return null;
         }
-    
+
         let parsedDate: Date;
         try {
-          if (typeof date === "string") {
-            parsedDate = new Date(date);
-            if (isNaN(parsedDate.getTime())) {
-              if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(date)) {
-                const [month, day, year] = date.split("/").map(Number);
-                parsedDate = new Date(year, month - 1, day);
-              } else if (/^\d{2}-\d{2}-\d{4}$/.test(date)) {
-                const [day, month, year] = date.split("-").map(Number);
-                parsedDate = new Date(year, month - 1, day);
-              } else if (/^\d{1,2}\s+[A-Za-z]+\s+\d{4}$/.test(date)) {
+            if (typeof date === "string") {
                 parsedDate = new Date(date);
-              } else {
-                console.warn(`Unsupported date string format: ${date}`);
+                if (isNaN(parsedDate.getTime())) {
+                    if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(date)) {
+                        const [month, day, year] = date.split("/").map(Number);
+                        parsedDate = new Date(year, month - 1, day);
+                    } else if (/^\d{2}-\d{2}-\d{4}$/.test(date)) {
+                        const [day, month, year] = date.split("-").map(Number);
+                        parsedDate = new Date(year, month - 1, day);
+                    } else if (/^\d{1,2}\s+[A-Za-z]+\s+\d{4}$/.test(date)) {
+                        parsedDate = new Date(date);
+                    } else {
+                        console.warn(`Unsupported date string format: ${date}`);
+                        return null;
+                    }
+                }
+            } else if (date instanceof Timestamp) {
+                parsedDate = date.toDate();
+            } else if (typeof date === "object" && "seconds" in date && typeof date.seconds === "number") {
+                parsedDate = new Date(date.seconds * 1000);
+            } else if (date instanceof Date) {
+                parsedDate = date;
+            } else {
+                console.warn(`Invalid date type: ${JSON.stringify(date)}`);
                 return null;
-              }
             }
-          } else if (date instanceof Timestamp) {
-            parsedDate = date.toDate();
-          } else if (typeof date === "object" && "seconds" in date && typeof date.seconds === "number") {
-            parsedDate = new Date(date.seconds * 1000);
-          } else if (date instanceof Date) {
-            parsedDate = date;
-          } else {
-            console.warn(`Invalid date type: ${JSON.stringify(date)}`);
-            return null;
-          }
-    
-          if (isNaN(parsedDate.getTime())) {
-            console.warn(`Invalid date parsed: ${JSON.stringify(date)}`);
-            return null;
-          }
-    
-          return `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, "0")}-${String(parsedDate.getDate()).padStart(2, "0")}`;
+
+            if (isNaN(parsedDate.getTime())) {
+                console.warn(`Invalid date parsed: ${JSON.stringify(date)}`);
+                return null;
+            }
+
+            return `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, "0")}-${String(parsedDate.getDate()).padStart(2, "0")}`;
         } catch (error) {
-          console.error(`Error parsing date: ${JSON.stringify(date)}`, error);
-          return null;
+            console.error(`Error parsing date: ${JSON.stringify(date)}`, error);
+            return null;
         }
-      };
+    };
 
     const handleOpenModal = (store: StoreOpsView, modal: "details" | "confirmSetup") => {
         console.log(`Opening modal: ${modal} for store ${store.id}`)
@@ -203,7 +203,7 @@ export function OpsList({
             searchTerm
                 ? ("store" in event
                     ? (event.store.tradingName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      (event.store.storeId || "").toLowerCase().includes(searchTerm.toLowerCase())
+                    (event.store.storeId || "").toLowerCase().includes(searchTerm.toLowerCase())
                     : (event.event.title || "Untitled").toLowerCase().includes(searchTerm.toLowerCase()))
                 : true
         );
@@ -268,26 +268,26 @@ export function OpsList({
                     <CardDescription>Monitor and manage {title.toLowerCase()}</CardDescription>
                 </CardHeader>
             )}
-            <span className="w-full overflow-x-auto p-4">
-                <span className="block md:hidden space-y-2">
+            <div className="w-full overflow-x-auto p-4">
+                <div className="block md:hidden space-y-2">
                     {events.length === 0 ? (
-                        <span className="text-center py-2">
+                        <div className="text-center py-2">
                             <CheckCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                             <h3 className="text-lg font-medium text-gray-900 mb-2">No {title.toLowerCase()} found</h3>
                             <p className="text-gray-600">
                                 {hasActiveFilters ? "Try adjusting your search or filter criteria" : `No ${title.toLowerCase()} available`}
                             </p>
-                        </span>
+                        </div>
                     ) : (
                         events.map((event, index) => (
                             <EditCard key={`${"store" in event ? event.store.id : event.event.id}-${event.eventType}-${index}`} className="p-4 bg-gray-50">
-                                <span className="space-y-2">
-                                    <span className="flex justify-between items-center">
+                                <div className="space-y-2">
+                                    <div className="flex justify-between items-center">
                                         <h3 className="font-medium text-sm">
                                             {"store" in event ? event.store.tradingName : event.event.title}
                                         </h3>
-                                        <ProvinceCell province={"store" in event ? event.store.province : event.event.province} />
-                                    </span>
+                                        {/* <div province={"store" in event ? event.store.province : event.event.province} /> */}
+                                    </div>
                                     <span className="text-sm text-gray-600 space-y-1">
                                         <p>
                                             {"store" in event ? event.store.streetAddress || "N/A" : event.event.description || "N/A"}
@@ -352,11 +352,11 @@ export function OpsList({
                                             </Button>
                                         </span>
                                     )}
-                                </span>
+                                </div>
                             </EditCard>
                         ))
                     )}
-                </span>
+                </div>
 
                 <Table className="hidden md:table w-full" role="grid">
                     <TableHeader>
@@ -370,24 +370,25 @@ export function OpsList({
                     <TableBody>
                         {events.map((event, index) => (
                             <TableRow key={`${"store" in event ? event.store.id : event.event.id}-${event.eventType}-${index}`}>
-                                <TableCell>
+                                <>
                                     {"store" in event ? (
                                         <StoreInfoCell
                                             tradingName={event.store.tradingName || ""}
                                             streetAddress={event.store.streetAddress || ""}
                                         />
                                     ) : (
-                                        <div>
+                                        <TableCell>
                                             <div className="font-medium">{event.event.title}</div>
                                             <div className="text-sm text-gray-600">{event.event.description || "N/A"}</div>
-                                        </div>
+                                        </TableCell>
                                     )}
-                                </TableCell>
+                                </>
+
                                 <ProvinceCell province={"store" in event ? event.store.province : event.event.province} />
                                 <TableCell>
-                                    <span
-                                        className={`px-2 py-1 rounded border font-medium text-xs tracking-wide
-                      ${event.eventType === "training"
+                                    <div
+                                        className={`px-2 py-1 rounded border font-medium text-xs tracking-wide w-fit
+                                        ${event.eventType === "training"
                                                 ? "border-blue-600 text-blue-700 bg-blue-50"
                                                 : event.eventType === "launch"
                                                     ? "border-green-600 text-green-700 bg-green-50"
@@ -396,10 +397,10 @@ export function OpsList({
                                         style={{ letterSpacing: "0.05em" }}
                                     >
                                         {event.eventType === "training" ? "Training" : event.eventType === "launch" ? "Launch" : "Event"}
-                                    </span>
-                                    <span className="px-2 py-1 rounded border border-gray-300 bg-gray-50 text-gray-800 text-xs font-mono">
+                                    </div>
+                                    <div className="px-2 py-1 rounded border border-gray-300 bg-gray-50 text-gray-800 text-xs font-mono w-fit">
                                         {event.eventDate ? formatDateTimeForDisplay(event.eventDate) : "N/A"}
-                                    </span>
+                                    </div>
                                 </TableCell>
                                 <TableCell>
                                     <span className="flex items-center gap-2">
@@ -466,7 +467,7 @@ export function OpsList({
                         </p>
                     </span>
                 )}
-            </span>
+            </div>
         </Card>
     )
 
@@ -481,7 +482,7 @@ export function OpsList({
                     />
                     <StatusFilter
                         value={statusFilter}
-                        onChange={(value) => setStatusFilter(value as "all" | "coming" | "past" | "future")}
+                        onChange={(value) => setStatusFilter(value as "all" | "coming" | "past" )}
                         options={EVENT_STATUS_OPTIONS}
                         placeholder="Filter by status"
                     />
@@ -489,7 +490,6 @@ export function OpsList({
 
                 {renderEventTable(filteredEvents, "Coming Month Events", true)}
                 {pastEvents.length > 0 && statusFilter === "all" && renderEventTable(pastEvents, "Past Events")}
-                {futureEvents.length > 0 && statusFilter === "all" && renderEventTable(futureEvents, "Future Events")}
 
                 <StoreDetailsModal
                     store={selectedDetailsStore}

@@ -55,13 +55,11 @@ const isSuperadmin = currentUser?.role === "superadmin";
       const emails = filteredStores
         .flatMap((store) => store.contactPersons?.map((person) => person.email))
         .filter(Boolean);
-      console.log("Contact person emails for closed/rollout stores:", emails);
     }
   }, [stores]);
 
   useEffect(() => {
     if (!auth) {
-      console.log("DashboardProvider - Offline mode: Setting default user")
       setCurrentUser({
         id: "offline-user",
         name: "Offline User",
@@ -77,10 +75,8 @@ const isSuperadmin = currentUser?.role === "superadmin";
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
         if (firebaseUser) {
-          console.log("DashboardProvider - Fetching user data for:", firebaseUser.uid)
           const userData = await userService.getById(firebaseUser.uid)
           if (userData) {
-            console.log("DashboardProvider - User data fetched:", userData)
             setCurrentUser(userData)
           } else {
             const newUser: User = {
@@ -91,11 +87,9 @@ const isSuperadmin = currentUser?.role === "superadmin";
               createdAt: new Date(),
               updatedAt: new Date(),
             }
-            console.log("DashboardProvider - Creating new user:", newUser)
             setCurrentUser(newUser)
           }
         } else {
-          console.log("DashboardProvider - No authenticated user")
           setCurrentUser(null)
         }
       } catch (error) {
@@ -113,14 +107,12 @@ const isSuperadmin = currentUser?.role === "superadmin";
     })
 
     return () => {
-      console.log("DashboardProvider - Unsubscribing from auth state changes")
       unsubscribe()
     }
   }, [])
 
   const loadData = useCallback(async () => {
     if (!currentUser) {
-      console.log("DashboardProvider - No current user, clearing data")
       setStores([])
       setUsers([])
       setDocuments([])
@@ -129,34 +121,26 @@ const isSuperadmin = currentUser?.role === "superadmin";
 
     try {
       setLoading(true)
-      console.log("DashboardProvider - Loading data for user:", currentUser.id, { role: currentUser.role })
 
       let storesData: Store[] = []
       let usersData: User[] = []
       const documentsData = await documentService.getAll()
-      console.log("DashboardProvider - Documents fetched:", documentsData)
 
       switch (currentUser.role) {
         case "superadmin":
           storesData = await storeService.getAll()
           usersData = await userService.getAll()
-          console.log("DashboardProvider - Superadmin: Fetched stores:", storesData)
-          console.log("DashboardProvider - Superadmin: Fetched users:", usersData)
           break
         case "salesperson":
           storesData = await storeService.getBySalesperson(currentUser.id)
-          console.log("DashboardProvider - Salesperson: Fetched stores:", storesData)
           break
         case "operations":
           storesData = await storeService.getByOpsUser(currentUser.id)
-          console.log("DashboardProvider - Operations: Fetched stores:", storesData)
           break
         case "media":
           storesData = await storeService.getAll()
-          console.log("DashboardProvider - Media: Fetched stores:", storesData)
           break
         default:
-          console.log("DashboardProvider - Unknown role:", currentUser.role)
           break
       }
 
@@ -170,13 +154,11 @@ const isSuperadmin = currentUser?.role === "superadmin";
       setDocuments([])
     } finally {
       setLoading(false)
-      console.log("DashboardProvider - Data loading complete")
     }
   }, [currentUser])
 
   useEffect(() => {
     if (currentUser) {
-      console.log("DashboardProvider - Triggering data load for user:", currentUser.id)
       loadData()
     }
   }, [currentUser, loadData])
@@ -184,18 +166,15 @@ const isSuperadmin = currentUser?.role === "superadmin";
   const handleSaveStore = useCallback(
     async (updatedStore: Store) => {
       try {
-        console.log("DashboardProvider - Saving store:", updatedStore)
         if (updatedStore.id && !updatedStore.id.startsWith("store-")) {
           setStores((prev) => prev.map((s) => (s.id === updatedStore.id ? updatedStore : s)))
           await storeService.update(updatedStore.id, updatedStore)
-          console.log("DashboardProvider - Store updated:", updatedStore.id)
         } else {
           const { id, ...storeData } = updatedStore
           const newStore = { ...storeData, salespersonId: currentUser?.id || "" }
           const newId = await storeService.create(newStore)
           const createdStore = { ...newStore, id: newId, createdAt: new Date(), updatedAt: new Date() }
           setStores((prev) => [createdStore, ...prev])
-          console.log("DashboardProvider - Store created:", createdStore)
         }
       } catch (error) {
         console.error("DashboardProvider - Error saving store:", error, { storeId: updatedStore.id })
@@ -208,10 +187,8 @@ const isSuperadmin = currentUser?.role === "superadmin";
   const handleDeleteStore = useCallback(
     async (storeId: string) => {
       try {
-        console.log("DashboardProvider - Deleting store:", storeId)
         setStores((prev) => prev.filter((s) => s.id !== storeId))
         await storeService.delete(storeId)
-        console.log("DashboardProvider - Store deleted:", storeId)
       } catch (error) {
         console.error("DashboardProvider - Error deleting store:", error, { storeId })
         await loadData()
@@ -223,10 +200,8 @@ const isSuperadmin = currentUser?.role === "superadmin";
   const handleStatusChange = useCallback(
     async (storeId: string, newStatus: Store["status"]) => {
       try {
-        console.log("DashboardProvider - Updating store status:", { storeId, newStatus })
         setStores((prev) => prev.map((s) => (s.id === storeId ? { ...s, status: newStatus } : s)))
         await storeService.update(storeId, { status: newStatus })
-        console.log("DashboardProvider - Store status updated:", { storeId, newStatus })
       } catch (error) {
         console.error("DashboardProvider - Error updating store status:", error, { storeId, newStatus })
         await loadData()
@@ -240,11 +215,9 @@ const isSuperadmin = currentUser?.role === "superadmin";
       const store = stores.find((s) => s.id === storeId)
       if (store) {
         try {
-          console.log("DashboardProvider - Toggling setup for store:", storeId)
           const newSetupStatus = !store.isSetup
           setStores((prev) => prev.map((s) => (s.id === storeId ? { ...s, isSetup: newSetupStatus } : s)))
           await storeService.update(storeId, { isSetup: newSetupStatus })
-          console.log("DashboardProvider - Setup toggled:", { storeId, newSetupStatus })
         } catch (error) {
           console.error("DashboardProvider - Error toggling setup:", error, { storeId })
           await loadData()
@@ -257,7 +230,6 @@ const isSuperadmin = currentUser?.role === "superadmin";
   const handleSetupConfirmation = useCallback(
     async (storeId: string) => {
       try {
-        console.log("DashboardProvider - Confirming setup for store:", storeId)
         const updates = {
           setupConfirmed: true,
           setupConfirmedBy: currentUser?.id,
@@ -265,7 +237,6 @@ const isSuperadmin = currentUser?.role === "superadmin";
         }
         setStores((prev) => prev.map((s) => (s.id === storeId ? { ...s, ...updates } : s)))
         await storeService.update(storeId, updates)
-        console.log("DashboardProvider - Setup confirmed:", { storeId })
       } catch (error) {
         console.error("DashboardProvider - Error confirming setup:", error, { storeId })
         await loadData()
@@ -277,7 +248,6 @@ const isSuperadmin = currentUser?.role === "superadmin";
   const handlePushToRollout = useCallback(
     async (storeId: string, trainingDate: Date, launchDate: Date) => {
       try {
-        console.log("DashboardProvider - Pushing store to rollout:", { storeId, trainingDate, launchDate })
         const updates = {
           trainingDate,
           launchDate,
@@ -288,11 +258,9 @@ const isSuperadmin = currentUser?.role === "superadmin";
         const cleanUpdates = Object.fromEntries(Object.entries(updates).filter(([_, value]) => value !== undefined))
         setStores((prev) => prev.map((s) => (s.id === storeId ? { ...s, ...cleanUpdates } : s)))
         await storeService.update(storeId, cleanUpdates)
-        console.log("DashboardProvider - Store pushed to rollout:", { storeId })
 
         // Notify via n8n webhook with enhanced store data
         const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL as string;
-        console.log("DashboardProvider - Preparing webhook call to:", webhookUrl)
         const store = stores.find((s) => s.id === storeId)
         if (store) {
             const payload = {
@@ -311,19 +279,16 @@ const isSuperadmin = currentUser?.role === "superadmin";
             hasProducts: !!(store.products && store.products.length > 0),
             }
             
-          console.log("DashboardProvider - Webhook payload:", JSON.stringify(payload, null, 2))
           const response = await fetch(webhookUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
           })
-          console.log("DashboardProvider - Webhook response status:", response.status, response.statusText)
           if (!response.ok) {
             const errorText = await response.text().catch(() => 'No response body')
             console.error("DashboardProvider - Webhook failed:", { status: response.status, statusText: response.statusText, errorText })
             throw new Error(`Webhook failed with status ${response.status}: ${errorText}`)
           }
-          console.log("DashboardProvider - Webhook sent successfully to n8n")
         } else {
           console.error("DashboardProvider - Store not found for webhook:", { storeId })
           throw new Error(`Store with ID ${storeId} not found for webhook`)
@@ -346,7 +311,6 @@ const isSuperadmin = currentUser?.role === "superadmin";
   const handleMarkAsError = useCallback(
     async (storeId: string, errorDescription: string) => {
       try {
-        console.log("DashboardProvider - Marking store as error:", { storeId, errorDescription })
         const updates = {
           hasErrors: true,
           errorDescription,
@@ -356,7 +320,6 @@ const isSuperadmin = currentUser?.role === "superadmin";
         const cleanUpdates = Object.fromEntries(Object.entries(updates).filter(([_, value]) => value !== undefined))
         setStores((prev) => prev.map((s) => (s.id === storeId ? { ...s, ...cleanUpdates } : s)))
         await storeService.update(storeId, cleanUpdates)
-        console.log("DashboardProvider - Store marked as error:", { storeId })
       } catch (error) {
         console.error("DashboardProvider - Error marking store as error:", error, { storeId, errorDescription })
         await loadData()
@@ -368,7 +331,6 @@ const isSuperadmin = currentUser?.role === "superadmin";
   const handleClearError = useCallback(
     async (storeId: string) => {
       try {
-        console.log("DashboardProvider - Clearing error for store:", storeId)
         const updates = {
           hasErrors: false,
           errorDescription: null,
@@ -377,7 +339,6 @@ const isSuperadmin = currentUser?.role === "superadmin";
         }
         setStores((prev) => prev.map((s) => (s.id === storeId ? { ...s, ...updates } : s)))
         await storeService.update(storeId, updates)
-        console.log("DashboardProvider - Error cleared for store:", { storeId })
       } catch (error) {
         console.error("DashboardProvider - Error clearing store error:", error, { storeId })
         await loadData()
@@ -389,7 +350,6 @@ const isSuperadmin = currentUser?.role === "superadmin";
   const handleCreateUser = useCallback(
     async (userData: { name: string; email: string; password: string; role: User["role"] }) => {
       try {
-        console.log("DashboardProvider - Creating user:", userData)
         if (currentUser?.role !== "superadmin") {
           throw new Error("Only superadmins can create users")
         }
@@ -405,12 +365,10 @@ const isSuperadmin = currentUser?.role === "superadmin";
         }
 
         const newUserId = await userService.create(userData, credentials)
-        console.log("DashboardProvider - User created with ID:", newUserId)
 
         const newUser = await userService.getById(newUserId)
         if (newUser) {
           setUsers((prev) => [newUser, ...prev])
-          console.log("DashboardProvider - New user added to state:", newUser)
         } else {
           const localUser: User = {
             id: newUserId,
@@ -421,7 +379,6 @@ const isSuperadmin = currentUser?.role === "superadmin";
             updatedAt: new Date(),
           }
           setUsers((prev) => [localUser, ...prev])
-          console.log("DashboardProvider - Local user added to state:", localUser)
         }
       } catch (error) {
         console.error("DashboardProvider - Error creating user:", error, { userData })
@@ -434,10 +391,8 @@ const isSuperadmin = currentUser?.role === "superadmin";
   const handleUpdateUser = useCallback(
     async (userId: string, updates: Partial<User>) => {
       try {
-        console.log("DashboardProvider - Updating user:", { userId, updates })
         setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, ...updates } : u)))
         await userService.update(userId, updates)
-        console.log("DashboardProvider - User updated:", { userId })
       } catch (error) {
         console.error("DashboardProvider - Error updating user:", error, { userId, updates })
         await loadData()
@@ -449,10 +404,8 @@ const isSuperadmin = currentUser?.role === "superadmin";
   const handleDeleteUser = useCallback(
     async (userId: string) => {
       try {
-        console.log("DashboardProvider - Deleting user:", userId)
         setUsers((prev) => prev.filter((u) => u.id !== userId))
         await userService.delete(userId)
-        console.log("DashboardProvider - User deleted:", userId)
       } catch (error) {
         console.error("DashboardProvider - Error deleting user:", error, { userId })
         await loadData()
@@ -492,7 +445,6 @@ const isSuperadmin = currentUser?.role === "superadmin";
         },
       });
     } catch (error) {
-      console.log("Updating credentials for store:", { storeId, credentials });
       toast.error("Failed to update credentials", {
         style: {
           background: "#fff",

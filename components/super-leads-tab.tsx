@@ -18,9 +18,8 @@ import type { Store, User } from "@/lib/firebase/types"
 import { SearchInput, StatusFilter, AssignedOpsFilter, FilterBar, LEAD_STATUS_OPTIONS } from "@/components/shared/filters"
 import { useState } from "react"
 import { StoreDetailModal } from "./rollout/store-detail-modal"
-import { Checkbox } from "@/components/ui/checkbox" // Assuming you have a Checkbox component from shadcn/ui
-import { Label } from "@/components/ui/label"
 import { AssignedOpsCell } from "./cells/assigned-ops-cell"
+import { startOfWeek, endOfWeek, subWeeks, startOfMonth, subMonths } from "date-fns" // Add date-fns for date manipulation
 
 interface LeadsTabProps {
     stores: Store[]
@@ -55,12 +54,11 @@ export function SuperLeadsTab({
     const [searchTerm, setSearchTerm] = useState<string>("")
     const [statusFilter, setStatusFilter] = useState<string>("")
     const [assignedOpsFilter, setAssignedOpsFilter] = useState<string>("")
-
     const [provinceFilter, setProvinceFilter] = useState<string>("")
-    // State for modal
+    const [dateFilter, setDateFilter] = useState<string>("All") // New state for date filter
+
     const [selectedStore, setSelectedStore] = useState<Store | null>(null)
     const [modalMode, setModalMode] = useState<"share" | "confirmSetup">("share")
-    // State for column visibility
     const [columnVisibility, setColumnVisibility] = useState({
         Creator: true,
         Assigned: true,
@@ -77,10 +75,11 @@ export function SuperLeadsTab({
         searchTerm,
         statusFilter,
         provinceFilter,
+        dateFilter,
     }
 
     const hasActiveFilters =
-        !!salespersonFilter || !!searchTerm || !!statusFilter || !!provinceFilter
+        !!salespersonFilter || !!searchTerm || !!statusFilter || !!provinceFilter || dateFilter !== "All"
 
     const clearFilters = () => {
         setSalespersonFilter("")
@@ -88,6 +87,7 @@ export function SuperLeadsTab({
         setStatusFilter("")
         setAssignedOpsFilter("")
         setProvinceFilter("")
+        setDateFilter("All")
     }
 
     const handleDeleteClick = (storeId: string, storeName: string) => {
@@ -110,7 +110,15 @@ export function SuperLeadsTab({
         label: province,
     }))
 
-    // Helper to handle "All" selection for filters
+    // Date filter options
+    const dateFilterOptions = [
+        { value: "All", label: "All Time" },
+        { value: "This Week", label: "This Week" },
+        { value: "Previous Week", label: "Previous Week" },
+        { value: "Past Month", label: "Past Month" },
+    ]
+
+    // Helper to handle filter changes
     const handleStatusChange = (value: string) => {
         setStatusFilter(value)
         if (value === "All") clearFilters()
@@ -123,44 +131,79 @@ export function SuperLeadsTab({
         setProvinceFilter(value)
         if (value === "All") clearFilters()
     }
+    const handleDateChange = (value: string) => {
+        setDateFilter(value)
+        if (value === "All") clearFilters()
+    }
 
-    // Filter stores based on filters
-    const filteredStores = stores.filter((store) => {
-        const matchesSearch =
-            !filters.searchTerm ||
-            store.tradingName?.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-            store.streetAddress?.toLowerCase().includes(filters.searchTerm.toLowerCase())
+    // Date range helper
+    const getDateRange = (filter: string) => {
+        const now = new Date()
+        switch (filter) {
+            case "This Week":
+                return { start: startOfWeek(now, { weekStartsOn: 1 }), end: endOfWeek(now, { weekStartsOn: 1 }) }
+            case "Previous Week":
+                return {
+                    start: startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 }),
+                    end: endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 }),
+                }
+            case "Past Month":
+                return { start: startOfMonth(subMonths(now, 1)), end: now }
+            default:
+                return { start: null, end: null }
+        }
+    }
 
-        const matchesStatus =
-            !filters.statusFilter || filters.statusFilter === "All" || store.status === filters.statusFilter
+    // Filter and sort stores
+    const filteredStores = stores
+        .filter((store) => {
+            const matchesSearch =
+                !filters.searchTerm ||
+                store.tradingName?.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+                store.streetAddress?.toLowerCase().includes(filters.searchTerm.toLowerCase())
 
-        const matchesAssignedOps =
-            !filters.assignedOpsFilter || filters.assignedOpsFilter === "All" || store.assignedOpsIds?.includes(filters.assignedOpsFilter)
+            const matchesStatus =
+                !filters.statusFilter || filters.statusFilter === "All" || store.status === filters.statusFilter
 
-        const matchesSalesperson =
-            !filters.salespersonFilter || filters.salespersonFilter === "All" || store.salespersonId === filters.salespersonFilter
+            const matchesAssignedOps =
+                !filters.assignedOpsFilter ||
+                filters.assignedOpsFilter === "All" ||
+                store.assignedOpsIds?.includes(filters.assignedOpsFilter)
 
-        const matchesProvince =
-            !filters.provinceFilter || filters.provinceFilter === "All" || store.province === filters.provinceFilter
+            const matchesSalesperson =
+                !filters.salespersonFilter ||
+                filters.salespersonFilter === "All" ||
+                store.salespersonId === filters.salespersonFilter
 
-        return matchesSearch && matchesStatus && matchesSalesperson && matchesAssignedOps && matchesProvince
-    })
+            const matchesProvince =
+                !filters.provinceFilter ||
+                filters.provinceFilter === "All" ||
+                store.province === filters.provinceFilter
 
-    // Handler to open the modal
+            const { start, end } = getDateRange(filters.dateFilter)
+            const matchesDate =
+                !start || !end || !store.createdAt
+                    ? true
+                    : new Date(store.createdAt) >= start && new Date(store.createdAt) <= end
+
+            return matchesSearch && matchesStatus && matchesSalesperson && matchesAssignedOps && matchesProvince && matchesDate
+        })
+        .sort((a, b) => {
+            // Sort by createdAt in descending order (most recent first)
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        })
+
     const handleOpenModal = (store: Store, mode: "share" | "confirmSetup") => {
         setSelectedStore(store)
         setModalMode(mode)
     }
 
-    // Handler for column visibility toggle
     const toggleColumn = (column: keyof typeof columnVisibility) => {
         setColumnVisibility((prev) => ({
             ...prev,
             [column]: !prev[column],
         }))
     }
-
-    console.log(stores)
 
     return (
         <div className="space-y-6 w-full">
@@ -191,6 +234,12 @@ export function SuperLeadsTab({
                     options={[{ value: "All", label: "All Locations" }, ...provinceOptions]}
                     placeholder="Filter by location"
                 />
+                <StatusFilter
+                    value={filters.dateFilter}
+                    onChange={handleDateChange}
+                    options={dateFilterOptions}
+                    placeholder="Filter by date"
+                />
                 {hasActiveFilters && (
                     <Button variant="outline" onClick={clearFilters} className="w-full sm:w-auto bg-transparent">
                         Clear Filters
@@ -207,10 +256,9 @@ export function SuperLeadsTab({
                             key={column}
                             type="button"
                             onClick={() => toggleColumn(column as keyof typeof columnVisibility)}
-                            className={`px-3 py-1 rounded-full transition-colors text-sm font-medium ${isVisible
-                                ? "bg-black text-white"
-                                : "bg-gray-100 text-gray-400"
-                                }`}
+                            className={`px-3 py-1 rounded-full transition-colors text-sm font-medium ${
+                                isVisible ? "bg-black text-white" : "bg-gray-100 text-gray-400"
+                            }`}
                         >
                             {column}
                         </button>
@@ -231,7 +279,6 @@ export function SuperLeadsTab({
                                 <TableHead>Store</TableHead>
                                 {columnVisibility.Creator && <TableHead>Creator</TableHead>}
                                 {columnVisibility.Assigned && <TableHead>Ops</TableHead>}
-                                {/* <TableHead>ID</TableHead> */}
                                 <TableHead>Status</TableHead>
                                 {columnVisibility.Contact && <TableHead>Contact</TableHead>}
                                 {columnVisibility.Location && <TableHead>Location</TableHead>}
@@ -251,14 +298,11 @@ export function SuperLeadsTab({
                                     {columnVisibility.Assigned && (
                                         <AssignedOpsCell isSuperadmin={isSuperadmin} users={users} assignedOpsIds={store.assignedOpsIds ?? []} />
                                     )}
-                                    {/* <TableCell>{store.id}</TableCell> */}
                                     <StoreStatusBadge status={store.status} isKeyAccount={!!store.isKeyAccount} />
                                     {columnVisibility.Contact && (
                                         <ContactsCell contactPersons={store.contactPersons ?? []} />
                                     )}
-
                                     {columnVisibility.Location && <ProvinceCell province={store.province} />}
-
                                     {columnVisibility.Dates && (
                                         <LaunchTrainDateCell
                                             launchDate={store.launchDate}
@@ -267,10 +311,7 @@ export function SuperLeadsTab({
                                     )}
                                     {columnVisibility.Docs && <DocumentsCell store={store} onViewDocument={onViewDocument} />}
                                     {columnVisibility.Contract && (
-                                        <ContractTermsCell
-                                            contractTerms={store.contractTerms}
-                                            // isKeyAccount={!!store.isKeyAccount}
-                                        />
+                                        <ContractTermsCell contractTerms={store.contractTerms} />
                                     )}
                                     <TableCell>
                                         <div className="flex gap-1">
@@ -324,6 +365,3 @@ export function SuperLeadsTab({
         </div>
     )
 }
-
-
-

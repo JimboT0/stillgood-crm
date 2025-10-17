@@ -221,13 +221,13 @@ export function RolloutCalendar({
         {hasEvents && (
           <div className="flex flex-col items-center mt-2">
             <div
-              className={`w-6 h-6 flex items-center justify-center rounded-full text-white text-xs font-bold mb-1 ${
+              className={`w-7 h-7 flex items-center justify-center rounded-full text-white text-xs font-bold mb-1 ${
                 day === new Date().getDate() &&
                 currentDate.getMonth() === new Date().getMonth() &&
                 currentDate.getFullYear() === new Date().getFullYear()
                   ? "bg-green-600"
                   : new Date(currentDate.getFullYear(), currentDate.getMonth(), day) <= new Date()
-                  ? "bg-orange-500"
+                  ? "bg-gray-500/50"
                   : "bg-blue-600"
               }`}
             >

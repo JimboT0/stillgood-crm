@@ -12,7 +12,7 @@ import {
   orderBy,
 } from "firebase/firestore"
 import { db } from "../config"
-import type { Store } from "../types"
+import type { Store, StoreOpsView } from "../types"
 import { safeDateToTimestamp } from "../../utils"
 import { parseFirestoreDate } from "@/lib/date-validation"
 
@@ -72,6 +72,8 @@ export const storeService = {
       return []
     }
   },
+
+  
 
   async getBySalesperson(salespersonId: string): Promise<Store[]> {
     try {

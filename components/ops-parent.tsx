@@ -62,7 +62,7 @@ export function OpsParent({ stores: initialStores = [], events: initialEvents = 
   })
   const isSuperadmin = currentUser?.role === "superadmin";
 
-  // Handle authentication state
+  // // Handle authentication state
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
@@ -102,46 +102,46 @@ export function OpsParent({ stores: initialStores = [], events: initialEvents = 
   }, [])
 
   // Fetch store and event data
-  useEffect(() => {
-    const loadData = async () => {
-      if (!currentUser) return
-      setLoading(true)
-      try {
-        console.log("[OpsParent] Loading data for user:", currentUser.email)
-        const storesData = await storeService.getAll()
-        const eventsData = await eventService.getAll()
-        console.log(
-          "[OpsParent] Loaded stores:",
-          storesData.map((s) => ({
-            id: s.id,
-            tradingName: s.tradingName,
-            trainingDate: s.trainingDate ? { seconds: s.trainingDate.seconds, nanoseconds: s.trainingDate.nanoseconds } : null,
-            launchDate: s.launchDate ? { seconds: s.launchDate.seconds, nanoseconds: s.launchDate.nanoseconds } : null,
-          }))
-        )
-        console.log(
-          "[OpsParent] Loaded events:",
-          eventsData.map((e) => ({
-            id: e.id,
-            title: e.title,
-            description: e.description,
-            province: e.province,
-            date: e.date ? { seconds: e.date.seconds, nanoseconds: e.date.nanoseconds } : null,
-          }))
-        )
-        setStores(storesData)
-        setEvents(eventsData)
-      } catch (error) {
-        console.error("[OpsParent] Error loading data:", error)
-        setStores([])
-        setEvents([])
-      } finally {
-        setLoading(false)
-      }
-    }
+  // useEffect(() => {
+  //   const loadData = async () => {
+  //     if (!currentUser) return
+  //     setLoading(true)
+  //     try {
+  //       console.log("[OpsParent] Loading data for user:", currentUser.email)
+  //       const storesData = await storeService.getAll()
+  //       const eventsData = await eventService.getAll()
+  //       console.log(
+  //         "[OpsParent] Loaded stores:",
+  //         storesData.map((s) => ({
+  //           id: s.id,
+  //           tradingName: s.tradingName,
+  //           trainingDate: s.trainingDate ? { seconds: s.trainingDate.seconds, nanoseconds: s.trainingDate.nanoseconds } : null,
+  //           launchDate: s.launchDate ? { seconds: s.launchDate.seconds, nanoseconds: s.launchDate.nanoseconds } : null,
+  //         }))
+  //       )
+  //       console.log(
+  //         "[OpsParent] Loaded events:",
+  //         eventsData.map((e) => ({
+  //           id: e.id,
+  //           title: e.title,
+  //           description: e.description,
+  //           province: e.province,
+  //           date: e.date ? { seconds: e.date.seconds, nanoseconds: e.date.nanoseconds } : null,
+  //         }))
+  //       )
+  //       setStores(storesData)
+  //       setEvents(eventsData)
+  //     } catch (error) {
+  //       console.error("[OpsParent] Error loading data:", error)
+  //       setStores([])
+  //       setEvents([])
+  //     } finally {
+  //       setLoading(false)
+  //     }
+  //   }
 
-    loadData()
-  }, [currentUser])
+  //   loadData()
+  // }, [currentUser])
 
   // Filter stores based on status and province
   const filteredStores = useMemo(() => {

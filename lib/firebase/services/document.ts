@@ -71,7 +71,6 @@ export const documentService = {
       const q = query(collection(db, "documents"), orderBy("uploadedAt", "desc"));
       const querySnapshot = await getDocs(q);
       const documents = querySnapshot.docs.map(convertFirestoreToDocument);
-      console.log("documentService - Fetched all documents:", documents.length);
       return documents;
     } catch (error: any) {
       console.error("documentService - getAll error:", error);
