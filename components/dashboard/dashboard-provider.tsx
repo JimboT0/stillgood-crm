@@ -263,20 +263,33 @@ const isSuperadmin = currentUser?.role === "superadmin";
         const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL as string;
         const store = stores.find((s) => s.id === storeId)
         if (store) {
-            const payload = {
-            storeName: store.tradingName || 'Unknown',
-            province: store.province || 'Unknown',
-            trainingDate: trainingDate.toISOString(),
-            launchDate: launchDate.toISOString(),
-            pushedToRolloutBy: currentUser?.name || 'Unknown',
-            pushedToRolloutAt: updates.pushedToRolloutAt.toISOString(),
+            const hasCollectionTimes = (() => {
+              const ct = store.collectionTimes
+              if (!ct) return false
+              const mf = ct.mondayFriday
+              if (!mf) return false
+              const from = (mf.from ?? "").toString()
+              const to = (mf.to ?? "").toString()
+              const hasNumber = (s: string) => /\d/.test(s)
+              if (from === "" && to === "") return false
+              return hasNumber(from) || hasNumber(to)
+            })()
 
-            bankConfirmation: store.bankConfirmation || false,
-            hasBankConfirmation: !!store.bankConfirmation, 
-            signedSla: store.signedSla || false,
-            hasSignedSla: !!store.signedSla,
-            hasCollectionTimes: Array.isArray(store.collectionTimes) && store.collectionTimes.some((v) => typeof v === "number" && !isNaN(v)),
-            hasProducts: !!(store.products && store.products.length > 0),
+            const payload = {
+              storeName: store.tradingName || 'Unknown',
+              province: store.province || 'Unknown',
+              trainingDate: trainingDate.toISOString(),
+              launchDate: launchDate.toISOString(),
+              pushedToRolloutBy: currentUser?.name || 'Unknown',
+              pushedToRolloutAt: updates.pushedToRolloutAt.toISOString(),
+
+              bankConfirmation: store.bankConfirmation || false,
+              hasBankConfirmation: !!store.bankConfirmation,
+              signedSla: store.signedSla || false,
+              hasSignedSla: !!store.signedSla,
+              hasCollectionTimes,
+              hasProducts: store.products?.[0]?.name != null,
+              email: currentUser?.email || 'Unknown',
             }
             
           const response = await fetch(webhookUrl, {

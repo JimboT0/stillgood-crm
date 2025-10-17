@@ -202,6 +202,7 @@ export interface Error {
   issueDescription: string;
   issueType: "expired & spoiled" | "unexpired & spoiled" | "incorrect category" | "undervalue" | "damaged" | "invalid" | string;
   issueTime: Date;
+  staffProcedure: "Packing" | "Collection" | "Wasting" | "Other"
 }
 
 export interface BagLog {

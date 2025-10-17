@@ -270,7 +270,7 @@ const performSave = useCallback(async () => {
         subcategory: null,
         url,
         storeId: store?.id || `new-${Date.now()}`,
-        uploadedBy: currentUserId,
+        uploadedBy: currentUserId || "",
         uploadedAt: new Date(),
       };
     }

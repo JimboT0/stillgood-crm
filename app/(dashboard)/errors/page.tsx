@@ -1,50 +1,48 @@
 
+"use client"
 
-
-"use client";
-
-import { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, CheckCircle, Calendar, Trash2, Pencil, RotateCcw, AlertCircle, AlertTriangle, Siren, Skull, BatteryWarningIcon, CircleAlert, OctagonAlert } from "lucide-react";
-import { StoreOpsView, User, Error } from "@/lib/firebase/types";
-import { formatDateTime } from "@/lib/utils/date-utils";
-import toast, { Toaster } from "react-hot-toast";
-import { ProvinceCell } from "@/components/cells/province-cell";
-import { doc, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
-import { useDashboardData } from "@/components/dashboard/dashboard-provider";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandInput, CommandItem, CommandList, CommandEmpty, CommandGroup } from "@/components/ui/command";
-import { ChevronsUpDown, Check } from "lucide-react";
-import { cn } from "@/lib/utils";
-
-
+import { useState, useMemo } from "react"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Search, CheckCircle, Calendar, Trash2, Pencil, RotateCcw, AlertCircle, AlertTriangle, Siren, Skull, CircleAlert, OctagonAlert } from "lucide-react"
+import { StoreOpsView, User, Error as StoreError } from "@/lib/firebase/types"
+import { formatDateTime } from "@/lib/utils/date-utils"
+import toast, { Toaster } from "react-hot-toast"
+import { ProvinceCell } from "@/components/cells/province-cell"
+import { doc, updateDoc } from "firebase/firestore"
+import { db } from "@/lib/firebase/config"
+import { useDashboardData } from "@/components/dashboard/dashboard-provider"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandInput, CommandItem, CommandList, CommandEmpty, CommandGroup } from "@/components/ui/command"
+import { ChevronsUpDown, Check } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Textarea } from "@/components/ui/textarea"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 
 export default function ErrorPage() {
-  const { stores, users, currentUser, loading } = useDashboardData();
-  console.log("ErrorPage stores:", stores); // Debug
-  console.log("ErrorPage currentUser:", currentUser); // Debug
+  const { stores, users, currentUser, loading } = useDashboardData()
+  console.log("ErrorPage stores:", stores)
+  console.log("ErrorPage currentUser:", currentUser)
 
-  const [selectedStoreId, setSelectedStoreId] = useState<string>("");
-  const [storeSearchTerm, setStoreSearchTerm] = useState(""); // For searchable store dropdown
-  const [urgency, setUrgency] = useState<1 | 2 | 3 | 4 | 5 | "">("");
-  const [issueDescription, setIssueDescription] = useState("");
+  const [selectedStoreId, setSelectedStoreId] = useState<string>("")
+  const [storeSearchTerm, setStoreSearchTerm] = useState("")
+  const [urgency, setUrgency] = useState<1 | 2 | 3 | 4 | 5 | "">("")
+  const [issueDescription, setIssueDescription] = useState("")
+  const [staffProcedure, setStaffProcedure] = useState<"Packing" | "Collection" | "Wasting" | "Other" | "">("")
   const [issueType, setIssueType] = useState<
     "expired & spoiled" | "unexpired & spoiled" | "incorrect category" | "undervalue" | "damaged" | "invalid" | ""
-  >("");
-  const [issueDate, setIssueDate] = useState<string>("");
-  const [searchTerm, setSearchTerm] = useState(""); // For table/card search
-  const [sortMode, setSortMode] = useState<"errors-desc" | "errors-asc">("errors-desc");
-  const [editError, setEditError] = useState<{ storeId: string; error: Error } | null>(null);
-  const isSuperadmin = currentUser?.role === "superadmin";
-  const [reloadTrigger, setReloadTrigger] = useState(0);
-
-
+  >("")
+  const [issueDate, setIssueDate] = useState<string>("")
+  const [searchTerm, setSearchTerm] = useState("")
+  const [sortMode, setSortMode] = useState<"errors-desc" | "errors-asc">("errors-desc")
+  const [editError, setEditError] = useState<{ storeId: string; error: StoreError } | null>(null)
+  const [selectedDescription, setSelectedDescription] = useState<string>("")
+  const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false)
+  const isSuperadmin = currentUser?.role === "superadmin"
 
   // Available issue types
   const issueTypes = [
@@ -54,197 +52,204 @@ export default function ErrorPage() {
     "undervalue",
     "damaged",
     "invalid",
-  ] as const;
+  ] as const
+
+  // Staff procedure options
+  const staffProcedures = ["Packing", "Collection", "Wasting", "Other"] as const
 
   // Handle form submission for new error
   const handleSubmitError = async () => {
-    if (!selectedStoreId || !urgency || !issueDescription || !issueType || !issueDate) {
+    if (!selectedStoreId || !urgency || !issueDescription || !issueType || !issueDate || !staffProcedure) {
       toast.error("Please fill in all required fields", {
         style: { background: "#fff", color: "#111827", border: "1px solid #f97316" },
-      });
-      return;
+      })
+      return
     }
-
 
     if (stores.length === 0) {
       toast.error("No stores available to log errors", {
         style: { background: "#fff", color: "#111827", border: "1px solid #f97316" },
-      });
-      return;
+      })
+      return
     }
 
     try {
-      const store = stores.find((s) => s.id === selectedStoreId);
+      const store = stores.find((s) => s.id === selectedStoreId)
       if (!store) {
         toast.error("Selected store not found", {
           style: { background: "#fff", color: "#111827", border: "1px solid #f97316" },
-        });
-        return;
+        })
+        return
       }
 
-      const newError: Error = {
+      const newError: StoreError = {
         id: `error-${Date.now()}`,
         urgency: urgency as 1 | 2 | 3 | 4 | 5,
         issueDescription,
-        issueType: issueType as Error["issueType"],
+        issueType: issueType as StoreError["issueType"],
+        staffProcedure: staffProcedure as StoreError["staffProcedure"],
         issueTime: new Date(issueDate),
-      };
+      }
 
       // Update Firestore
       await updateDoc(doc(db, "stores", store.id), {
         errors: [...(store.errors || []), newError],
-      });
+      })
 
       toast.success("Error logged successfully!", {
         style: { background: "#fff", color: "#111827", border: "1px solid #f97316" },
-      });
+      })
 
       // Reset form
-      setUrgency("");
-      setIssueDescription("");
-      setIssueType("");
-      setIssueDate("");
+      setUrgency("")
+      setIssueDescription("")
+      setIssueType("")
+      setStaffProcedure("")
+      setIssueDate("")
+      setSelectedStoreId("")
     } catch (error) {
-      console.error("Error logging error:", error);
+      console.error("Error logging error:", error)
       toast.error("Failed to log error", {
         style: { background: "#fff", color: "#111827", border: "1px solid #f97316" },
-      });
+      })
     }
-  };
+  }
 
   // Handle edit error
   const handleEditError = async () => {
-    if (!editError || !urgency || !issueDescription || !issueType || !issueDate) {
+    if (!editError || !urgency || !issueDescription || !issueType || !issueDate || !staffProcedure) {
       toast.error("Please fill in all required fields", {
         style: { background: "#fff", color: "#111827", border: "1px solid #f97316" },
-      });
-      return;
+      })
+      return
     }
 
     try {
-      const store = stores.find((s) => s.id === editError.storeId);
+      const store = stores.find((s) => s.id === editError.storeId)
       if (!store) {
         toast.error("Store not found", {
           style: { background: "#fff", color: "#111827", border: "1px solid #f97316" },
-        });
-        return;
+        })
+        return
       }
 
       const updatedErrors = (store.errors || []).map((err) =>
         err.id === editError.error.id
           ? {
-            ...err,
-            urgency: urgency as 1 | 2 | 3 | 4 | 5,
-            issueDescription,
-            issueType: issueType as Error["issueType"],
-            issueTime: new Date(issueDate),
-          }
+              ...err,
+              urgency: urgency as 1 | 2 | 3 | 4 | 5,
+              issueDescription,
+              issueType: issueType as StoreError["issueType"],
+              staffProcedure: staffProcedure as StoreError["staffProcedure"],
+              issueTime: new Date(issueDate),
+            }
           : err
-      );
+      )
 
       // Update Firestore
       await updateDoc(doc(db, "stores", store.id), {
         errors: updatedErrors,
-      });
+      })
 
       toast.success("Error updated successfully!", {
         style: { background: "#fff", color: "#111827", border: "1px solid #f97316" },
-      });
+      })
 
       // Reset form and close modal
-      setEditError(null);
-      setUrgency("");
-      setIssueDescription("");
-      setIssueType("");
-      setIssueDate("");
+      setEditError(null)
+      setUrgency("")
+      setIssueDescription("")
+      setIssueType("")
+      setStaffProcedure("")
+      setIssueDate("")
     } catch (error) {
-      console.error("Error updating error:", error);
+      console.error("Error updating error:", error)
       toast.error("Failed to update error", {
         style: { background: "#fff", color: "#111827", border: "1px solid #f97316" },
-      });
+      })
     }
-  };
+  }
 
   // Handle delete error
   const handleDeleteError = async (storeId: string, errorId: string) => {
     try {
-      const store = stores.find((s) => s.id === storeId);
+      const store = stores.find((s) => s.id === storeId)
       if (!store) {
         toast.error("Store not found", {
           style: { background: "#fff", color: "#111827", border: "1px solid #f97316" },
-        });
-        return;
+        })
+        return
       }
 
-      const updatedErrors = (store.errors || []).filter((err) => err.id !== errorId);
+      const updatedErrors = (store.errors || []).filter((err) => err.id !== errorId)
 
       // Update Firestore
       await updateDoc(doc(db, "stores", store.id), {
         errors: updatedErrors,
-      });
+      })
 
       toast.success("Error deleted successfully!", {
         style: { background: "#fff", color: "#111827", border: "1px solid #f97316" },
-      });
+      })
     } catch (error) {
-      console.error("Error deleting error:", error);
+      console.error("Error deleting error:", error)
       toast.error("Failed to delete error", {
         style: { background: "#fff", color: "#111827", border: "1px solid #f97316" },
-      });
+      })
     }
-  };
+  }
 
   // Set date to today or yesterday
   const setDateToToday = () => {
-    const today = new Date();
+    const today = new Date()
     setIssueDate(
       `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`
-    );
-  };
+    )
+  }
 
   const setDateToYesterday = () => {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
     setIssueDate(
       `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, "0")}-${String(yesterday.getDate()).padStart(2, "0")}`
-    );
-  };
+    )
+  }
 
   // Reset filters
   const resetFilters = () => {
-    setSearchTerm("");
-    setSortMode("errors-desc");
-  };
+    setSearchTerm("")
+    setSortMode("errors-desc")
+  }
 
   // Filter stores for dropdown (searchable)
   const filteredDropdownStores = useMemo(() => {
-    if (!storeSearchTerm) return stores;
+    if (!storeSearchTerm) return stores
     return stores.filter((store) =>
       store.tradingName?.toLowerCase().includes(storeSearchTerm.toLowerCase())
-    );
-  }, [stores, storeSearchTerm]);
+    )
+  }, [stores, storeSearchTerm])
 
   // Filter and sort stores for errors and stores views
   const filteredAndSortedStores = useMemo(() => {
-    let result = stores;
+    let result = stores
 
     // Apply text search (always active)
     if (searchTerm) {
       result = result.filter((store) =>
         store.tradingName?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      )
     }
 
     // Sort by number of errors
     result = [...result].sort((a, b) => {
-      const aErrors = (a.errors || []).length;
-      const bErrors = (b.errors || []).length;
-      return sortMode === "errors-desc" ? bErrors - aErrors : aErrors - bErrors;
-    });
+      const aErrors = (a.errors || []).length
+      const bErrors = (b.errors || []).length
+      return sortMode === "errors-desc" ? bErrors - aErrors : aErrors - bErrors
+    })
 
-    console.log("ErrorPage filtered and sorted stores:", result); // Debug
-    return result;
-  }, [stores, searchTerm, sortMode]);
+    console.log("ErrorPage filtered and sorted stores:", result)
+    return result
+  }, [stores, searchTerm, sortMode])
 
   // Get all errors across filtered and sorted stores for errors view
   const allErrors = useMemo(() => {
@@ -257,34 +262,39 @@ export default function ErrorPage() {
               ? error.issueTime
               : (typeof error.issueTime === "object" && error.issueTime !== null && "toDate" in error.issueTime)
                 ? (error.issueTime as { toDate: () => Date }).toDate()
-                : new Date(error.issueTime as string); // fallback
+                : new Date(error.issueTime as string) // fallback
 
-          return { store, error: { ...error, issueTime } };
+          return { store, error: { ...error, issueTime } }
         })
       )
-      .sort((a, b) => b.error.issueTime.getTime() - a.error.issueTime.getTime());
-    return errors;
-  }, [filteredAndSortedStores]);
+      .sort((a, b) => b.error.issueTime.getTime() - a.error.issueTime.getTime())
+    return errors
+  }, [filteredAndSortedStores])
 
   // Get stores with errors for stores view (filtered and sorted)
   const storesWithErrors = useMemo(() => {
-    return filteredAndSortedStores.filter((store) => (store.errors || []).length > 0);
-  }, [filteredAndSortedStores]);
+    return filteredAndSortedStores.filter((store) => (store.errors || []).length > 0)
+  }, [filteredAndSortedStores])
 
   // Open edit modal
-  const openEditModal = (storeId: string, error: Error) => {
-    setEditError({ storeId, error });
-    setUrgency(error.urgency);
-    setIssueDescription(error.issueDescription);
-    setIssueType(error.issueType as typeof issueType);
+  const openEditModal = (storeId: string, error: StoreError) => {
+    setEditError({ storeId, error })
+    setUrgency(error.urgency)
+    setIssueDescription(error.issueDescription)
+    setIssueType(error.issueType as typeof issueType)
+    setStaffProcedure(error.staffProcedure || "")
     setIssueDate(
       `${error.issueTime.getFullYear()}-${String(error.issueTime.getMonth() + 1).padStart(2, "0")}-${String(
         error.issueTime.getDate()
       ).padStart(2, "0")}`
-    );
-  };
+    )
+  }
 
-
+  // Open description modal
+  const openDescriptionModal = (description: string) => {
+    setSelectedDescription(description)
+    setIsDescriptionModalOpen(true)
+  }
 
   if (loading) {
     return (
@@ -296,16 +306,15 @@ export default function ErrorPage() {
           <p className="text-gray-600">Loading error log data...</p>
         </div>
       </div>
-    );
+    )
   }
 
-  // Authentication check
   if (!currentUser) {
     return (
       <div className="text-red-500 text-center py-4" role="alert">
         Please log in to view the error log.
       </div>
-    );
+    )
   }
 
   return (
@@ -319,14 +328,10 @@ export default function ErrorPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-2">
             <Popover>
               <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  className="justify-between w-full"
-                >
+                <Button variant="outline" role="combobox" className="justify-between w-full">
                   <span className="truncate max-w-[180px] block">
                     {editError
                       ? stores.find((s) => s.id === editError.storeId)?.tradingName || "Select Store"
@@ -339,15 +344,19 @@ export default function ErrorPage() {
               </PopoverTrigger>
               <PopoverContent className="p-0 w-[300px]">
                 <Command>
-                  <CommandInput placeholder="Search store..." />
+                  <CommandInput
+                    placeholder="Search store..."
+                    value={storeSearchTerm}
+                    onValueChange={setStoreSearchTerm}
+                  />
                   <CommandList>
                     <CommandEmpty>No store found.</CommandEmpty>
                     <CommandGroup>
-                      {stores.map((store) => (
+                      {filteredDropdownStores.map((store) => (
                         <CommandItem
                           key={store.id}
                           onSelect={() => {
-                            if (!editError) setSelectedStoreId(store.id);
+                            if (!editError) setSelectedStoreId(store.id)
                           }}
                           className="flex items-center justify-between"
                         >
@@ -364,88 +373,162 @@ export default function ErrorPage() {
                   </CommandList>
                 </Command>
               </PopoverContent>
-            </Popover>   <Select
-              value={urgency.toString()}
-              onValueChange={(value) => setUrgency(Number(value) as 1 | 2 | 3 | 4 | 5)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select Urgency" />
-              </SelectTrigger>
-              <SelectContent>
-                {[
-                  { level: 1, icon: <AlertCircle size={16} className="mr-2 text-blue-500" />, label: "Minor" },
-                  { level: 2, icon: <OctagonAlert size={16} className="mr-2 text-purple-500" />, label: "Low" },
-                  { level: 3, icon: <AlertTriangle size={16} className="mr-2 text-yellow-500" />, label: "Moderate" },
-                  { level: 4, icon: <Siren size={16} className="mr-2 text-orange-500" />, label: "High" },
-                  { level: 5, icon: <Skull size={16} className="mr-2 text-red-500" />, label: "Critical" },
-                ].map(({ level, icon, label }) => (
-                  <SelectItem key={level} value={level.toString()}>
-                    <div className="flex items-center">
-                      {icon}
-                      {level} - {label}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            </Popover>
 
-            <Input
-              placeholder="Issue Description"
-              value={issueDescription}
-              onChange={(e) => setIssueDescription(e.target.value)}
-            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" role="combobox" className="justify-between w-full">
+                  <span className="truncate max-w-[180px] block">
+                    {urgency
+                      ? (() => {
+                          switch (urgency) {
+                            case 1:
+                              return "1 - Minor"
+                            case 2:
+                              return "2 - Low"
+                            case 3:
+                              return "3 - Moderate"
+                            case 4:
+                              return "4 - High"
+                            case 5:
+                              return "5 - Critical"
+                            default:
+                              return "Select Urgency"
+                          }
+                        })()
+                      : "Select Urgency"}
+                  </span>
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="p-0 w-[300px]">
+                <Command>
+                  <CommandInput placeholder="Search urgency..." />
+                  <CommandList>
+                    <CommandEmpty>No urgency found.</CommandEmpty>
+                    <CommandGroup>
+                      {[
+                        { level: 1, icon: <AlertCircle size={16} className="mr-2 text-blue-500" />, label: "Minor" },
+                        { level: 2, icon: <OctagonAlert size={16} className="mr-2 text-purple-500" />, label: "Low" },
+                        { level: 3, icon: <AlertTriangle size={16} className="mr-2 text-yellow-500" />, label: "Moderate" },
+                        { level: 4, icon: <Siren size={16} className="mr-2 text-orange-500" />, label: "High" },
+                        { level: 5, icon: <Skull size={16} className="mr-2 text-red-500" />, label: "Critical" },
+                      ].map(({ level, icon, label }) => (
+                        <CommandItem
+                          key={level}
+                          onSelect={() => setUrgency(level as 1 | 2 | 3 | 4 | 5)}
+                          className="flex items-center justify-between"
+                        >
+                          <div className="flex items-center">
+                            {icon}
+                            <span>{level} - {label}</span>
+                          </div>
+                          <Check
+                            className={cn(
+                              "h-4 w-4",
+                              urgency === level ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
 
-            <Select value={issueType} onValueChange={(value) => setIssueType(value as typeof issueType)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select Issue Type" />
-              </SelectTrigger>
-              <SelectContent>
-                {issueTypes.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" role="combobox" className="justify-between w-full">
+                  <span className="truncate max-w-[180px] block">
+                    {issueDescription
+                      ? issueDescription
+                      : issueType
+                        ? issueType
+                        : "Issue description & type"}
+                  </span>
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="p-3 w-[320px]">
+                <div className="flex flex-col gap-2">
+                  <Textarea
+                    placeholder="Issue Description"
+                    value={issueDescription}
+                    onChange={(e) => setIssueDescription(e.target.value)}
+                    rows={4}
+                  />
+                  <Select value={issueType} onValueChange={(value) => setIssueType(value as typeof issueType)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select Issue Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {issueTypes.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </PopoverContent>
+            </Popover>
 
-            <div className="flex flex-col gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="justify-between w-full">
+                  <span className="truncate max-w-[180px] block">
+                    {staffProcedure ? staffProcedure : "Staff Procedure"}
+                  </span>
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="p-2 w-[320px]">
+                <div className="flex flex-col gap-1">
+                  {staffProcedures.map((value) => (
+                    <Button
+                      key={value}
+                      variant={staffProcedure === value ? "secondary" : "ghost"}
+                      onClick={() => setStaffProcedure(value)}
+                      className="justify-start"
+                    >
+                      {value}
+                    </Button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            <div className="flex flex-col md:flex-row gap-1">
               <Input
                 type="date"
                 value={issueDate}
                 onChange={(e) => setIssueDate(e.target.value)}
-                className="w-full"
+                className="w-[70%]"
               />
+              <div className="flex flex-row gap-1">
+                <Button
+                  onClick={setDateToToday}
+                  size="icon"
+                  className="py-2 text-[7px] h-8 text-xs"
+                  style={{ minWidth: "5px" }}
+                >
+                  T
+                </Button>
+                <Button
+                  onClick={setDateToYesterday}
+                  size="icon"
+                  className="py-2 text-[7px] h-8 text-xs"
+                  style={{ minWidth: "5px" }}
+                >
+                  Y
+                </Button>
+              </div>
             </div>
 
-            <div className="flex flex-row gap-1">
+            <div className="flex flex-col gap-1">
               <Button
-                onClick={setDateToToday}
-                size="icon"
-                className="py-2 text-[10px] h-8 text-xs"
-                style={{ minWidth: "10px" }}
-              >
-                T
-              </Button>
-              <Button
-                onClick={setDateToYesterday}
-                size="icon"
-                className="py-2 text-[10px] h-8 text-xs"
-                style={{ minWidth: "10px" }}
-              >
-                Y
-              </Button>
-              </div>   
-              <div className="flex gap-2">
-              <Button
-                onClick={async () => {
-                  if (editError) {
-                    await handleEditError();
-                  } else {
-                    await handleSubmitError();
-                  }
-                  setReloadTrigger((prev) => prev + 1);
-                  window.location.reload();
-                }}
+                onClick={editError ? handleEditError : handleSubmitError}
                 disabled={stores.length === 0}
                 className="border-2 border-red-400 bg-white hover:bg-red-200 text-red-400"
               >
@@ -505,6 +588,7 @@ export default function ErrorPage() {
                     <TableHead>Urgency</TableHead>
                     <TableHead>Issue Type</TableHead>
                     <TableHead>Issue Description</TableHead>
+                    <TableHead>Staff Procedure</TableHead>
                     <TableHead>Issue Date</TableHead>
                     <TableHead>Errors Count</TableHead>
                     <TableHead>Actions</TableHead>
@@ -525,46 +609,70 @@ export default function ErrorPage() {
                                     <AlertCircle size={14} />
                                     Minor
                                   </span>
-                                );
+                                )
                               case 2:
                                 return (
                                   <span className="flex items-center gap-1 px-2 py-1 rounded text-xs bg-purple-100 text-purple-800">
                                     <OctagonAlert size={14} />
                                     Low
                                   </span>
-                                );
+                                )
                               case 3:
                                 return (
                                   <span className="flex items-center gap-1 px-2 py-1 rounded text-xs bg-yellow-100 text-yellow-800">
                                     <AlertTriangle size={14} />
                                     Moderate
                                   </span>
-                                );
+                                )
                               case 4:
                                 return (
                                   <span className="flex items-center gap-1 px-2 py-1 rounded text-xs bg-orange-100 text-orange-800">
                                     <Siren size={14} />
                                     High
                                   </span>
-                                );
+                                )
                               case 5:
                                 return (
                                   <span className="flex items-center gap-1 px-2 py-1 rounded text-xs bg-red-100 text-red-800">
                                     <Skull size={14} />
                                     Critical
                                   </span>
-                                );
+                                )
                               default:
-                                return <span className="text-gray-600">N/A</span>;
+                                return <span className="text-gray-600">N/A</span>
                             }
                           })()}
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
-                        <span className="flex items-center justify-center gap-1 p-2 rounded text-xs bg-gray-100 text-orange-400">
+                        <div className="flex items-center justify-center gap-1 p-2 rounded text-xs bg-gray-100 text-orange-400">
                           {error.issueType}
-                        </span>
-                      </TableCell>   <TableCell>{error.issueDescription}</TableCell>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Dialog open={isDescriptionModalOpen} onOpenChange={setIsDescriptionModalOpen}>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              className="text-left p-0 h-auto truncate max-w-[200px] block"
+                              onClick={() => openDescriptionModal(error.issueDescription)}
+                            >
+                              {error.issueDescription}
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Issue Description</DialogTitle>
+                            </DialogHeader>
+                            <div className="mt-2">
+                              <p className="text-gray-600">{selectedDescription}</p>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {error.staffProcedure || "N/A"}
+                      </TableCell>
                       <TableCell>{formatDateTime(error.issueTime)}</TableCell>
                       <TableCell>{(store.errors || []).length}</TableCell>
                       <TableCell>
@@ -572,10 +680,7 @@ export default function ErrorPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => {
-                              openEditModal(store.id, error);
-                              setReloadTrigger((prev) => prev + 1);
-                            }}
+                            onClick={() => openEditModal(store.id, error)}
                             disabled={!isSuperadmin}
                           >
                             <Pencil size={16} />
@@ -583,16 +688,12 @@ export default function ErrorPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={async () => {
-                              await handleDeleteError(store.id, error.id);
-                              setReloadTrigger((prev) => prev + 1);
-                              window.location.reload(); // Reload the page after action
-                            }}
+                            onClick={() => handleDeleteError(store.id, error.id)}
                             disabled={!isSuperadmin}
-
                           >
                             <Trash2 size={16} />
-                          </Button>   </div>
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -674,5 +775,5 @@ export default function ErrorPage() {
         </TabsContent>
       </Tabs>
     </div>
-  );
+  )
 }
