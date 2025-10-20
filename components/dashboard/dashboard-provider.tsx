@@ -301,6 +301,21 @@ const isSuperadmin = currentUser?.role === "superadmin";
             const errorText = await response.text().catch(() => 'No response body')
             console.error("DashboardProvider - Webhook failed:", { status: response.status, statusText: response.statusText, errorText })
             throw new Error(`Webhook failed with status ${response.status}: ${errorText}`)
+          } else {
+            console.info("DashboardProvider - Successfully pushed to rollout and notified webhook:", {
+              storeId,
+              storeName: store.tradingName,
+              trainingDate: trainingDate.toISOString(),
+              launchDate: launchDate.toISOString(),
+              webhookStatus: response.status,
+            })
+            toast.success(`Pushed "${store.tradingName}" to rollout and notified webhook`, {
+              style: {
+                background: "#fff",
+                color: "#111827",
+                border: "1px solid #10b981",
+              },
+            })
           }
         } else {
           console.error("DashboardProvider - Store not found for webhook:", { storeId })
