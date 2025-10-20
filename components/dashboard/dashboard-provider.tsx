@@ -302,7 +302,7 @@ const isSuperadmin = currentUser?.role === "superadmin";
             console.error("DashboardProvider - Webhook failed:", { status: response.status, statusText: response.statusText, errorText })
             throw new Error(`Webhook failed with status ${response.status}: ${errorText}`)
           } else {
-            console.info("DashboardProvider - Successfully pushed to rollout and notified webhook:", {
+            console.info("Dash Prov. Successfully pushed to rollout and notified webhook:", {
               storeId,
               storeName: store.tradingName,
               trainingDate: trainingDate.toISOString(),
