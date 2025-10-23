@@ -65,6 +65,10 @@ OrderPassword: ${cred.orderpassword}`;
                 <pre className="bg-gray-100 p-4 rounded-md text-sm whitespace-pre-wrap">
                   {`Login to admin.stillgood.co.za\n
 
+***Admin/Management/Owner ONLY***\n
+BagAdminUsername: ${store.credentials[0].bagusername ?? "UNDEFINED"}
+BagAdminPassword: ${store.credentials[0].bagpassword ?? "UNDEFINED"}
+
 Load Bags\n
 BagAdminUsername: ${store.credentials[0].bagusername ?? "UNDEFINED"}
 BagAdminPassword: ${store.credentials[0].bagpassword ?? "UNDEFINED"}

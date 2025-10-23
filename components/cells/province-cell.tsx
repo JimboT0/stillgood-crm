@@ -19,6 +19,7 @@ export const ProvinceCell: React.FC<ProvinceCellProps> = ({ province }) => {
     "Northern Cape": "NC",
     "Free State": "FS",
     "North West": "NW",
+    "Garden Route": "WC",
   }
 
   const abbreviation = provinceMap[province] || province

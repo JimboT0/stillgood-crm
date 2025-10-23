@@ -61,8 +61,7 @@ export function LeadsTab({
     status: store.status,
   })))
 
-  const isSuperadmin = currentUser?.role === "superadmin" || currentUser?.role === "salesperson"
-
+  const isSuperadmin = currentUser?.role === "superadmin";
   return (
     <div className="space-y-6 w-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -103,8 +102,8 @@ export function LeadsTab({
             <TableHeader>
               <TableRow>
                 <TableHead>Store</TableHead>
-                {isSuperadmin ? (<TableHead>Creator</TableHead>) : null }
-                {isSuperadmin ? (<TableHead>Assigned</TableHead>) : null }
+                {isSuperadmin && (<TableHead>Creator</TableHead>) }
+                {isSuperadmin && (<TableHead>Assigned</TableHead>) }
                 <TableHead>Status</TableHead>
                 <TableHead>Contact</TableHead>
                 <TableHead>Location</TableHead>

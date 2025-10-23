@@ -11,8 +11,6 @@ import { LaunchTrainDateCell, ProvinceCell, SalespersonCell, StoreInfoCell } fro
 
 export default function CompletedPage() {
   const { stores, users, currentUser } = useDashboardData()
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedProvince, setSelectedProvince] = useState("all")
 
 
   const completedStores = stores.filter((store) => {
@@ -28,18 +26,6 @@ export default function CompletedPage() {
 
   const isSuperAdmin = currentUser?.role === "superadmin"
 
-  // Filter stores based on search, province, and date range
-  const filteredStores = completedStores.filter((store) => {
-    const matchesSearch = store.tradingName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false
-    const matchesProvince = selectedProvince === "all" || store.province === selectedProvince
-    const storeDate =
-      store.launchDate instanceof Date
-        ? store.launchDate
-        : store.launchDate?.seconds !== undefined
-        ? new Date(store.launchDate.seconds * 1000)
-        : undefined
-    return matchesSearch && matchesProvince 
-  })
 
   return (
     <div className="space-y-6 w-full">
@@ -62,7 +48,7 @@ export default function CompletedPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredStores.map((store, idx) => (
+              {stores.map((store, idx) => (
                 <TableRow key={store.id ?? `store-row-${idx}`}>
                     <StoreInfoCell
                       tradingName={store.tradingName ?? ""}
@@ -91,7 +77,7 @@ export default function CompletedPage() {
             </TableBody>
           </Table>
 
-          {filteredStores.length === 0 && (
+          {stores.length === 0 && (
             <div className="text-center py-8">
               <CheckCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No completed stores</h3>

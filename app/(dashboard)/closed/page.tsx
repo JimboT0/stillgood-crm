@@ -50,7 +50,7 @@ async function handlePushStoreToRollout(store: Store, trainingDate?: Date, launc
         finalTrainingDate = new Date(
           store.trainingDate.seconds * 1000 + (store.trainingDate.nanoseconds || 0) / 1000000,
         )
-      } else if (store.trainingDate instanceof Date) {
+      } else if ((store.trainingDate as any) instanceof Date) {
         // It's already a Date object
         finalTrainingDate = store.trainingDate
       } else if (typeof store.trainingDate === "string") {
@@ -73,7 +73,7 @@ async function handlePushStoreToRollout(store: Store, trainingDate?: Date, launc
         if (typeof store.launchDate === "object" && "seconds" in store.launchDate) {
           // It's a Firebase Timestamp object
           finalLaunchDate = new Date(store.launchDate.seconds * 1000 + (store.launchDate.nanoseconds || 0) / 1000000)
-        } else if (store.launchDate instanceof Date) {
+        } else if ((store.launchDate as any) instanceof Date) {
           // It's already a Date object
           finalLaunchDate = store.launchDate
         } else if (typeof store.launchDate === "string") {
@@ -124,7 +124,7 @@ async function handlePushStoreToRollout(store: Store, trainingDate?: Date, launc
       await handlePushToRollout(store.id, finalTrainingDate, finalLaunchDate)
     } catch (error) {
       console.error("Error pushing to rollout:", error)
-      alert("Failed to push to rollout: " + error.message)
+      alert("Failed to push to rollout: " + error)
     }
   }
 
