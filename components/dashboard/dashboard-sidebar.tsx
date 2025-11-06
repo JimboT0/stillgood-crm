@@ -158,13 +158,6 @@ const navigationItems = [
     icon: MessageCircle,
     roles: ["superadmin", "operations", "salesperson"],
   },
-  //   {
-  //   title: "Refunds",
-  //   url: "/refunds",
-  //   icon: HandCoins,
-  //   roles: ["superadmin", "operations", "media", "salesperson"],
-  //   getCount: (counts: Record<string, number>) => counts.refunds,
-  // },
   {
     title: "SuperLeads",
     url: "/superleads",
