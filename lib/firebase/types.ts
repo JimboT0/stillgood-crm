@@ -5,7 +5,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: "superadmin" | "salesperson" | "operations" | "media";
+  role: "superadmin" | "salesperson" | "operations" | "media" | "Magos";
   createdAt: Date;
   updatedAt: Date;
   assignedStores?: string[];

@@ -17,24 +17,34 @@ export const SalespersonCell: React.FC<SalespersonCellProps> = ({
   className = "",
 }) => {
   const getSalespersonName = (salespersonId: string) => {
-    const salesperson = users.find((user) => user.id === salespersonId)
+    if (!salespersonId) return "Unknown"
+    const salesperson = users?.find((user) => user.id === salespersonId)
     return salesperson?.name || "Unknown"
   }
 
   const getSalespersonInitials = (salespersonId: string) => {
-    const salesperson = users.find((user) => user.id === salespersonId)
+    if (!salespersonId) return "?"
+    const salesperson = users?.find((user) => user.id === salespersonId)
+    if (!salesperson?.name) return "?"
     return (
-      salesperson?.name
-        ?.split(" ")
+      salesperson.name
+        .split(" ")
         .map((n) => n[0])
         .join("") || "?"
     )
   }
 
-  if (!isSuperadmin) return null
+  // Show cell if superadmin OR if explicitly requested (for creator column)
+  // The isSuperadmin prop is now used to determine visibility, but we can also show it for creator column
+  if (!isSuperadmin && !salespersonId) return null
 
   const name = getSalespersonName(salespersonId)
   const initials = getSalespersonInitials(salespersonId)
+
+  // Log if user not found for debugging
+  if (!users?.find((user) => user.id === salespersonId) && salespersonId) {
+    console.log(`[SalespersonCell] User not found for salespersonId: ${salespersonId}, users count: ${users?.length || 0}`)
+  }
 
   return (
     <TableCell className={className}>

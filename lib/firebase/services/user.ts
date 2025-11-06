@@ -93,14 +93,25 @@ export const userService = {
 
   async getById(id: string): Promise<User | null> {
     try {
+      console.log(`[userService.getById] Loading user with id: ${id}`)
       const docRef = doc(db, "users", id)
       const docSnap = await getDoc(docRef)
+      
       if (docSnap.exists()) {
-        return convertFirestoreToUser(docSnap)
+        const userData = convertFirestoreToUser(docSnap)
+        console.log(`[userService.getById] User found:`, {
+          id: userData.id,
+          email: userData.email,
+          role: userData.role,
+          name: userData.name
+        })
+        return userData
+      } else {
+        console.log(`[userService.getById] No user document found with id: ${id}`)
+        return null
       }
-      return null
     } catch (error) {
-      console.error("Error getting user:", error)
+      console.error("[userService.getById] Error getting user:", error, { userId: id })
       return null
     }
   },

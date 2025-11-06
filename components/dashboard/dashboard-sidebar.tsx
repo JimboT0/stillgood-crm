@@ -65,7 +65,7 @@ const navigationItems = [
     getCount: (counts: Record<string, number>) => counts.rollout,
   },
   {
-    title: "My Leads",
+    title: "Leads",
     url: "/leads",
     icon: Building2,
     roles: ["superadmin", "salesperson"],
@@ -131,7 +131,7 @@ const navigationItems = [
     title: "Ops Calendar",
     url: "/",
     icon: Calendar,
-    roles: ["superadmin", "operations", "media", "salesperson"],
+    roles: ["superadmin", "operations", "media", "salesperson", "Magos"],
     getCount: (counts: Record<string, number>) => counts.opsCalendar,
   },
   {

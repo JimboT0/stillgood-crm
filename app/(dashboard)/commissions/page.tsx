@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ExternalLink } from "lucide-react"
 import { storeService } from "@/lib/firebase/services/store"
-import { formatDateTime } from "@/lib/utils/date-utils"
+import { formatDateTime, toJavaScriptDate } from "@/lib/utils/date-utils"
 import type { Store } from "@/lib/firebase/types"
 import { Label } from "@/components/ui/label"
 
@@ -35,13 +35,13 @@ function CommissionsPage() {
           let expiryStatus: "expired" | "today" | "active" = "active"
           let daysRemaining: number = 0
 
-          if (store.contractTerms?.months && store.createdAt) {
-            const createdAt = new Date(store.createdAt)
-            if (isNaN(createdAt.getTime())) {
-              console.warn(`[AccountsPage] Invalid createdAt for store ${store.id}`)
+          if (store.contractTerms?.months && store.launchDate) {
+            const launchDate = toJavaScriptDate(store.launchDate)
+            if (!launchDate) {
+              console.warn(`[AccountsPage] Invalid launchDate for store ${store.id}`)
               return { ...store, expiryDate: null, expiryStatus: "active" as "expired" | "today" | "active", daysRemaining: 0 }
             }
-            expiryDate = new Date(createdAt)
+            expiryDate = new Date(launchDate)
             expiryDate.setMonth(expiryDate.getMonth() + (store.contractTerms.months || 0))
             const diffMs = expiryDate.getTime() - now.getTime()
             daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
@@ -51,7 +51,7 @@ function CommissionsPage() {
           return { ...store, expiryDate, expiryStatus, daysRemaining }
         })
 
-        // Sort stores: those with commissions by expiryDate (latest to earliest), then those without by createdAt (latest to earliest)
+        // Sort stores: those with commissions by expiryDate (latest to earliest), then those without by launchDate (latest to earliest)
         const sortedStores = processedStores.sort((a, b) => {
           if (a.expiryDate && b.expiryDate) {
             return b.expiryDate.getTime() - a.expiryDate.getTime() // Latest expiry first
@@ -60,12 +60,12 @@ function CommissionsPage() {
           } else if (b.expiryDate) {
             return 1
           } else {
-            const aCreated = a.createdAt ? new Date(a.createdAt).getTime() : 0
-            const bCreated = b.createdAt ? new Date(b.createdAt).getTime() : 0
-            return bCreated - aCreated // Latest createdAt first for non-commission stores
+            const aLaunch = a.launchDate ? (toJavaScriptDate(a.launchDate)?.getTime() || 0) : 0
+            const bLaunch = b.launchDate ? (toJavaScriptDate(b.launchDate)?.getTime() || 0) : 0
+            return bLaunch - aLaunch // Latest launchDate first for non-commission stores
           }
         })
-
+        
         setStores(sortedStores)
         setError(null)
       } catch (error: any) {
@@ -146,20 +146,42 @@ function CommissionsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredStores.map((store) => (
-                    <TableRow key={store.id} className="hover:bg-gray-50">
-                      <TableCell className="px-6 py-4 font-medium">{store.tradingName}</TableCell>
-                      <TableCell className="px-6 py-4">
-                        {store.createdAt ? formatDateTime(new Date(store.createdAt)) : "N/A"}
-                      </TableCell>
-                      <TableCell className="px-6 py-4">
-                        {store.contractTerms?.months
-                          ? `${store.contractTerms.months} month${store.contractTerms.months !== 1 ? "s" : ""}`
-                          : "None"}
-                      </TableCell>
-                      <TableCell className="px-6 py-4">
-                        {store.expiryDate ? formatDateTime(store.expiryDate) : "N/A"}
-                      </TableCell>
+                  {filteredStores.map((store) => {
+                    // Ensure dates are properly converted for display
+                    // Handle launchDate - could be Date, Timestamp, or object with seconds
+                    let launchDateDate: Date | null = null
+                    if (store.launchDate) {
+                      if (store.launchDate instanceof Date) {
+                        launchDateDate = isNaN(store.launchDate.getTime()) ? null : store.launchDate
+                      } else {
+                        launchDateDate = toJavaScriptDate(store.launchDate)
+                      }
+                    }
+                    
+                    // expiryDate is already a Date from our processing, but double-check
+                    let expiryDateDate: Date | null = null
+                    if (store.expiryDate) {
+                      if (store.expiryDate instanceof Date) {
+                        expiryDateDate = isNaN(store.expiryDate.getTime()) ? null : store.expiryDate
+                      } else {
+                        expiryDateDate = toJavaScriptDate(store.expiryDate)
+                      }
+                    }
+                    
+                    return (
+                      <TableRow key={store.id} className="hover:bg-gray-50">
+                        <TableCell className="px-6 py-4 font-medium">{store.tradingName}</TableCell>
+                        <TableCell className="px-6 py-4">
+                          {launchDateDate ? formatDateTime(launchDateDate, "N/A") : "N/A"}
+                        </TableCell>
+                        <TableCell className="px-6 py-4">
+                          {store.contractTerms?.months
+                            ? `${store.contractTerms.months} month${store.contractTerms.months !== 1 ? "s" : ""}`
+                            : "None"}
+                        </TableCell>
+                        <TableCell className="px-6 py-4">
+                          {expiryDateDate ? formatDateTime(expiryDateDate, "N/A") : "N/A"}
+                        </TableCell>
                       <TableCell className="px-6 py-4">
                         {store.contractTerms?.months ? (
                           <Badge
@@ -196,7 +218,8 @@ function CommissionsPage() {
                         )}
                       </TableCell>
                     </TableRow>
-                  ))}
+                    )
+                  })}
                 </TableBody>
               </Table>
             </div>

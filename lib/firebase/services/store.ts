@@ -123,7 +123,7 @@ export const storeService = {
       const storeData = {
         ...store,
         assignedOpsIds: store.assignedOpsIds || [], // Ensure assignedOpsIds is an array
-        createdAt: new Date(),
+        createdAt: store.createdAt || new Date(), // Preserve createdAt if provided, otherwise set to now
         updatedAt: new Date(),
       }
       const docRef = await addDoc(collection(db, "stores"), convertStoreToFirestore(storeData))
@@ -169,15 +169,24 @@ export const storeService = {
         q,
         (querySnapshot) => {
           const stores = querySnapshot.docs.map(convertFirestoreToStore)
+          console.log(`[storeService.subscribeToAll] Received ${stores.length} stores from Firestore`)
+          if (stores.length > 0) {
+            console.log(`[storeService.subscribeToAll] Sample stores:`, stores.slice(0, 3).map(s => ({
+              id: s.id,
+              tradingName: s.tradingName,
+              status: s.status,
+              salespersonId: s.salespersonId
+            })))
+          }
           callback(stores)
         },
         (error) => {
-          console.error("Error subscribing to stores:", error)
+          console.error("[storeService.subscribeToAll] Error subscribing to stores:", error)
           callback([])
         },
       )
     } catch (error) {
-      console.error("Error setting up stores subscription:", error)
+      console.error("[storeService.subscribeToAll] Error setting up stores subscription:", error)
       return () => {}
     }
   },

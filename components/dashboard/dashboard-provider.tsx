@@ -57,7 +57,10 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
   }, [stores])
 
   useEffect(() => {
+    console.log(`[DashboardProvider] Auth effect running, auth exists: ${!!auth}`)
+    
     if (!auth) {
+      console.log(`[DashboardProvider] No auth, setting offline user`)
       setCurrentUser({
         id: "offline-user",
         uid: "offline-user",
@@ -71,29 +74,43 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
       return
     }
 
+    console.log(`[DashboardProvider] Setting up onAuthStateChanged listener`)
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      console.log(`[DashboardProvider] onAuthStateChanged fired - firebaseUser: ${firebaseUser?.uid || "null"}`)
+      
       try {
         if (firebaseUser) {
+          console.log(`[DashboardProvider] Firebase user found, loading user data for: ${firebaseUser.uid}`)
           const userData = await userService.getById(firebaseUser.uid)
+          
           if (userData) {
+            console.log(`[DashboardProvider] User data loaded from Firestore:`, {
+              id: userData.id,
+              email: userData.email,
+              role: userData.role,
+              name: userData.name
+            })
             setCurrentUser(userData)
           } else {
+            console.log(`[DashboardProvider] No user data found in Firestore, creating new user`)
             const newUser: User = {
               id: firebaseUser.uid,
               name: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "User",
               email: firebaseUser.email || "",
-              role: isSuperadmin ? "superadmin" : "salesperson",
+              role: firebaseUser.email?.includes("admin") ? "superadmin" : "salesperson",
               createdAt: new Date(),
               updatedAt: new Date(),
             }
+            console.log(`[DashboardProvider] Created new user:`, newUser)
             setCurrentUser(newUser)
           }
         } else {
+          console.log(`[DashboardProvider] No Firebase user, setting currentUser to null`)
           setCurrentUser(null)
         }
       } catch (error) {
         console.error("DashboardProvider - Error loading user:", error, { userId: firebaseUser?.uid })
-        setCurrentUser({
+        const fallbackUser: User = {
           id: firebaseUser?.uid || "unknown",
           uid: firebaseUser?.uid || "unknown",
           name: firebaseUser?.displayName || "User",
@@ -101,18 +118,25 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
           role: firebaseUser?.email?.includes("admin") ? "superadmin" : "salesperson",
           createdAt: new Date(),
           updatedAt: new Date(),
-        })
+        }
+        console.log(`[DashboardProvider] Setting fallback user due to error:`, fallbackUser)
+        setCurrentUser(fallbackUser)
       }
       setLoading(false)
+      console.log(`[DashboardProvider] Auth callback completed, loading set to false`)
     })
 
     return () => {
+      console.log(`[DashboardProvider] Cleaning up auth listener`)
       unsubscribe()
     }
   }, [])
 
   useEffect(() => {
+    console.log(`[DashboardProvider] useEffect for subscriptions - currentUser: ${currentUser?.id}, role: ${currentUser?.role}`)
+    
     if (!currentUser) {
+      console.log(`[DashboardProvider] No currentUser in subscription effect, clearing stores`)
       setStores([])
       setUsers([])
       setDocuments([])
@@ -125,11 +149,17 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     try {
       switch (currentUser.role) {
         case "superadmin":
+          console.log(`[DashboardProvider] Setting up subscriptions for superadmin`)
           unsubscribers.push(storeService.subscribeToAll(setStores))
           unsubscribers.push(userService.subscribeToAll(setUsers))
           break
         case "salesperson":
-          unsubscribers.push(storeService.subscribeToBySalesperson(currentUser.id, setStores))
+          // Salespersons need to see all stores to switch between "All Leads" and "My Leads" tabs
+          // They also need users to see creator names in the "All Leads" tab
+          // Component-level permission checks will prevent unauthorized modifications
+          console.log(`[DashboardProvider] Setting up subscriptions for salesperson: ${currentUser.id}`)
+          unsubscribers.push(storeService.subscribeToAll(setStores))
+          unsubscribers.push(userService.subscribeToAll(setUsers))
           break
         case "operations":
           unsubscribers.push(storeService.subscribeToByOpsUser(currentUser.id, setStores))
@@ -138,14 +168,16 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
           unsubscribers.push(storeService.subscribeToAll(setStores))
           break
         default:
+          console.log(`[DashboardProvider] Unknown role in subscriptions: ${currentUser.role}`)
           break
       }
 
       unsubscribers.push(documentService.subscribeToAll(setDocuments))
+      console.log(`[DashboardProvider] Subscriptions set up successfully`)
 
       setLoading(false)
     } catch (error) {
-      console.error("DashboardProvider - Error setting up subscriptions:", error, { userId: currentUser?.id })
+      console.error("DashboardProvider - Error setting up subscriptions:", error, { userId: currentUser?.id, role: currentUser?.role })
       setStores([])
       setUsers([])
       setDocuments([])
@@ -153,12 +185,16 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     }
 
     return () => {
+      console.log(`[DashboardProvider] Cleaning up subscriptions`)
       unsubscribers.forEach((unsubscribe) => unsubscribe())
     }
   }, [currentUser])
 
   const loadData = useCallback(async () => {
+    console.log(`[DashboardProvider] loadData called - currentUser: ${currentUser?.id}, role: ${currentUser?.role}`)
+    
     if (!currentUser) {
+      console.log(`[DashboardProvider] No currentUser, clearing stores`)
       setStores([])
       setUsers([])
       setDocuments([])
@@ -167,6 +203,7 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
 
     try {
       setLoading(true)
+      console.log(`[DashboardProvider] Starting to load data for role: ${currentUser.role}`)
 
       let storesData: Store[] = []
       let usersData: User[] = []
@@ -174,11 +211,32 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
 
       switch (currentUser.role) {
         case "superadmin":
+          console.log(`[DashboardProvider] Loading stores for superadmin`)
           storesData = await storeService.getAll()
           usersData = await userService.getAll()
+          console.log(`[DashboardProvider] Superadmin loaded ${storesData.length} stores`)
           break
         case "salesperson":
-          storesData = await storeService.getBySalesperson(currentUser.id)
+          // Salespersons need to see all stores to switch between "All Leads" and "My Leads" tabs
+          // Component-level permission checks will prevent unauthorized modifications
+          console.log(`[DashboardProvider] Loading ALL stores for salesperson: ${currentUser.id}`)
+          try {
+            storesData = await storeService.getAll()
+            console.log(`[DashboardProvider] Successfully loaded ${storesData.length} stores for salesperson`)
+            if (storesData.length > 0) {
+              console.log(`[DashboardProvider] Sample stores:`, storesData.slice(0, 3).map(s => ({
+                id: s.id,
+                tradingName: s.tradingName,
+                status: s.status,
+                salespersonId: s.salespersonId
+              })))
+            } else {
+              console.warn(`[DashboardProvider] WARNING: No stores loaded for salesperson!`)
+            }
+          } catch (storeError) {
+            console.error(`[DashboardProvider] Error loading stores for salesperson:`, storeError)
+            throw storeError
+          }
           break
         case "operations":
           storesData = await storeService.getByOpsUser(currentUser.id)
@@ -187,19 +245,23 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
           storesData = await storeService.getAll()
           break
         default:
+          console.log(`[DashboardProvider] Unknown role: ${currentUser.role}`)
           break
       }
 
+      console.log(`[DashboardProvider] Setting stores: ${storesData.length} stores for role: ${currentUser.role}`)
       setStores(storesData)
       setUsers(usersData)
       setDocuments(documentsData)
+      console.log(`[DashboardProvider] Data loaded successfully - stores: ${storesData.length}, users: ${usersData.length}, documents: ${documentsData.length}`)
     } catch (error) {
-      console.error("DashboardProvider - Error loading dashboard data:", error, { userId: currentUser?.id })
+      console.error("DashboardProvider - Error loading dashboard data:", error, { userId: currentUser?.id, role: currentUser?.role })
       setStores([])
       setUsers([])
       setDocuments([])
     } finally {
       setLoading(false)
+      console.log(`[DashboardProvider] loadData completed, loading set to false`)
     }
   }, [currentUser])
 

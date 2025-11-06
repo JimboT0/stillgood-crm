@@ -132,6 +132,7 @@ export function UserCreateModal({ isOpen, onClose, onSave }: UserCreateModalProp
                   <SelectItem value="salesperson">Salesperson</SelectItem>
                   <SelectItem value="operations">Operations</SelectItem>
                   <SelectItem value="media">Media Team</SelectItem>
+                  <SelectItem value="Magos">Magos</SelectItem>
                 </SelectContent>
               </Select>
             </div>

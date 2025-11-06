@@ -233,6 +233,7 @@ export default function RolloutsTab({ stores = [], users = [] }: RolloutsTabProp
 
     const isSuperadmin = currentUser?.role === "superadmin"
 
+
     // Debug logging for stores and user
     useEffect(() => {
         console.log("RolloutsTab props.stores:", stores)
@@ -307,10 +308,10 @@ export default function RolloutsTab({ stores = [], users = [] }: RolloutsTabProp
         setEditRolloutData({
             province: rollout.province,
             area: rollout.area,
-            startDate: rollout.startDate instanceof Timestamp 
+            startDate: rollout.startDate instanceof Timestamp
                 ? rollout.startDate.toDate().toISOString().split('T')[0]
                 : rollout.startDate,
-            endDate: rollout.endDate instanceof Timestamp 
+            endDate: rollout.endDate instanceof Timestamp
                 ? rollout.endDate.toDate().toISOString().split('T')[0]
                 : rollout.endDate,
         })
@@ -499,20 +500,20 @@ export default function RolloutsTab({ stores = [], users = [] }: RolloutsTabProp
                                                     <CardDescription>
                                                         {rollout.startDate
                                                             ? format(
-                                                                  rollout.startDate instanceof Timestamp
-                                                                      ? rollout.startDate.toDate()
-                                                                      : new Date(rollout.startDate),
-                                                                  "PPP"
-                                                              )
+                                                                rollout.startDate instanceof Timestamp
+                                                                    ? rollout.startDate.toDate()
+                                                                    : new Date(rollout.startDate),
+                                                                "PPP"
+                                                            )
                                                             : "N/A"}{" "}
                                                         -{" "}
                                                         {rollout.endDate
                                                             ? format(
-                                                                  rollout.endDate instanceof Timestamp
-                                                                      ? rollout.endDate.toDate()
-                                                                      : new Date(rollout.endDate),
-                                                                  "PPP"
-                                                              )
+                                                                rollout.endDate instanceof Timestamp
+                                                                    ? rollout.endDate.toDate()
+                                                                    : new Date(rollout.endDate),
+                                                                "PPP"
+                                                            )
                                                             : "N/A"}
                                                     </CardDescription>
                                                 </CardHeader>
@@ -699,6 +700,7 @@ export default function RolloutsTab({ stores = [], users = [] }: RolloutsTabProp
                                         const assignedStores = rollout.storeIds
                                             .map((id) => effectiveStores.find((s) => s.id === id))
                                             .filter((store): store is Store => !!store)
+                                            .filter((store) => store.pushedToRollout === true);
 
                                         return (
                                             <Card key={rollout.id} className={`${color}`}>
@@ -707,20 +709,20 @@ export default function RolloutsTab({ stores = [], users = [] }: RolloutsTabProp
                                                     <CardDescription>
                                                         {rollout.startDate
                                                             ? format(
-                                                                  rollout.startDate instanceof Timestamp
-                                                                      ? rollout.startDate.toDate()
-                                                                      : new Date(rollout.startDate),
-                                                                  "PPP"
-                                                              )
+                                                                rollout.startDate instanceof Timestamp
+                                                                    ? rollout.startDate.toDate()
+                                                                    : new Date(rollout.startDate),
+                                                                "PPP"
+                                                            )
                                                             : "N/A"}{" "}
                                                         -{" "}
                                                         {rollout.endDate
                                                             ? format(
-                                                                  rollout.endDate instanceof Timestamp
-                                                                      ? rollout.endDate.toDate()
-                                                                      : new Date(rollout.endDate),
-                                                                  "PPP"
-                                                              )
+                                                                rollout.endDate instanceof Timestamp
+                                                                    ? rollout.endDate.toDate()
+                                                                    : new Date(rollout.endDate),
+                                                                "PPP"
+                                                            )
                                                             : "N/A"}
                                                     </CardDescription>
                                                 </CardHeader>
@@ -810,32 +812,33 @@ function AssignStoresModal({
     }, [stores, rollout])
 
     const filteredStores = stores
+        .filter((s) => s.pushedToRollout === true)
         .filter((s) => s.province && s.province === rollout.province)
         .filter((s) => !rollout.storeIds.includes(s.id))
         .filter((s) => {
             // Filter stores that fall within the rollout date range
             if (!s.launchDate || !rollout.startDate) return true;
-            
-            const storeLaunchDate = s.launchDate instanceof Timestamp 
-                ? s.launchDate.toDate() 
+
+            const storeLaunchDate = s.launchDate instanceof Timestamp
+                ? s.launchDate.toDate()
                 : new Date(s.launchDate);
-            
-            const rolloutStartDate = rollout.startDate instanceof Timestamp 
-                ? rollout.startDate.toDate() 
+
+            const rolloutStartDate = rollout.startDate instanceof Timestamp
+                ? rollout.startDate.toDate()
                 : new Date(rollout.startDate);
-            
-            const rolloutEndDate = rollout.endDate 
-                ? (rollout.endDate instanceof Timestamp 
-                    ? rollout.endDate.toDate() 
+
+            const rolloutEndDate = rollout.endDate
+                ? (rollout.endDate instanceof Timestamp
+                    ? rollout.endDate.toDate()
                     : new Date(rollout.endDate))
                 : null;
-            
+
             // Store launch date should be within or after rollout start date
             if (storeLaunchDate < rolloutStartDate) return false;
-            
+
             // If there's an end date, store launch date should be before or on end date
             if (rolloutEndDate && storeLaunchDate > rolloutEndDate) return false;
-            
+
             return true;
         })
         .filter((s) => s.tradingName?.toLowerCase().includes(storeSearchTerm.toLowerCase()) || storeSearchTerm === "")
@@ -844,6 +847,9 @@ function AssignStoresModal({
             label: store.tradingName || `Store ${store.id}`,
             store,
         }))
+
+
+
 
     const handleToggle = (storeId: string) => {
         setSelectedStoreIds((prev) =>
@@ -861,117 +867,79 @@ function AssignStoresModal({
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-[800px] max-h-[80vh] flex flex-col">
-            <DialogHeader>
-                <DialogTitle>Assign Stores to {rollout.area} ({rollout.province})</DialogTitle>
-            </DialogHeader>
-            {stores.length === 0 ? (
-                <p className="text-center text-gray-600 py-4">No stores available to assign</p>
-            ) : (
-                <div className="space-y-4 flex-1 overflow-y-auto">
-                <Popover>
-                    <PopoverTrigger asChild>
-                    <Button variant="outline" role="combobox" className="justify-between w-full bg-transparent">
-                        <span className="truncate max-w-[180px] block">
-                        {selectedStoreIds.length > 0
-                            ? `${selectedStoreIds.length} store(s) selected`
-                            : "Select Stores"}
-                        </span>
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                <DialogHeader>
+                    <DialogTitle>Assign Stores to {rollout.area} ({rollout.province})</DialogTitle>
+                </DialogHeader>
+                {stores.length === 0 ? (
+                    <p className="text-center text-gray-600 py-4">No stores available to assign</p>
+                ) : (
+                    <div className="space-y-4 flex-1 overflow-y-auto">
+                        <div className="overflow-y-auto max-h-[400px] border rounded-md">
+                            <Table>
+                                <TableHeader className="sticky top-0 bg-background z-10">
+                                    <TableRow>
+                                        <TableHead className="w-[50px]">Select</TableHead>
+                                        <TableHead>Store</TableHead>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead>Location</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {filteredStores.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={3} className="text-center">
+                                                No available stores in {rollout.province}
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : (
+                                        filteredStores.map(({ store }) => (
+                                            <TableRow key={store.id}>
+                                                <TableCell>
+                                                    <Checkbox
+                                                        checked={selectedStoreIds.includes(store.id)}
+                                                        onCheckedChange={() => handleToggle(store.id)}
+                                                    />
+                                                </TableCell>
+                                                <StoreInfoCell
+                                                    tradingName={store.tradingName || ""}
+                                                    streetAddress={store.streetAddress || ""}
+                                                />
+                                                <TableCell>
+                                                    {store.launchDate
+                                                        ? (() => {
+                                                            try {
+                                                                const date = store.launchDate instanceof Timestamp
+                                                                    ? store.launchDate.toDate()
+                                                                    : new Date(store.launchDate);
+                                                                
+                                                                if (isNaN(date.getTime())) {
+                                                                    return "Invalid date";
+                                                                }
+                                                                
+                                                                return format(date, "MMM dd, yyyy");
+                                                            } catch (error) {
+                                                                return "Invalid date";
+                                                            }
+                                                        })()
+                                                        : "No date"}
+                                                </TableCell>
+                                                <ProvinceCell province={store.province || ""} />
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </div>
+                )}
+                <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
+                    <Button variant="outline" onClick={onClose}>
+                        Cancel
                     </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="p-0 w-[300px]">
-                    <Command>
-                        <CommandInput
-                        placeholder="Search store..."
-                        value={storeSearchTerm}
-                        onValueChange={setStoreSearchTerm}
-                        />
-                        <CommandList>
-                        <CommandEmpty>No stores found.</CommandEmpty>
-                        <CommandGroup>
-                            {filteredStores.map(({ value, label, store }) => (
-                            <CommandItem
-                                key={value}
-                                onSelect={() => handleToggle(value)}
-                                className="flex items-center justify-between"
-                            >
-                                <div className="flex items-center">
-                                <Checkbox
-                                    checked={selectedStoreIds.includes(value)}
-                                    className="mr-2"
-                                />
-                                <span className="truncate max-w-[180px] block">{label}</span>
-                                </div>
-                                <Check
-                                className={cn(
-                                    "h-4 w-4",
-                                    selectedStoreIds.includes(value) ? "opacity-100" : "opacity-0"
-                                )}
-                                />
-                            </CommandItem>
-                            ))}
-                        </CommandGroup>
-                        </CommandList>
-                    </Command>
-                    </PopoverContent>
-                </Popover>
-                <div className="overflow-y-auto max-h-[400px] border rounded-md">
-                    <Table>
-                    <TableHeader className="sticky top-0 bg-background z-10">
-                        <TableRow>
-                        <TableHead className="w-[50px]">Select</TableHead>
-                        <TableHead>Store</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Location</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {filteredStores.length === 0 ? (
-                        <TableRow>
-                            <TableCell colSpan={3} className="text-center">
-                            No available stores in {rollout.province}
-                            </TableCell>
-                        </TableRow>
-                        ) : (
-                        filteredStores.map(({ store }) => (
-                            <TableRow key={store.id}>
-                            <TableCell>
-                                <Checkbox
-                                checked={selectedStoreIds.includes(store.id)}
-                                onCheckedChange={() => handleToggle(store.id)}
-                                />
-                            </TableCell>
-                            <StoreInfoCell
-                                tradingName={store.tradingName || ""}
-                                streetAddress={store.streetAddress || ""}
-                            />
-                                                        <TableCell>
-                                {store.launchDate 
-                                    ? (store.launchDate instanceof Timestamp 
-                                        ? format(store.launchDate.toDate(), "PPP") 
-                                        : (() => {
-                                            const date = new Date(store.launchDate);
-                                            return isNaN(date.getTime()) ? "" : format(date, "PPP");
-                                          })())
-                                    : ""}
-                            </TableCell>
-                            <ProvinceCell province={store.province || ""} />
-                            </TableRow>
-                        ))
-                        )}
-                    </TableBody>
-                    </Table>
+                    <Button onClick={handleSubmit} disabled={selectedStoreIds.length === 0}>
+                        Assign Selected ({selectedStoreIds.length})
+                    </Button>
                 </div>
-                </div>
-            )}
-            <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
-                <Button variant="outline" onClick={onClose}>
-                Cancel
-                </Button>
-                <Button onClick={handleSubmit} disabled={selectedStoreIds.length === 0}>
-                Assign Selected ({selectedStoreIds.length})
-                </Button>
-            </div>
             </DialogContent>
         </Dialog>
     )

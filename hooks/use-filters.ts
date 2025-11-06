@@ -83,7 +83,9 @@ export function useFilters<T = any>(
 
   // Filter the data based on current filter state
   const filteredData = useMemo(() => {
-    return data.filter((item) => {
+    console.log(`[useFilters] Filtering ${data?.length || 0} items with filters:`, filters)
+    
+    const filtered = data.filter((item) => {
       // Search filter
       if (filters.searchTerm && config.searchFields) {
         const searchLower = filters.searchTerm.toLowerCase()
@@ -132,6 +134,9 @@ export function useFilters<T = any>(
 
       return true
     })
+    
+    console.log(`[useFilters] Filtered ${filtered.length} items from ${data.length} (filters: status=${filters.statusFilter}, search="${filters.searchTerm}", province=${filters.provinceFilter}, manager=${filters.managerFilter})`)
+    return filtered;
   }, [data, filters, config])
 
   // Get filter counts for different categories

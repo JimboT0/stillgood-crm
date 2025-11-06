@@ -287,7 +287,7 @@ const performSave = useCallback(async () => {
         subcategory: null,
         url,
         storeId: store?.id || `new-${Date.now()}`,
-        uploadedBy: currentUserId,
+        uploadedBy: currentUserId || "",
         uploadedAt: new Date(),
       };
     }
@@ -942,6 +942,7 @@ const performSave = useCallback(async () => {
                         value={formatDateTimeForInput(formData.trainingDate)}
                         onChange={(e) => handleInputChange("trainingDate", e.target.value)}
                         className={errors.trainingDate ? "border-red-500" : ""}
+                        step="1"
                       />
                       {errors.trainingDate && <p className="text-red-500 text-sm mt-1">{errors.trainingDate}</p>}
                     </div>
@@ -953,6 +954,7 @@ const performSave = useCallback(async () => {
                         value={formatDateTimeForInput(formData.launchDate)}
                         onChange={(e) => handleInputChange("launchDate", e.target.value)}
                         className={errors.launchDate ? "border-red-500" : ""}
+                        step="1"
                       />
                       {errors.launchDate && <p className="text-red-500 text-sm mt-1">{errors.launchDate}</p>}
                     </div>

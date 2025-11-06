@@ -55,7 +55,7 @@ function EditCard({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="edit-card"
-      className={cn("bg-card text-card-foreground rounded-lg border shadow-sm", className)}
+      className={cn("bg-card text-card-foreground py-2", className)}
       {...props}
     />
   )
