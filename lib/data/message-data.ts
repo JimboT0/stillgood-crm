@@ -37,21 +37,20 @@ When packing bags, please ensure:
 Remember: Quality is our top priority. When in doubt, leave it out!`,
     subcategory: "Packing" as const,
   },
-  {
-    id: 4,
-    title: "Collection Process",
-    description: "How the collection process works",
-    content: `Collection Process
+//   {
+//     id: 4,
+//     title: "Collection Process",
+//     description: "How the collection process works",
+//     content: `Collection Process
 
-Here's what to expect during collection times:
+// Here's what to expect during collection times:
 
-1. Bags should be ready 30 minutes before collection window
-2. Keep bags in a cool, designated area
-3. Our driver will arrive during the specified time window
-4. Please have someone available to hand over the bags
-5. Driver will confirm collection in the system
+// 1. Bags should be ready 30 minutes before collection window
+// 2. Keep bags in a cool, designated area
+// 3. Our driver will arrive during the specified time window
+// 4. Please have someone available to hand over the bags
 
-If there are any issues, please contact us immediately.`,
-    subcategory: "Collection" as const,
-  },
+// If there are any issues, please contact us immediately.`,
+//     subcategory: "Collection" as const,
+//   },
 ]

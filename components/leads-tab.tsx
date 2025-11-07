@@ -16,10 +16,9 @@ import {
 } from "./cells/index"
 import type { Store, User } from "@/lib/firebase/types"
 import { useStoreFilters } from "@/hooks/use-store-filters"
-import { SearchInput, StatusFilter, FilterBar, LEAD_STATUS_OPTIONS } from "@/components/shared/filters"
+import { SearchInput, StatusFilter, FilterBar, ManagerFilter } from "@/components/shared/filters"
 import { AssignedOpsCell } from "./cells/assigned-ops-cell"
-import { useState, useMemo } from "react"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useMemo } from "react"
 
 interface LeadsTabProps {
   stores: Store[]
@@ -42,137 +41,45 @@ export function LeadsTab({
   onDeleteStore,
   onStatusChange,
 }: LeadsTabProps) {
-  console.log(`[LeadsTab] Component initialized - stores: ${stores?.length || 0}, currentUser: ${currentUser?.id}, role: ${currentUser?.role}`)
-  
   const isSuperadmin = currentUser?.role === "superadmin";
   
-  // All users can switch between 'all' and 'my' tabs
-  // Default to 'all' tab so users can see all leads immediately
-  const [activeTab, setActiveTab] = useState<'all' | 'my'>('all')
-  
-  // Filter stores based on active tab
-  // All users can see all leads, but can only modify their own
-  const baseStores = useMemo(() => {
-    console.log(`[LeadsTab] ========== TAB FILTERING ==========`)
-    console.log(`[LeadsTab] Input: ${stores?.length || 0} stores, activeTab: "${activeTab}", currentUser.id: "${currentUser?.id}"`)
-    
-    if (!stores || stores.length === 0) {
-      console.log(`[LeadsTab] ❌ No stores provided or empty array`)
-      return [];
-    }
-    
-    // Log status breakdown of incoming stores
-    const statusBreakdown = {
-      new: stores.filter(s => s.status === "new").length,
-      cold: stores.filter(s => s.status === "cold").length,
-      warm: stores.filter(s => s.status === "warm").length,
-      lead: stores.filter(s => s.status === "lead").length,
-      other: stores.filter(s => !["new", "cold", "warm", "lead"].includes(s.status || "")).length,
-      null: stores.filter(s => !s.status).length
-    }
-    console.log(`[LeadsTab] Status breakdown of incoming stores:`, statusBreakdown)
-    
-    // Filter by tab
-    let filtered: Store[];
-    if (activeTab === 'my') {
-      console.log(`[LeadsTab] 🔍 Filtering to MY leads`)
-      console.log(`[LeadsTab] Current user ID: "${currentUser?.id}"`)
-      console.log(`[LeadsTab] Looking for stores where salespersonId === "${currentUser?.id}"`)
-      
-      // Get all unique salespersonIds in stores for debugging
-      const allSalespersonIds = [...new Set(stores.map(s => s.salespersonId).filter(Boolean))]
-      console.log(`[LeadsTab] All salespersonIds in stores:`, allSalespersonIds)
-      console.log(`[LeadsTab] Does current user ID exist in stores? ${allSalespersonIds.includes(currentUser?.id || '')}`)
-      
-      filtered = stores.filter((store) => {
-        const storeSalespersonId = store.salespersonId || '';
-        const currentUserId = currentUser?.id || '';
-        const matches = storeSalespersonId === currentUserId;
-        
-        if (matches) {
-          console.log(`[LeadsTab] ✅ MATCH: Store "${store.tradingName}" - salespersonId: "${storeSalespersonId}" === currentUser: "${currentUserId}" (status: ${store.status})`)
-        }
-        return matches;
-      });
-      
-      console.log(`[LeadsTab] MY tab result: ${filtered.length} stores match current user`)
-      if (filtered.length === 0) {
-        console.warn(`[LeadsTab] ⚠️ WARNING: No stores found for user "${currentUser?.id}"`)
-        console.warn(`[LeadsTab] Available salespersonIds:`, allSalespersonIds)
+  // Get all unique statuses from stores for the status filter
+  const statusOptions = useMemo(() => {
+    const statuses = new Set<string>();
+    stores.forEach((store) => {
+      if (store.status) {
+        statuses.add(store.status);
       }
-    } else {
-      console.log(`[LeadsTab] Showing ALL leads (no filtering by salesperson)`)
-      filtered = stores;
-      console.log(`[LeadsTab] ALL tab: ${filtered.length} stores (no filtering)`)
-    }
+    });
     
-    console.log(`[LeadsTab] After tab filter: ${filtered.length} stores`)
-    console.log(`[LeadsTab] Sample filtered stores:`, filtered.slice(0, 3).map(s => ({
-      tradingName: s.tradingName,
-      status: s.status,
-      salespersonId: s.salespersonId
-    })))
-    console.log(`[LeadsTab] ===================================`)
-    return filtered;
-  }, [stores, activeTab, currentUser?.id])
+    // Create options with "All" first, then sorted statuses
+    const options = [
+      { value: "all", label: "All Statuses" },
+      ...Array.from(statuses)
+        .sort()
+        .map((status) => ({
+          value: status,
+          label: status.charAt(0).toUpperCase() + status.slice(1).replace(/([A-Z])/g, " $1"),
+        })),
+    ];
+    
+    return options;
+  }, [stores]);
   
-  // For "My Leads" tab, don't filter by status - show ALL stores created by user
-  // For "All Leads" tab, filter by status (new, cold, warm, lead)
-  const shouldFilterByStatus = activeTab === 'all'
-  
-  // Apply status filter only if needed
-  const storesAfterStatusFilter = useMemo(() => {
-    if (!shouldFilterByStatus) {
-      // "My Leads" - show all stores regardless of status
-      return baseStores
-    }
-    // "All Leads" - filter by lead statuses
-    return baseStores.filter((store) => {
-      const status = store.status || "";
-      return ["new", "cold", "warm", "lead"].includes(status);
-    })
-  }, [baseStores, shouldFilterByStatus])
-  
-  // Apply search and other filters
+  // Apply filters - no pre-filtering, all stores are available
   const {
     filteredData: filteredStores,
     filters,
     setSearchTerm,
     setStatusFilter,
+    setManagerFilter,
     hasActiveFilters,
     clearFilters,
-  } = useStoreFilters(storesAfterStatusFilter, users, {
+    managers: filterManagers,
+  } = useStoreFilters(stores, users, {
     includeKeyAccounts: true,
     includeDateFiltering: false,
   })
-  
-  // Debug: Log the complete filtering chain
-  console.log(`[LeadsTab] ========== FINAL FILTERING SUMMARY ==========`)
-  console.log(`[LeadsTab] Step 1 - Incoming stores from props: ${stores?.length || 0}`)
-  console.log(`[LeadsTab] Step 2 - After tab filter (${activeTab}): ${baseStores.length}`)
-  console.log(`[LeadsTab] Step 3 - After status filter (${shouldFilterByStatus ? 'applied' : 'skipped for My Leads'}): ${storesAfterStatusFilter.length}`)
-  console.log(`[LeadsTab] Step 4 - After search/filters: ${filteredStores.length}`)
-  console.log(`[LeadsTab] Active filters:`, { 
-    searchTerm: filters.searchTerm || "(empty)", 
-    statusFilter: filters.statusFilter || "all", 
-    hasActiveFilters 
-  })
-  console.log(`[LeadsTab] Current user: ${currentUser?.id} (${currentUser?.role})`)
-  
-  if (filteredStores.length > 0) {
-    console.log(`[LeadsTab] ✅ SUCCESS: ${filteredStores.length} stores will be displayed`)
-    console.log(`[LeadsTab] Sample stores:`, filteredStores.slice(0, 3).map(s => ({
-      name: s.tradingName,
-      status: s.status,
-      salespersonId: s.salespersonId
-    })))
-  } else {
-    console.warn(`[LeadsTab] ⚠️ No stores to display`)
-    console.warn(`[LeadsTab] - baseStores: ${baseStores.length}`)
-    console.warn(`[LeadsTab] - storesAfterStatusFilter: ${storesAfterStatusFilter.length}`)
-    console.warn(`[LeadsTab] - filteredStores: ${filteredStores.length}`)
-  }
-  console.log(`[LeadsTab] =============================================`)
 
   const handleDeleteClick = (storeId: string, storeName: string) => {
     if (window.confirm(`Are you sure you want to delete "${storeName}"? This action cannot be undone.`)) {
@@ -195,8 +102,19 @@ export function LeadsTab({
       </Card>
 
       <FilterBar>
-        <SearchInput value={filters.searchTerm} onChange={setSearchTerm} />
-        <StatusFilter value={filters.status} onChange={setStatusFilter} options={LEAD_STATUS_OPTIONS} />
+        <SearchInput value={filters.searchTerm} onChange={setSearchTerm} placeholder="Search stores..." />
+        <ManagerFilter 
+          value={filters.managerFilter || "all"} 
+          onChange={setManagerFilter} 
+          managers={filterManagers}
+          placeholder="Filter by salesperson"
+        />
+        <StatusFilter 
+          value={filters.statusFilter || "all"} 
+          onChange={setStatusFilter} 
+          options={statusOptions}
+          placeholder="Filter by status"
+        />
         {hasActiveFilters && (
           <Button variant="outline" onClick={clearFilters}>
             Clear Filters
@@ -204,34 +122,10 @@ export function LeadsTab({
         )}
       </FilterBar>
 
-      <Tabs value={activeTab} onValueChange={(value) => {
-        console.log(`[LeadsTab] 🔄 Tab changed from "${activeTab}" to "${value}"`)
-        const newTab = value as 'all' | 'my'
-        setActiveTab(newTab)
-        
-        // Log what will be shown after tab change
-        setTimeout(() => {
-          if (newTab === 'my') {
-            const myStores = stores.filter(s => s.salespersonId === currentUser?.id)
-            console.log(`[LeadsTab] After switching to "my": ${myStores.length} stores match user "${currentUser?.id}"`)
-            console.log(`[LeadsTab] Matching stores:`, myStores.map(s => ({
-              name: s.tradingName,
-              status: s.status,
-              salespersonId: s.salespersonId
-            })))
-          }
-        }, 100)
-      }}>
-        <TabsList>
-          <TabsTrigger value="all">All Leads</TabsTrigger>
-          <TabsTrigger value="my">My Leads</TabsTrigger>
-        </TabsList>
-      </Tabs>
-
       {/* Leads Table */}
       <Card>
         <CardHeader>
-          <CardTitle>{activeTab === 'all' ? 'All Leads' : 'My Leads'}</CardTitle>
+          <CardTitle>Leads</CardTitle>
           <CardDescription>Manage your sales pipeline</CardDescription>
         </CardHeader>
         <CardContent>
@@ -239,7 +133,7 @@ export function LeadsTab({
             <TableHeader>
               <TableRow>
                 <TableHead>Store</TableHead>
-                {activeTab === 'all' && (<TableHead>Creator</TableHead>)}
+                <TableHead>Creator</TableHead>
                 {isSuperadmin && (<TableHead>Assigned</TableHead>)}
                 <TableHead>Status</TableHead>
                 <TableHead>Contact</TableHead>
@@ -251,35 +145,11 @@ export function LeadsTab({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(() => {
-                console.log(`[LeadsTab] 🎨 RENDERING TABLE - activeTab: "${activeTab}", filteredStores: ${filteredStores.length}`)
-                if (filteredStores.length > 0) {
-                  console.log(`[LeadsTab] ✅ RENDERING ${filteredStores.length} STORES`)
-                  console.log(`[LeadsTab] Stores to render:`, filteredStores.slice(0, 5).map(s => ({
-                    name: s.tradingName,
-                    status: s.status,
-                    salespersonId: s.salespersonId,
-                    id: s.id
-                  })))
-                } else {
-                  console.warn(`[LeadsTab] ⚠️ NO STORES TO RENDER!`)
-                  console.warn(`[LeadsTab] Debug info:`, {
-                    storesProp: stores?.length || 0,
-                    baseStoresLength: baseStores.length,
-                    activeTab,
-                    currentUserId: currentUser?.id,
-                    filtersStatus: filters.statusFilter,
-                    filtersSearch: filters.searchTerm,
-                    hasActiveFilters
-                  })
-                }
-                return null;
-              })()}
               {filteredStores.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={10} className="text-center py-8">
                     <div className="text-muted-foreground">
-                      {activeTab === 'my' ? 'No leads found that you created.' : 'No leads found.'}
+                      No leads found.
                     </div>
                   </TableCell>
                 </TableRow>
@@ -290,17 +160,22 @@ export function LeadsTab({
                   <StoreInfoCell
                     tradingName={store.tradingName || ""}
                     streetAddress={store.streetAddress || ""} />
-                  {activeTab === 'all' && (
-                    <SalespersonCell
-                      isSuperadmin={true}
-                      salespersonId={store.salespersonId ?? ""}
-                      users={users || []} />
-                  )}
+                  <SalespersonCell
+                    isSuperadmin={true}
+                    salespersonId={store.salespersonId ?? ""}
+                    users={users || []} />
                   {isSuperadmin ? <AssignedOpsCell                     
                   isSuperadmin={isSuperadmin}
                   assignedOpsIds={store.assignedOpsIds ?? []} 
                   users={users} /> : null}
-                  <StoreStatusBadge status={store.status || ""} isKeyAccount={!!store.isKeyAccount} />
+                  <StoreStatusBadge 
+                    status={(
+                      store.status && ["lead", "cold", "warm", "closed", "pending setup", "rollout", "completed"].includes(store.status)
+                        ? store.status
+                        : "lead"
+                    ) as "lead" | "cold" | "warm" | "closed" | "pending setup" | "rollout" | "completed"} 
+                    isKeyAccount={!!store.isKeyAccount} 
+                  />
                   <ContactsCell contactPersons={store.contactPersons || []} />
                   <ProvinceCell province={store.province || ""} />
                   <LaunchTrainDateCell launchDate={store.launchDate} trainingDate={store.trainingDate} />
