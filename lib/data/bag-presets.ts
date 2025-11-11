@@ -1,3 +1,5 @@
+import { Product } from "../firebase/types"
+
 interface BagPreset {
   name: string
   description: string
@@ -11,101 +13,71 @@ interface BagPresets {
   standard: BagPreset[]
 }
 
-export const bagPresets: BagPresets = {
+export const bagPresets: Record<'pnp' | 'spar' | 'standard', Product[]> = {
   pnp: [
     {
-      name: "Vegetable - value bag",
-      description: "A mix of fruit and vegetables",
-      estimatedValue: 60,
-      price: 29,
+      name: 'Mystery - Value Bag',
+      description: 'Get a fresh mix of both Fruit & Veg and Bakery items at a fraction of the price. You might find items like apples, muffins, potatoes, or pastries. Contents vary, but quality is still good. Images are for illustration only actual contents may vary.',
+      retailPrice: 54.95,
+      estimatedValue: 150.00,
     },
     {
-      name: "Bakery - value bag",
-      description: "A selection of bakery and confectionery items",
-      estimatedValue: 60,
-      price: 29,
+      name: 'Fruit & Veg - Value Bag',
+      description: 'Get a fresh mix of perfectly good fruit or vegetables at a fraction of the price. You might find items like apples, bananas, carrots, or potatoes. Contents vary, but quality is still good. Images are for illustration only actual contents may vary.',
+      retailPrice: 54.95,
+      estimatedValue: 150.00,
     },
-    {
-      name: "Convenience - value bag",
-      description: "Includes hot foods, sandwiches, pizzas, etc.",
-      estimatedValue: 60,
-      price: 29,
-    },
-    {
-      name: "Mystery - value bag",
-      description: "A mixed selection from various categories",
-      estimatedValue: 60,
-      price: 29,
-    },
-    {
-      name: "Mixedgrocery - value bag",
-      description: "Cereals, canned goods, household items, etc.",
-      estimatedValue: 60,
-      price: 29,
+        {
+      name: 'Bakery - Value Bag',
+      description: 'Enjoy a fresh selection of perfectly good bakery products at a fraction of the price. You might find bread rolls, muffins, or pastries—savoury, sweet, or both. Contents vary, but quality is still good. Images are for illustration only—actual contents may vary.',
+      retailPrice: 39.90,
+      estimatedValue: 100.00,
     },
   ],
   spar: [
     {
-      name: "Vegetable - value bag",
-      description: "A mix of fruit and vegetables",
-      estimatedValue: 50,
-      price: 25,
+      name: 'Mystery - Value Bag',
+      description: 'Get a fresh mix of both Fruit & Veg and Bakery items at a fraction of the price. You might find items like apples, muffins, potatoes, or pastries. Contents vary, but quality is still good. Images are for illustration only actual contents may vary.',
+      retailPrice: 39.90,
+      estimatedValue: 100.00,
     },
     {
-      name: "Bakery - value bag",
-      description: "A selection of bakery and confectionery items",
-      estimatedValue: 50,
-      price: 25,
+      name: 'Fruit & Veg - Value Bag',
+      description: 'Get a fresh mix of perfectly good fruit or vegetables at a fraction of the price. You might find items like apples, bananas, carrots, or potatoes. Contents vary, but quality is still good. Images are for illustration only actual contents may vary.',
+      retailPrice: 39.90,
+      estimatedValue: 100.00,
     },
-    {
-      name: "Convenience - value bag",
-      description: "Includes hot foods, sandwiches, pizzas, etc.",
-      estimatedValue: 50,
-      price: 25,
+        {
+      name: 'Bakery - Value Bag',
+      description: 'Enjoy a fresh selection of perfectly good bakery products at a fraction of the price. You might find bread rolls, muffins, or pastries—savoury, sweet, or both. Contents vary, but quality is still good. Images are for illustration only—actual contents may vary.',
+      retailPrice: 39.90,
+      estimatedValue: 100.00,
     },
-    {
-      name: "Mystery - value bag",
-      description: "A mixed selection from various categories",
-      estimatedValue: 50,
-      price: 25,
-    },
-    {
-      name: "Mixedgrocery - value bag",
-      description: "Cereals, canned goods, household items, etc.",
-      estimatedValue: 50,
-      price: 25,
+        {
+      name: 'Best Before Grocery - Value Bag',
+      description: 'A variety of Cereals, Canned Goods, Sweets, Rice, Sugar and other mixed groceries which have passed their best before dates.',
+      retailPrice: 54.95,
+      estimatedValue: 150.00,
     },
   ],
   standard: [
     {
-      name: "Vegetable - value bag",
-      description: "A mix of fruit and vegetables",
-      estimatedValue: 45,
-      price: 22,
+      name: 'Mystery - Value Bag',
+      description: 'Get a fresh mix of both Fruit & Veg and Bakery items at a fraction of the price. You might find items like apples, muffins, potatoes, or pastries. Contents vary, but quality is still good. Images are for illustration only actual contents may vary.',
+      retailPrice: 54.95,
+      estimatedValue: 150.00,
     },
     {
-      name: "Bakery - value bag",
-      description: "A selection of bakery and confectionery items",
-      estimatedValue: 45,
-      price: 22,
+      name: 'Fruit & Veg - Value Bag',
+      description: 'Get a fresh mix of perfectly good fruit or vegetables at a fraction of the price. You might find items like apples, bananas, carrots, or potatoes. Contents vary, but quality is still good. Images are for illustration only actual contents may vary.',
+      retailPrice: 54.95,
+      estimatedValue: 150.00,
     },
-    {
-      name: "Convenience - value bag",
-      description: "Includes hot foods, sandwiches, pizzas, etc.",
-      estimatedValue: 45,
-      price: 22,
-    },
-    {
-      name: "Mystery - value bag",
-      description: "A mixed selection from various categories",
-      estimatedValue: 45,
-      price: 22,
-    },
-    {
-      name: "Mixedgrocery - value bag",
-      description: "Cereals, canned goods, household items, etc.",
-      estimatedValue: 45,
-      price: 22,
+        {
+      name: 'Bakery - Value Bag',
+      description: 'Enjoy a fresh selection of perfectly good bakery products at a fraction of the price. You might find bread rolls, muffins, or pastries—savoury, sweet, or both. Contents vary, but quality is still good. Images are for illustration only—actual contents may vary.',
+      retailPrice: 39.90,
+      estimatedValue: 100.00,
     },
   ],
-}
+};
