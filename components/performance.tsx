@@ -10,8 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Store as StoreIcon, Snowflake, Flame, DoorClosed, CheckCircle2, AlertCircle, TrendingUp, DollarSign, Package, Search, Filter } from "lucide-react"
 import type { Store, User } from "@/lib/firebase/types"
-import { format } from "date-fns"
 import { useState, useMemo } from "react"
+import { formatDate } from "@/lib/utils/date-formatter"
 
 interface PerformanceProps {
   stores: Store[]
@@ -333,7 +333,7 @@ export function Performance({ stores, users }: PerformanceProps) {
                             {store.tradingName || "Unnamed Store"}
                           </TableCell>
                           <TableCell>
-                            {store.createdAt ? format(new Date(store.createdAt), "PPp") : "N/A"}
+                            {formatDate(store.createdAt, "PPp", "N/A")}
                           </TableCell>
                           <TableCell>
                             <Badge variant="default" className="bg-green-600">

@@ -97,7 +97,7 @@ export function UserEditModal({ isOpen, onClose, onSave, user }: UserEditModalPr
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="superadmin">Super Admin</SelectItem>
-                  <SelectItem value="salesperson">Creator</SelectItem>
+                  <SelectItem value="salesperson">Salesperson</SelectItem>
                   <SelectItem value="operations">Operations</SelectItem>
                   <SelectItem value="media">Media Team</SelectItem>
                 </SelectContent>
