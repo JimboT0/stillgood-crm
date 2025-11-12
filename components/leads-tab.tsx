@@ -92,7 +92,6 @@ export function LeadsTab({
       <Card>
         <CardHeader>
           <CardTitle>Leads Management</CardTitle>
-          <CardDescription>Manage cold and warm leads</CardDescription>
         </CardHeader>
         <CardContent>
           <Button onClick={onAddStore}>
@@ -185,21 +184,39 @@ export function LeadsTab({
                     <div className="flex justify-end gap-2">
                       {(isSuperadmin || store.salespersonId === currentUser?.id) && store.status === "lead" && (
                         <>
-                          <Button variant="ghost" size="icon" onClick={() => onStatusChange(store.id, "warm")}>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => onStatusChange(store.id, "warm")}
+                            className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                          >
                             <Flame className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => onStatusChange(store.id, "cold")}>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => onStatusChange(store.id, "cold")}
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          >
                             <Snowflake className="h-4 w-4" />
                           </Button>
                         </>
                       )}
                       {(isSuperadmin || store.salespersonId === currentUser?.id) && store.status === "cold" && (
-                        <Button variant="ghost" onClick={() => onStatusChange(store.id, "warm")}>
+                        <Button 
+                          variant="ghost" 
+                          onClick={() => onStatusChange(store.id, "warm")}
+                          className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                        >
                           <Flame className="mr-2 h-4 w-4" /> Warm
                         </Button>
                       )}
                       {(isSuperadmin || store.salespersonId === currentUser?.id) && store.status === "warm" && (
-                        <Button variant="ghost" onClick={() => onStatusChange(store.id, "closed")}>
+                        <Button 
+                          variant="ghost" 
+                          onClick={() => onStatusChange(store.id, "closed")}
+                          className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                        >
                           <DoorClosed className="mr-2 h-4 w-4" /> Close
                         </Button>
                       )}
@@ -208,12 +225,18 @@ export function LeadsTab({
                           variant="ghost"
                           size="icon"
                           onClick={() => handleDeleteClick(store.id, store.tradingName || "")}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       )}
                       {(isSuperadmin || store.salespersonId === currentUser?.id) && (
-                        <Button variant="ghost" size="icon" onClick={() => onEditStore(store)}>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => onEditStore(store)}
+                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
                       )}

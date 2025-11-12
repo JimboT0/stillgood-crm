@@ -153,7 +153,12 @@ export function ClosedTab({
                             <CheckCircle className="w-4 h-4" />
                           </Button>
                         )}
-                        <Button size="sm" variant="outline" onClick={() => setSelectedStore(store)}>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => setSelectedStore(store)}
+                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 bg-transparent"
+                        >
                           <EditIcon className="w-4 h-4" />
                         </Button>
                       </div>
