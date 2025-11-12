@@ -11,7 +11,7 @@ import { EditCard, CardHeader, CardTitle, CardContent } from "@/components/ui/ca
 import { Plus, Trash2 } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import { storeService } from "@/lib/firebase/services/store"
-import { formatDateTimeForInput, parseDateTime } from "../../lib/utils/date-utils"
+import { formatDateTimeForInput, parseDateTime, timestampToDate } from "../../lib/utils/date-utils"
 import { isValidTimestamp } from "@/lib/date-validation"
 import type { Store, CollectionTimes, Product } from "@/lib/firebase/types"
 import { PROVINCES } from "@/lib/firebase/types"
@@ -80,8 +80,32 @@ export function CorporateStoreEditModal({
   // Initialize forms based on store or initialStoreCount
   useEffect(() => {
     if (store && isOpen) {
-      const trainingDate = store.trainingDate ? parseDateTime(store.trainingDate) as Timestamp : null
-      const launchDate = store.launchDate ? parseDateTime(store.launchDate) as Timestamp : null
+      let trainingDate: Timestamp | null = null
+      let launchDate: Timestamp | null = null
+      
+      if (store.trainingDate) {
+        if (store.trainingDate instanceof Timestamp) {
+          trainingDate = store.trainingDate
+        } else if (isValidTimestamp(store.trainingDate)) {
+          // Convert plain timestamp object to proper Timestamp
+          const date = timestampToDate(store.trainingDate)
+          trainingDate = Timestamp.fromDate(date)
+        } else {
+          trainingDate = parseDateTime(store.trainingDate) as Timestamp | null
+        }
+      }
+      
+      if (store.launchDate) {
+        if (store.launchDate instanceof Timestamp) {
+          launchDate = store.launchDate
+        } else if (isValidTimestamp(store.launchDate)) {
+          // Convert plain timestamp object to proper Timestamp
+          const date = timestampToDate(store.launchDate)
+          launchDate = Timestamp.fromDate(date)
+        } else {
+          launchDate = parseDateTime(store.launchDate) as Timestamp | null
+        }
+      }
       const collectionTimes: CollectionTimes = {
         mondayFriday: {
           from: store.collectionTimes?.mondayFriday?.from || "",
@@ -151,7 +175,16 @@ export function CorporateStoreEditModal({
     setStoreForms((prev) => {
       const updated = [...prev]
       if (field === "trainingDate" || field === "launchDate") {
-        const parsedDate = parseDateTime(value) as Timestamp | null
+        let parsedDate: Timestamp | null = null
+        if (value && typeof value === "string" && value.trim() !== "") {
+          const dateObj = new Date(value)
+          if (!isNaN(dateObj.getTime())) {
+            parsedDate = Timestamp.fromDate(dateObj)
+          }
+        } else if (value) {
+          // If it's already a Timestamp or valid timestamp object, use parseDateTime
+          parsedDate = parseDateTime(value) as Timestamp | null
+        }
         updated[index] = { ...updated[index], [field]: parsedDate }
         setErrors((prevErrors) => {
           const updatedErrors = [...prevErrors]
@@ -183,7 +216,7 @@ export function CorporateStoreEditModal({
     setStoreForms((prev) => {
       const updated = [...prev]
       updated[index] = {
-        ...updated,
+        ...updated[index],
         collectionTimes: {
           ...updated[index].collectionTimes,
           [period]: { ...updated[index].collectionTimes[period], [field]: value },
@@ -257,6 +290,7 @@ export function CorporateStoreEditModal({
           errorDescription: form.errorDescription,
           launchDate: form.launchDate,
           trainingDate: form.trainingDate,
+          errors: [],
           collectionTimes: Object.values(form.collectionTimes).some(
             (time) => time.from || time.to
           )
@@ -275,13 +309,13 @@ export function CorporateStoreEditModal({
           setupConfirmedBy: "",
           setupConfirmedAt: undefined,
           pushedToRollout: true,
-          pushedToRolloutAt: new Date() as Timestamp,
+          pushedToRolloutAt: Timestamp.fromDate(new Date()),
           pushedToRolloutBy: currentUserId,
           hasErrors: !!form.errorDescription,
           errorSetBy: form.errorDescription ? currentUserId : "",
-          errorSetAt: form.errorDescription ? (new Date() as Timestamp) : undefined,
-          createdAt: store?.createdAt && index === 0 ? store.createdAt : (new Date() as Timestamp),
-          updatedAt: new Date() as Timestamp,
+          errorSetAt: form.errorDescription ? new Date() : undefined,
+          createdAt: store?.createdAt && index === 0 ? store.createdAt : new Date(),
+          updatedAt: new Date(),
           isKeyStore: false,
           isKeyAccount: false,
           keyAccountManager: "",
