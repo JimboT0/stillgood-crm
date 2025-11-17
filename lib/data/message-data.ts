@@ -3,14 +3,20 @@ export const messageData = [
     id: 1,
     title: "Welcome Message",
     description: "Introduction message for new stores",
-    content: `Hi Team at {__STORE NAME__},
+    content: `Thank you for your time today. We’re excited to launch still good with you! 
 
-Welcome to StillGood! We're excited to partner with you in reducing food waste and helping your community access quality food at affordable prices.
+Could you please add the following managers to the group: 
+•⁠  ⁠Store manager 
+•⁠  ⁠⁠Assistant manager 
+•⁠  ⁠⁠Bakery manager 
+•⁠  ⁠Produce manager 
+•⁠  ⁠Receiving manager 
 
-This message contains important information about getting started with our platform. Please read through carefully and reach out if you have any questions.
+I have added our operations team as well as our marketing team to align marketing and Ops for the launch. 
 
-Best regards,
-The StillGood Team`,
+Have a great day’s trade, 
+Kind regards 
+` ,
     subcategory: "Introduction" as const,
   },
   {
@@ -37,20 +43,20 @@ When packing bags, please ensure:
 Remember: Quality is our top priority. When in doubt, leave it out!`,
     subcategory: "Packing" as const,
   },
-//   {
-//     id: 4,
-//     title: "Collection Process",
-//     description: "How the collection process works",
-//     content: `Collection Process
+  //   {
+  //     id: 4,
+  //     title: "Collection Process",
+  //     description: "How the collection process works",
+  //     content: `Collection Process
 
-// Here's what to expect during collection times:
+  // Here's what to expect during collection times:
 
-// 1. Bags should be ready 30 minutes before collection window
-// 2. Keep bags in a cool, designated area
-// 3. Our driver will arrive during the specified time window
-// 4. Please have someone available to hand over the bags
+  // 1. Bags should be ready 30 minutes before collection window
+  // 2. Keep bags in a cool, designated area
+  // 3. Our driver will arrive during the specified time window
+  // 4. Please have someone available to hand over the bags
 
-// If there are any issues, please contact us immediately.`,
-//     subcategory: "Collection" as const,
-//   },
+  // If there are any issues, please contact us immediately.`,
+  //     subcategory: "Collection" as const,
+  //   },
 ]
