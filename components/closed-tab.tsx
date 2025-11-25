@@ -62,8 +62,7 @@ export function ClosedTab({
   };
 
   const handlePushToPendingSetup = (store: Store) => {
-    onPushToRollout({ ...store, status: "rollout", pushedToRollout: true });
-    onSetupConfirmation(store.id);
+    onPushToRollout(store);
   };
 
   const handleLoadPreset = (presetFilters: any) => {
