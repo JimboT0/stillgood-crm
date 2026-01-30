@@ -1,0 +1,88 @@
+{
+  "pnp_franchise": {
+    "label": "PnP Franchise",
+    "description": "Documents for Pick n Pay franchise stores",
+    "links": [
+      {
+        "name": "PnP SLA",
+        "description": "Service Level Agreement for PnP stores",
+        "url": "https://example.com/pnp-franchise-agreement"
+      },
+      {
+        "name": "SOP",
+        "description": "Standard Operating Procedures for PnP stores",
+        "url": "https://example.com/pnp-setup-guide"
+      }
+    ]
+  },
+  "pnp_corporate": {
+    "label": "PnP Corporate",
+    "description": "Documents for Pick n Pay corporate stores",
+    "links": [
+      {
+        "name": "SOP",
+        "description": "Standard Operating Procedures for PnP stores",
+        "url": "https://example.com/pnp-setup-guide"
+      }
+    ]
+  },
+  "spar_franchise": {
+    "label": "Spar Franchise",
+    "description": "Documents for Spar franchise stores",
+    "links": [
+      {
+        "name": "SPAR SLA",
+        "description": "Service Level Agreement for Spar stores",
+        "url": "https://example.com/spar-franchise-agreement"
+      },
+      {
+        "name": "SOP",
+        "description": "Standard Operating Procedures for Spar stores",
+        "url": "https://example.com/spar-setup-guide"
+      }
+    ]
+  },
+  "spar_corporate": {
+    "label": "Spar Corporate",
+    "description": "Documents for Spar corporate stores",
+    "links": [
+      {
+        "name": "SOP",
+        "description": "Standard Operating Procedures for Spar stores",
+        "url": "https://example.com/spar-setup-guide"
+      }
+    ]
+  },
+  "independent": {
+    "label": "Independent",
+    "description": "Documents for independent stores",
+    "links": [
+              {
+        "name": " SLA",
+        "description": "Service Level Agreement for Independent stores",
+        "url": "https://example.com/independent-agreement"
+      },
+      {
+        "name": "SOP",
+        "description": "Standard Operating Procedures for Independent stores",
+        "url": "https://example.com/independent-setup-guide"
+      }
+    ]
+  },
+  "internal": {
+    "label": "Internal",
+    "description": "Documents for internal use",
+    "links": [
+      {
+        "name": "Employee Handbook",
+        "description": "Internal employee policies and procedures",
+        "url": "https://example.com/employee-handbook"
+      }
+    ]
+  },
+  "other": {
+    "label": "Other",
+    "description": "Miscellaneous documents",
+    "links": []
+  }
+}

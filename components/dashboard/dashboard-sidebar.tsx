@@ -43,6 +43,7 @@ import {
   FlagIcon,
   BriefcaseBusiness,
   FerrisWheelIcon,
+  SmileIcon
 } from "lucide-react"
 import { useDashboardData } from "@/components/dashboard/dashboard-provider"
 import { signOut } from "firebase/auth"
@@ -50,6 +51,7 @@ import { auth } from "@/lib/firebase/config"
 import { useRouter } from "next/navigation"
 import { ThemeToggle } from "@/components/shared/theme-toggle"
 import sglogocrm from '../../public/sglogocrm.svg';
+import { Happy_Monkey } from "next/font/google"
 
 function SGlogocrm() {
   return <img src={sglogocrm.src} alt="Still Good Logo" className="w-10 h-10" />;
@@ -110,6 +112,13 @@ const navigationItems = [
     title: "Bag Management",
     url: "/bags",
     icon: Package,
+    roles: ["superadmin", "operations", "salesperson", "media"],
+    getCount: (counts: Record<string, number>) => counts.bags,
+  },
+    {
+    title: "Sentiment",
+    url: "/customerSentiment",
+    icon: SmileIcon,
     roles: ["superadmin", "operations", "salesperson", "media"],
     getCount: (counts: Record<string, number>) => counts.bags,
   },
