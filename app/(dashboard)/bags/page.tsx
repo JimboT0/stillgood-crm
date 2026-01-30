@@ -946,7 +946,7 @@ export default function Component() {
                                 ) : (
                                   <ChevronDown className="h-4 w-4" />
                                 )}
-                                <span>{province}</span>
+                                <span className="bg-gray-400 p-2 rounded-xl">Modify/Expand {province}</span>
                               </div>
 
                               <div className="flex items-center gap-2 text-sm font-medium">
