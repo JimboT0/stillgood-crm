@@ -779,10 +779,10 @@ export default function Component() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
-      <header className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+    <div className="flex flex-col">
+      <header className="bg-white">
+        <div className="w-full">
+          <div className="flex justify-between items-center p-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Retailer Dashboard</h1>
               <p className="text-gray-600 mt-1">Monitor bag sales and inventory across all retailers</p>
@@ -823,7 +823,7 @@ export default function Component() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 w-full">
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
