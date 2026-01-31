@@ -4,14 +4,9 @@
     "description": "Documents for Pick n Pay franchise stores",
     "links": [
       {
-        "name": "PnP SLA",
-        "description": "Service Level Agreement for PnP stores",
-        "url": "https://example.com/pnp-franchise-agreement"
-      },
-      {
-        "name": "SOP",
-        "description": "Standard Operating Procedures for PnP stores",
-        "url": "https://example.com/pnp-setup-guide"
+        "name": "PnP Docs",
+        "description": "Pick n Pay Documents Sharepoint Link",
+        "url": "https://stillgood.sharepoint.com/sites/stillgooddrive/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2Fstillgooddrive%2FShared%20Documents%2Fstill%20good%20drive%2FPnP%20Franchise&viewid=1f26b6da%2D3898%2D4c03%2D867b%2D5a91db815ec0"
       }
     ]
   },
@@ -47,9 +42,9 @@
     "description": "Documents for Spar corporate stores",
     "links": [
       {
-        "name": "SOP",
-        "description": "Standard Operating Procedures for Spar stores",
-        "url": "https://example.com/spar-setup-guide"
+        "name": "Spar Corporate Docs",
+        "description": "SPAR Corporate Docs",
+        "url": "https://stillgood.sharepoint.com/sites/stillgooddrive/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2Fstillgooddrive%2FShared%20Documents%2Fstill%20good%20drive%2FSPAR%20Corporate%2FSPAR%20DOCS%20Updated&viewid=1f26b6da%2D3898%2D4c03%2D867b%2D5a91db815ec0"
       }
     ]
   },
