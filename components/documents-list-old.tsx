@@ -27,7 +27,7 @@ const PACKAGE_TYPES = [
   { value: "spar_franchise", label: "Spar Franchise", description: "Documents for Spar franchise stores" },
   { value: "spar_corporate", label: "Spar Corporate", description: "Documents for Spar corporate stores" },
   { value: "independent", label: "Independent", description: "Documents for independent stores" },
-  { value: "internal", label: "Internal", description: "Documents for internal use" },
+  { value: "internal", label: "Internal & Operational", description: "Documents for internal use" },
   { value: "other", label: "Other", description: "Miscellaneous documents" },
 ] as const;
 
