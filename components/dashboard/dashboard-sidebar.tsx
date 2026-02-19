@@ -59,13 +59,13 @@ function SGlogocrm() {
 
 
 const navigationItems = [
-    {
-    title: "Rollout",
-    url: "/rollout",
-    icon: FerrisWheelIcon,
-    roles: ["superadmin", "operations", "salesperson", "media"],
-    getCount: (counts: Record<string, number>) => counts.rollout,
-  },
+  //   {
+  //   title: "Rollout",
+  //   url: "/rollout",
+  //   icon: FerrisWheelIcon,
+  //   roles: ["superadmin", "operations", "salesperson", "media"],
+  //   getCount: (counts: Record<string, number>) => counts.rollout,
+  // },
   {
     title: "Leads",
     url: "/leads",

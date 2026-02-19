@@ -13,6 +13,7 @@ import {
     SalespersonCell,
     StoreInfoCell,
     StoreStatusBadge,
+    ChecklistCell,
 } from "./cells/index"
 import type { Store, User } from "@/lib/firebase/types"
 import { SearchInput, StatusFilter, AssignedOpsFilter, FilterBar, LEAD_STATUS_OPTIONS } from "@/components/shared/filters"
@@ -67,6 +68,7 @@ export function SuperLeadsTab({
         Dates: true,
         Docs: true,
         Contract: true,
+        Checklist: true,
     })
 
     const filters = {
@@ -285,6 +287,7 @@ export function SuperLeadsTab({
                                 {columnVisibility.Dates && <TableHead>Dates</TableHead>}
                                 {columnVisibility.Docs && <TableHead>Docs</TableHead>}
                                 {columnVisibility.Contract && <TableHead>Contract</TableHead>}
+                                {columnVisibility.Checklist && <TableHead>Checklist</TableHead>}
                                 <TableHead>Actions</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -312,6 +315,9 @@ export function SuperLeadsTab({
                                     {columnVisibility.Docs && <DocumentsCell store={store} onViewDocument={onViewDocument} />}
                                     {columnVisibility.Contract && (
                                         <ContractTermsCell contractTerms={store.contractTerms} />
+                                    )}
+                                    {columnVisibility.Checklist && (
+                                        <ChecklistCell checklist={store.onboardingChecklist} />
                                     )}
                                     <TableCell>
                                         <div className="flex gap-1">

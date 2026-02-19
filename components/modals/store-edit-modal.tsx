@@ -25,6 +25,8 @@ import { userService } from "@/lib/firebase"
 import { DuplicateConfirmationModal } from "./duplicate-confirmation-modal"
 import { DuplicateCheck } from "./../duplicate-check"
 import { toast } from "../ui/use-toast"
+import { OnboardingChecklistComponent } from "../onboarding-checklist"
+import type { OnboardingChecklist } from "@/lib/firebase/types"
 
 interface StoreEditModalProps {
   store: Store | null
@@ -68,6 +70,7 @@ export function StoreEditModal({
   const [checkProvince, setCheckProvince] = useState("")
   const [shouldCheck, setShouldCheck] = useState(false)
   const [hasChecked, setHasChecked] = useState(false)
+  const [onboardingChecklist, setOnboardingChecklist] = useState<OnboardingChecklist>({})
 
   // Initialize DuplicateCheck
   const { checkDuplicates, isChecking } = DuplicateCheck({
@@ -134,7 +137,10 @@ export function StoreEditModal({
         bankConfirmationEmail: store.bankConfirmationEmail || "",
         whatsappGroupLink: store.whatsappGroupLink || "",
       })
-      setContactPersons(store.contactPersons || [])
+      setContactPersons((store.contactPersons || []).map(contact => ({
+        ...contact,
+        role: contact.role || ""
+      })))
       setProducts(
         (store.products || []).map((p) => ({
           name: p.name || "",
@@ -157,6 +163,8 @@ export function StoreEditModal({
       setUploadError(null)
       setAutoAssignStoreId(false)
       setErrorDescription(store.errorDescription || "")
+      setOnboardingChecklist(store.onboardingChecklist || {})
+      console.log('[StoreEditModal] Loading checklist:', store.onboardingChecklist)
       setShowDuplicateModal(false)
       setPotentialDuplicates([])
       setIsCheckingDuplicates(false)
@@ -195,6 +203,8 @@ export function StoreEditModal({
       setUploadError(null)
       setAutoAssignStoreId(true)
       setErrorDescription("")
+      setOnboardingChecklist({})
+      console.log('[StoreEditModal] Initialized empty checklist for new store')
       setShowDuplicateModal(false)
       setPotentialDuplicates([])
       setIsCheckingDuplicates(false)
@@ -295,6 +305,43 @@ const performSave = useCallback(async () => {
     // Generate a unique ID if none exists
     const storeId = store?.id || uuidv4();
 
+    // Helper function to normalize checklist values
+    function normalizeChecklistForSaving(checklist: any) {
+      const normalized = { ...checklist }
+      
+      // Convert all undefined boolean fields to false
+      const booleanFields = [
+        'crmListingConfirmed', 'storeWhatsappGroupSetup', 'allStaffAvailableForTraining',
+        'bagLoadingTrainingMaterial', 'collectionProcessVideo', 'websiteSystemWalkthrough',
+        'introducedToStoreManager', 'allRelevantStaffPresent', 'wasteRemovalProcessTrained',
+        'wasteRecordingTrained', 'correctBagPackingTrained', 'staffUnderstandingConfirmed',
+        'collectionTimesDiscussed', 'customerCollectionProceduresExplained', 'retailerTrainedOnWebsite',
+        'storeLoginCreated', 'loadBagsLinkConfirmed', 'flexMessagingSetup', 'bagsTapeStickersOrdered',
+        'trainingFullyCompleted', 'followUpRequired'
+      ]
+      
+      booleanFields.forEach(field => {
+        if (normalized[field] === undefined) {
+          normalized[field] = false
+        }
+      })
+      
+      // Handle categoriesActive nested object
+      if (normalized.categoriesActive) {
+        normalized.categoriesActive = {
+          produce: normalized.categoriesActive.produce === undefined ? false : normalized.categoriesActive.produce,
+          bakery: normalized.categoriesActive.bakery === undefined ? false : normalized.categoriesActive.bakery,
+          grocery: normalized.categoriesActive.grocery === undefined ? false : normalized.categoriesActive.grocery
+        }
+      } else {
+        normalized.categoriesActive = { produce: false, bakery: false, grocery: false }
+      }
+      
+      console.log('[normalizeChecklistForSaving] Original:', checklist)
+      console.log('[normalizeChecklistForSaving] Normalized:', normalized)
+      return normalized
+    }
+
     const storeData: Store = {
       id: storeId, // Use the generated or existing ID
       tradingName: formData.tradingName || "",
@@ -343,13 +390,19 @@ const performSave = useCallback(async () => {
       assignedOpsUsers: formData.assignedOpsUsers || [],
       groupId: formData.groupId || undefined,
       whatsappGroupLink: formData.whatsappGroupLink || "",
+      onboardingChecklist: normalizeChecklistForSaving(onboardingChecklist),
       createdAt: store?.createdAt || new Date(),
       updatedAt: new Date(),
     };
 
-    console.log("[handleSave] Saving store data:", storeData);
+    console.log("[handleSave] About to save store with checklist:", onboardingChecklist);
+    console.log("[handleSave] Current form state - onboardingChecklist:", onboardingChecklist);
+    console.log("[handleSave] Complete store data:", storeData);
+    console.log("[handleSave] Onboarding checklist keys:", Object.keys(onboardingChecklist || {}));
+    console.log("[handleSave] Onboarding checklist values:", Object.values(onboardingChecklist || {}));
     let savedStoreId: string;
     if (store?.id) {
+      console.log("[handleSave] Updating existing store:", store.id);
       await storeService.update(store.id, storeData);
       savedStoreId = store.id;
     } else {
@@ -401,7 +454,7 @@ const performSave = useCallback(async () => {
   } finally {
     setIsUploading(false);
   }
-}, [formData, contactPersons, collectionTimes, products, slaFile, bankFile, store, currentUserId, onSave, onClose, isMovingToClosed]);
+}, [formData, contactPersons, collectionTimes, products, slaFile, bankFile, store, currentUserId, onSave, onClose, isMovingToClosed, onboardingChecklist]);
   const handleInputChange = (field: string, value: any) => {
     console.log("[handleInputChange] Field:", field, "Value:", value)
     if (field === "trainingDate" || field === "launchDate") {
@@ -453,8 +506,21 @@ const performSave = useCallback(async () => {
   }
 
   const addContactPerson = () => {
-    setContactPersons((prev) => [...prev, { name: "", phone: "", email: "", designation: "", isPrimary: false }])
+    setContactPersons((prev) => [...prev, { name: "", phone: "", email: "", designation: "", isPrimary: false, role: "" }])
   }
+
+  const contactRoles = [
+    "Store Manager",
+    "Floor Manager", 
+    "Bakery Manager",
+    "Produce Manager",
+    "Vegetable Manager",
+    "Grocery Manager",
+    "Department Manager",
+    "Assistant Manager",
+    "Supervisor",
+    "Other"
+  ]
 
   const removeContactPerson = (index: number) => {
     setContactPersons((prev) => prev.filter((_, i) => i !== index))
@@ -697,9 +763,9 @@ const performSave = useCallback(async () => {
                 className="
                   grid w-full
                   grid-cols-2
-                  sm:grid-cols-2
-                  md:grid-cols-4
-                  lg:grid-cols-4
+                  sm:grid-cols-3
+                  md:grid-cols-5
+                  lg:grid-cols-5
                   gap-2
                   md:h-10
                   h-20
@@ -710,6 +776,7 @@ const performSave = useCallback(async () => {
                 <TabsTrigger value="basic">Basic Info</TabsTrigger>
                 <TabsTrigger value="contacts">Contacts</TabsTrigger>
                 <TabsTrigger value="products">Products</TabsTrigger>
+                <TabsTrigger value="checklist">Checklist</TabsTrigger>
                 <TabsTrigger value="documents">Documents</TabsTrigger>
               </TabsList>
             </div>
@@ -1105,6 +1172,24 @@ const performSave = useCallback(async () => {
                           />
                         </div>
                         <div>
+                          <Label>Role</Label>
+                          <Select
+                            value={contact.role}
+                            onValueChange={(value) => handleContactPersonChange(index, "role", value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {contactRoles.map((role) => (
+                                <SelectItem key={role} value={role}>
+                                  {role}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
                           <Label>Designation</Label>
                           <Input
                             value={contact.designation}
@@ -1314,6 +1399,19 @@ const performSave = useCallback(async () => {
                   </CardContent>
                 </EditCard>
               </EditCard>
+            </TabsContent>
+
+            <TabsContent value="checklist" className="space-y-6">
+              <OnboardingChecklistComponent
+                checklist={onboardingChecklist}
+                onUpdate={(updatedChecklist) => {
+                  console.log("[StoreModal] Checklist update received:", updatedChecklist);
+                  console.log("[StoreModal] Current checklist state:", onboardingChecklist);
+                  setOnboardingChecklist(updatedChecklist);
+                  console.log("[StoreModal] Checklist state updated to:", updatedChecklist);
+                }}
+                readonly={false}
+              />
             </TabsContent>
 
             <TabsContent value="documents" className="space-y-6">

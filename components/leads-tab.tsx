@@ -13,6 +13,7 @@ import {
   SalespersonCell,
   StoreInfoCell,
   StoreStatusBadge,
+  ChecklistCell,
 } from "./cells/index"
 import type { Store, User } from "@/lib/firebase/types"
 import { useStoreFilters } from "@/hooks/use-store-filters"
@@ -140,13 +141,14 @@ export function LeadsTab({
                 <TableHead>Dates</TableHead>
                 <TableHead>Docs</TableHead>
                 <TableHead>Contract</TableHead>
+                <TableHead>Checklist</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredStores.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-8">
+                  <TableCell colSpan={11} className="text-center py-8">
                     <div className="text-muted-foreground">
                       No leads found.
                     </div>
@@ -180,6 +182,7 @@ export function LeadsTab({
                   <LaunchTrainDateCell launchDate={store.launchDate} trainingDate={store.trainingDate} />
                   <DocumentsCell store={store} onViewDocument={onViewDocument} />
                   <ContractTermsCell contractTerms={store.contractTerms} />
+                  <ChecklistCell checklist={store.onboardingChecklist} />
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       {(isSuperadmin || store.salespersonId === currentUser?.id) && store.status === "lead" && (

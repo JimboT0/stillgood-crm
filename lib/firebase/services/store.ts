@@ -17,7 +17,7 @@ import type { Store } from "../types"
 import { safeDateToTimestamp } from "../../utils"
 import { parseFirestoreDate } from "@/lib/date-validation"
 
-// Helper function to remove undefined values
+// Helper function to remove undefined values but preserve false
 const removeUndefined = (obj: any): any => {
   if (obj === null || obj === undefined) return null
   if (obj instanceof Date) return obj
@@ -25,6 +25,7 @@ const removeUndefined = (obj: any): any => {
   if (typeof obj === "object") {
     const cleaned: any = {}
     for (const [key, value] of Object.entries(obj)) {
+      // Keep false values but remove undefined
       if (value !== undefined) {
         cleaned[key] = removeUndefined(value)
       }
@@ -51,7 +52,7 @@ const convertFirestoreToStore = (doc: any): Store => {
 
 // Convert Store object to Firestore data
 const convertStoreToFirestore = (store: Partial<Store>): any => {
-  return removeUndefined({
+  const data = removeUndefined({
     ...store,
     assignedOpsIds: store.assignedOpsIds || [], // Ensure assignedOpsIds is always an array
     createdAt: safeDateToTimestamp(store.createdAt),
@@ -60,6 +61,9 @@ const convertStoreToFirestore = (store: Partial<Store>): any => {
     pushedToRolloutAt: safeDateToTimestamp(store.pushedToRolloutAt),
     errorSetAt: safeDateToTimestamp(store.errorSetAt),
   })
+  
+  console.log("[convertStoreToFirestore] Final data to save:", data)
+  return data
 }
 
 export const storeService = {

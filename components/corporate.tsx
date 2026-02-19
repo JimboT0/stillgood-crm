@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Plus, Edit, Trash2, UserIcon } from "lucide-react"
-import { StoreInfoCell, ProvinceCell, LaunchTrainDateCell } from "./cells/index"
+import { StoreInfoCell, ProvinceCell, LaunchTrainDateCell, ChecklistCell } from "./cells/index"
 import type { Store, User } from "@/lib/firebase/types"
 import { SearchInput, FilterBar } from "@/components/shared/filters"
 import { useLeadFilters } from "@/hooks/use-lead-filters"
@@ -144,6 +144,7 @@ export function CorporateLeadsTab({
                 <TableHead>Store</TableHead>
                 <TableHead>Location</TableHead>
                 <TableHead>Launch Date</TableHead>
+                <TableHead>Checklist</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -156,6 +157,7 @@ export function CorporateLeadsTab({
                     launchDate={store.launchDate}
                     trainingDate={null} // Training date not needed for rollout
                   />
+                  <ChecklistCell checklist={store.onboardingChecklist} />
                   <TableCell>
                     <div className="flex items-center gap-1">
                       <Button
@@ -213,6 +215,7 @@ export function CorporateLeadsTab({
                 <TableHead>Store</TableHead>
                 <TableHead>Location</TableHead>
                 <TableHead>Launch Date</TableHead>
+                <TableHead>Checklist</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -225,6 +228,7 @@ export function CorporateLeadsTab({
                     launchDate={store.launchDate}
                     trainingDate={null} // Training date not needed for rollout
                   />
+                  <ChecklistCell checklist={store.onboardingChecklist} />
                   <TableCell>
                     <div className="flex items-center gap-1">
                       <Button

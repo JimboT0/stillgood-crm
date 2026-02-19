@@ -17,15 +17,15 @@ export const SalespersonCell: React.FC<SalespersonCellProps> = ({
   className = "",
 }) => {
   const getSalespersonName = (salespersonId: string) => {
-    if (!salespersonId) return "Unknown"
+    if (!salespersonId) return "Unassigned"
     const salesperson = users?.find((user) => user.id === salespersonId)
-    return salesperson?.name || "Unknown"
+    return salesperson?.name || `Deleted User (${salespersonId.slice(-6)})`
   }
 
   const getSalespersonInitials = (salespersonId: string) => {
-    if (!salespersonId) return "?"
+    if (!salespersonId) return "U"
     const salesperson = users?.find((user) => user.id === salespersonId)
-    if (!salesperson?.name) return "?"
+    if (!salesperson?.name) return "DU" // Deleted User
     return (
       salesperson.name
         .split(" ")
@@ -40,19 +40,33 @@ export const SalespersonCell: React.FC<SalespersonCellProps> = ({
 
   const name = getSalespersonName(salespersonId)
   const initials = getSalespersonInitials(salespersonId)
+  const isDeleted = salespersonId && !users?.find((user) => user.id === salespersonId)
 
-  // Log if user not found for debugging
-  if (!users?.find((user) => user.id === salespersonId) && salespersonId) {
-    console.log(`[SalespersonCell] User not found for salespersonId: ${salespersonId}, users count: ${users?.length || 0}`)
+  // Reduced logging for missing users
+  if (isDeleted && salespersonId) {
+    console.warn(`[SalespersonCell] Orphaned salesperson ID: ${salespersonId}`)
   }
 
   return (
     <TableCell className={className}>
       <div className="flex items-center gap-2">
         <Avatar className="w-8 h-8 flex-shrink-0">
-          <AvatarFallback className="bg-orange-100 text-orange-600 text-xs">{initials}</AvatarFallback>
+          <AvatarFallback 
+            className={`text-xs ${
+              isDeleted 
+                ? 'bg-red-100 text-red-600' 
+                : 'bg-orange-100 text-orange-600'
+            }`}
+          >
+            {initials}
+          </AvatarFallback>
         </Avatar>
-        <span className="text-sm truncate max-w-[120px]" title={name}>
+        <span 
+          className={`text-sm truncate max-w-[120px] ${
+            isDeleted ? 'text-red-600 italic' : ''
+          }`} 
+          title={name}
+        >
           {name}
         </span>
       </div>

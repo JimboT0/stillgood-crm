@@ -77,6 +77,60 @@ export interface ContractTerms {
   notes?: string;
 }
 
+// Onboarding Checklist Interface
+export interface OnboardingChecklist {
+  // 1. Store Information
+  crmListingConfirmed?: boolean;
+  storeWhatsappGroupSetup?: boolean;
+  
+  // 2. Store Management & Key Contacts - Names/numbers are already in contactPersons
+  
+  // 3. Operational Staff – Bag Loading Team - Names/numbers handled in contactPersons
+  
+  // 4. Training Preparation (Pre-Launch)
+  allStaffAvailableForTraining?: boolean;
+  bagLoadingTrainingMaterial?: boolean;
+  collectionProcessVideo?: boolean;
+  websiteSystemWalkthrough?: boolean;
+  
+  // 5. Day of Launch – Training Confirmation
+  introducedToStoreManager?: boolean;
+  allRelevantStaffPresent?: boolean;
+  wasteRemovalProcessTrained?: boolean;
+  wasteRecordingTrained?: boolean;
+  correctBagPackingTrained?: boolean;
+  staffUnderstandingConfirmed?: boolean;
+  
+  // Collection Process
+  collectionTimesDiscussed?: boolean;
+  customerCollectionProceduresExplained?: boolean;
+  
+  // 6. System & Website Training
+  retailerTrainedOnWebsite?: boolean;
+  storeLoginCreated?: boolean;
+  loadBagsLinkConfirmed?: boolean;
+  
+  // 7. Operational Setup
+  categoriesActive?: {
+    produce?: boolean;
+    bakery?: boolean;
+    grocery?: boolean;
+  };
+  flexMessagingSetup?: boolean;
+  flexMessageDetails?: string;
+  bagsTapeStickersOrdered?: boolean;
+  
+  // 8. Training Completion
+  trainingFullyCompleted?: boolean;
+  followUpRequired?: boolean;
+  followUpNotes?: string;
+  
+  // 9. Ops Team Sign-Off
+  opsTeamMemberName?: string;
+  opsSignOffDate?: Date;
+  additionalNotes?: string;
+}
+
 // lib/firebase/types.ts
 export interface Document {
   id: string;
@@ -156,6 +210,7 @@ export interface Store {
   createdAt?: Date;
   updatedAt?: Date;
   whatsappGroupLink?: string;
+  onboardingChecklist?: OnboardingChecklist;
   credentials?: Array<{
     username: string;
     password: string;
