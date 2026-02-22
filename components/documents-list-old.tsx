@@ -28,6 +28,7 @@ const PACKAGE_TYPES = [
   { value: "spar_corporate", label: "Spar Corporate", description: "Documents for Spar corporate stores" },
   { value: "independent", label: "Independent", description: "Documents for independent stores" },
   { value: "internal", label: "Internal & Operational", description: "Documents for internal use" },
+  { value: "training", label: "Training", description: "Documents for training purposes" },
   { value: "other", label: "Other", description: "Miscellaneous documents" },
 ] as const;
 

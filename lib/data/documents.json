@@ -70,6 +70,18 @@
       }
     ]
   },
+    "training": {
+    "label": "Training",
+    "description": "Documents for training purposes",
+    "links": [
+      {
+        "name": "Training Documents",
+        "description": "Training Docs",
+        "url": "https://stillgood.sharepoint.com/sites/stillgooddrive/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2Fstillgooddrive%2FShared%20Documents%2Fstill%20good%20drive%2FGuide%20Videos&viewid=1f26b6da%2D3898%2D4c03%2D867b%2D5a91db815ec0&newTargetListUrl=%2Fsites%2Fstillgooddrive%2FShared%20Documents&viewpath=%2Fsites%2Fstillgooddrive%2FShared%20Documents%2FForms%2FAllItems%2Easpx"
+      }
+    ]
+  },
+
   "other": {
     "label": "Other",
     "description": "Miscellaneous documents",

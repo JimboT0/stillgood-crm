@@ -762,15 +762,15 @@ const performSave = useCallback(async () => {
               <TabsList
                 className="
                   grid w-full
-                  grid-cols-2
-                  sm:grid-cols-3
-                  md:grid-cols-5
-                  lg:grid-cols-5
-                  gap-2
+                  grid-cols-5
+                  gap-1
+                  sm:gap-2
                   md:h-10
                   h-20
                   text-center
                   shadow-sm
+                  text-xs
+                  sm:text-sm
                 "
               >
                 <TabsTrigger value="basic">Basic Info</TabsTrigger>

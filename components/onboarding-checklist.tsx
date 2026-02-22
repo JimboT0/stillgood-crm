@@ -28,6 +28,29 @@ export function OnboardingChecklistComponent({
 }: OnboardingChecklistComponentProps) {
   const [localChecklist, setLocalChecklist] = useState<OnboardingChecklist>(checklist)
 
+  const normalizeDate = (value: unknown): Date | null => {
+    if (!value) return null
+    if (value instanceof Date) {
+      return isNaN(value.getTime()) ? null : value
+    }
+    if (typeof value === "string" || typeof value === "number") {
+      const parsed = new Date(value)
+      return isNaN(parsed.getTime()) ? null : parsed
+    }
+    if (typeof value === "object") {
+      const maybeTimestamp = value as { seconds?: number; toDate?: () => Date }
+      if (typeof maybeTimestamp.toDate === "function") {
+        const parsed = maybeTimestamp.toDate()
+        return isNaN(parsed.getTime()) ? null : parsed
+      }
+      if (typeof maybeTimestamp.seconds === "number") {
+        const parsed = new Date(maybeTimestamp.seconds * 1000)
+        return isNaN(parsed.getTime()) ? null : parsed
+      }
+    }
+    return null
+  }
+
   // Sync localChecklist when checklist prop changes
   useEffect(() => {
     console.log('[OnboardingChecklist] Checklist prop changed:', checklist)
@@ -517,16 +540,16 @@ export function OnboardingChecklistComponent({
                   disabled={readonly}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {localChecklist.opsSignOffDate 
-                    ? format(new Date(localChecklist.opsSignOffDate), "PPP")
-                    : "Select date..."
-                  }
+                  {(() => {
+                    const opsDate = normalizeDate(localChecklist.opsSignOffDate)
+                    return opsDate ? format(opsDate, "PPP") : "Select date..."
+                  })()}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
                 <Calendar
                   mode="single"
-                  selected={localChecklist.opsSignOffDate ? new Date(localChecklist.opsSignOffDate) : undefined}
+                  selected={normalizeDate(localChecklist.opsSignOffDate) ?? undefined}
                   onSelect={(date) => updateField('opsSignOffDate', date)}
                   initialFocus
                 />
