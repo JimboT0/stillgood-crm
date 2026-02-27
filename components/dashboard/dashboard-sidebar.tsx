@@ -43,7 +43,8 @@ import {
   FlagIcon,
   BriefcaseBusiness,
   FerrisWheelIcon,
-  SmileIcon
+  SmileIcon,
+  TrendingUp
 } from "lucide-react"
 import { useDashboardData } from "@/components/dashboard/dashboard-provider"
 import { signOut } from "firebase/auth"
@@ -172,6 +173,12 @@ const navigationItems = [
     url: "/superleads",
     icon: Superscript,
     roles: ["superadmin"],
+  },
+  {
+    title: "Store Health",
+    url: "/storeHealth",
+    icon: TrendingUp,
+    roles: ["superadmin", "operations"],
   },
 ]
 

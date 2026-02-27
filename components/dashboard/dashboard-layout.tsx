@@ -31,6 +31,7 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
     if (pathname.startsWith("/documents")) return "documents"
     if (pathname.startsWith("/ops-calendar")) return "ops-calendar"
     if (pathname.startsWith("/key-accounts")) return "key-accounts"
+    if (pathname.startsWith("/storeHealth")) return "storeHealth"
     return "leads"
   }, [pathname])
 

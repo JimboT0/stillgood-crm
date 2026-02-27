@@ -5,6 +5,7 @@ import "./globals.css"
 import { DashboardProvider } from "@/components/dashboard/dashboard-provider"
 import { FilterProvider } from "@/contexts/filter-context"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/ui/sonner"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -25,6 +26,7 @@ export default function RootLayout({
           <DashboardProvider>
             <FilterProvider>{children}</FilterProvider>
           </DashboardProvider>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>
