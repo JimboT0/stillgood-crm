@@ -144,6 +144,67 @@ export interface Document {
   createdAt: Date
 }
 
+export interface StoreChangeMetric {
+  storeId: string
+  storeName: string
+  salespersonId: string
+  salespersonName: string
+  province: string
+  changeType: "status" | "setup" | "contract" | "training" | "launch" | "error" | "assignment"
+  previousValue?: any
+  newValue?: any
+  changeDate: Date
+  changeDescription: string
+  successRate?: number
+  impact?: "positive" | "negative" | "neutral"
+}
+
+export interface ReportMetrics {
+  id: string
+  period: "daily" | "weekly" | "monthly" | "quarterly"
+  startDate: Date
+  endDate: Date
+  totalStores: number
+  newStores: number
+  closedStores: number
+  storesByProvince: Record<string, number>
+  storesByStatus: Record<string, number>
+  salesperformance: Array<{
+    salespersonId: string
+    salespersonName: string
+    totalStores: number
+    newStores: number
+    conversionRate: number
+  }>
+  averageSetupTime: number
+  successfulLaunches: number
+  errorRate: number
+  topIssues: Array<{
+    issue: string
+    count: number
+    impact: string
+  }>
+  revenueImpact: {
+    total: number
+    byProvince: Record<string, number>
+    bySalesperson: Record<string, number>
+  }
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface ActivityLog {
+  id: string
+  storeId: string
+  storeName: string
+  userId: string
+  userName: string
+  action: string
+  details: string
+  timestamp: Date
+  category: "store_management" | "user_action" | "system_event" | "error"
+}
+
 // Helper function to clean data before saving
 const cleanStoreData = (store: Partial<Store>): Partial<Store> => {
   const cleaned: Partial<Store> = {}
@@ -301,4 +362,173 @@ export const fileService = {
     const snapshot = await uploadBytes(storageRef, file)
     return await getDownloadURL(snapshot.ref)
   },
+}
+
+export const reportsService = {
+  // Store change metrics
+  async logStoreChange(metric: Omit<StoreChangeMetric, "id">): Promise<string> {
+    const docRef = await addDoc(collection(db, "storeChanges"), {
+      ...metric,
+      changeDate: new Date(),
+    })
+    return docRef.id
+  },
+
+  async getStoreChanges(
+    startDate?: Date,
+    endDate?: Date,
+    storeId?: string,
+    salespersonId?: string
+  ): Promise<StoreChangeMetric[]> {
+    let q = query(
+      collection(db, "storeChanges"),
+      orderBy("changeDate", "desc")
+    )
+
+    if (startDate && endDate) {
+      q = query(q, where("changeDate", ">=", startDate), where("changeDate", "<=", endDate))
+    }
+    if (storeId) {
+      q = query(q, where("storeId", "==", storeId))
+    }
+    if (salespersonId) {
+      q = query(q, where("salespersonId", "==", salespersonId))
+    }
+
+    const querySnapshot = await getDocs(q)
+    return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as StoreChangeMetric)
+  },
+
+  // Aggregated metrics
+  async saveReportMetrics(metrics: Omit<ReportMetrics, "id">): Promise<string> {
+    const docRef = await addDoc(collection(db, "reportMetrics"), {
+      ...metrics,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+    return docRef.id
+  },
+
+  async getReportMetrics(period: "daily" | "weekly" | "monthly" | "quarterly"): Promise<ReportMetrics[]> {
+    const q = query(
+      collection(db, "reportMetrics"),
+      where("period", "==", period),
+      orderBy("startDate", "desc")
+    )
+
+    const querySnapshot = await getDocs(q)
+    return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as ReportMetrics)
+  },
+
+  async getLatestMetrics(): Promise<ReportMetrics | null> {
+    const q = query(
+      collection(db, "reportMetrics"),
+      orderBy("createdAt", "desc")
+    )
+
+    const querySnapshot = await getDocs(q)
+    if (!querySnapshot.empty) {
+      const doc = querySnapshot.docs[0]
+      return { id: doc.id, ...doc.data() } as ReportMetrics
+    }
+    return null
+  },
+
+  // Activity logs
+  async logActivity(activity: Omit<ActivityLog, "id">): Promise<string> {
+    const docRef = await addDoc(collection(db, "activityLogs"), {
+      ...activity,
+      timestamp: new Date(),
+    })
+    return docRef.id
+  },
+
+  async getActivityLogs(
+    startDate?: Date,
+    endDate?: Date,
+    category?: string,
+    limit: number = 100
+  ): Promise<ActivityLog[]> {
+    let q = query(
+      collection(db, "activityLogs"),
+      orderBy("timestamp", "desc")
+    )
+
+    if (startDate && endDate) {
+      q = query(q, where("timestamp", ">=", startDate), where("timestamp", "<=", endDate))
+    }
+    if (category) {
+      q = query(q, where("category", "==", category))
+    }
+
+    const querySnapshot = await getDocs(q)
+    return querySnapshot.docs
+      .slice(0, limit)
+      .map((doc) => ({ id: doc.id, ...doc.data() }) as ActivityLog)
+  },
+
+  // Generate comprehensive report data
+  async generateComprehensiveReport(startDate: Date, endDate: Date): Promise<{
+    summary: any,
+    storeChanges: StoreChangeMetric[],
+    activities: ActivityLog[],
+    trends: any
+  }> {
+    const [storeChanges, activities, allStores, allUsers] = await Promise.all([
+      this.getStoreChanges(startDate, endDate),
+      this.getActivityLogs(startDate, endDate),
+      storeService.getAll(),
+      userService.getAll()
+    ])
+
+    // Calculate summary metrics
+    const summary = {
+      totalChanges: storeChanges.length,
+      uniqueStoresAffected: new Set(storeChanges.map(c => c.storeId)).size,
+      totalStores: allStores.length,
+      newStores: allStores.filter(s => s.createdAt >= startDate && s.createdAt <= endDate).length,
+      closedStores: allStores.filter(s => s.status === 'closed').length,
+      averageChangesPerStore: storeChanges.length / Math.max(1, new Set(storeChanges.map(c => c.storeId)).size),
+      changesByType: storeChanges.reduce((acc, change) => {
+        acc[change.changeType] = (acc[change.changeType] || 0) + 1
+        return acc
+      }, {} as Record<string, number>),
+      storesByProvince: allStores.reduce((acc, store) => {
+        acc[store.province] = (acc[store.province] || 0) + 1
+        return acc
+      }, {} as Record<string, number>),
+      salesperformance: allUsers
+        .filter(u => u.role === 'salesperson')
+        .map(user => {
+          const userStores = allStores.filter(s => s.salespersonId === user.id)
+          const userChanges = storeChanges.filter(c => c.salespersonId === user.id)
+          return {
+            salespersonId: user.id,
+            salespersonName: user.name,
+            totalStores: userStores.length,
+            newStores: userStores.filter(s => s.createdAt >= startDate && s.createdAt <= endDate).length,
+            totalChanges: userChanges.length,
+            conversionRate: userStores.length > 0 ? (userStores.filter(s => s.status !== 'cold').length / userStores.length) * 100 : 0
+          }
+        })
+    }
+
+    // Calculate trends
+    const trends = {
+      dailyChanges: storeChanges.reduce((acc, change) => {
+        const date = change.changeDate.toISOString().split('T')[0]
+        acc[date] = (acc[date] || 0) + 1
+        return acc
+      }, {} as Record<string, number>),
+      topIssues: storeChanges
+        .filter(c => c.changeType === 'error')
+        .reduce((acc, change) => {
+          const issue = change.changeDescription
+          acc[issue] = (acc[issue] || 0) + 1
+          return acc
+        }, {} as Record<string, number>)
+    }
+
+    return { summary, storeChanges, activities, trends }
+  }
 }

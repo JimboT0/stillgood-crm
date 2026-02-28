@@ -39,11 +39,27 @@ export interface StoreHealthMetrics {
   totalValue: number;
   averageSellThroughPercentage: number;
   loadConsistency: number; // 0-100 score
-  healthScore: "red" | "orange" | "yellow" | "green";
+  healthScore: "critical" | "poor" | "fair" | "good" | "excellent";
+  overallHealthPercentage: number; // 0-100 overall health score
   wasteRange: {
     min: number;
     max: number;
   };
+  healthIndicators: {
+    bagSalesPerformance: number; // 0-100 (primary metric for bag sales)
+    salesRevenue: number; // Actual sales revenue earned (R value)
+    salesConsistency: number; // 0-100 (regularity of bag sales)
+    salesEfficiency: number; // 0-100 (conversion rate efficiency)
+    volumeConsistency: number; // 0-100 (volume reliability)
+    salesGrowth: number; // 0-100 (bag sales growth trend)
+    revenueEfficiency: number; // 0-100 (revenue per bag efficiency)
+  };
+  alerts: {
+    level: "info" | "warning" | "critical";
+    message: string;
+    category: "waste" | "performance" | "inventory" | "operations" | "consistency";
+  }[];
+  recommendations: string[];
 }
 
 export interface ProvinceStoreHealth {

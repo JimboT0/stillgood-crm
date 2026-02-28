@@ -78,7 +78,6 @@ export function StoreHealthChart({ storeData, storeName }: StoreHealthChartProps
         sellThroughRate: loads > 0 ? (sold / loads) * 100 : 0,
         revenue,
         value,
-        wasteCount: loads - sold,
       });
     }
     
@@ -119,10 +118,6 @@ export function StoreHealthChart({ storeData, storeName }: StoreHealthChartProps
     revenue: {
       label: "Revenue",
       color: "hsl(var(--chart-1))",
-    },
-    wasteCount: {
-      label: "Daily Waste",
-      color: "hsl(var(--destructive))",
     },
   };
 
@@ -228,33 +223,6 @@ export function StoreHealthChart({ storeData, storeName }: StoreHealthChartProps
                     dot={{ fill: 'var(--color-sellThroughRate)', strokeWidth: 2 }}
                   />
                 </LineChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Daily Waste Analysis Over Time</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={chartConfig} className="h-80">
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis 
-                    dataKey="date" 
-                    stroke="#fff"
-                    tick={{ fill: '#fff' }}
-                  />
-                  <YAxis 
-                    stroke="#fff"
-                    tick={{ fill: '#fff' }}
-                  />
-                  <ChartTooltip 
-                    content={<ChartTooltipContent />} 
-                    contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', color: '#fff' }}
-                  />
-                  <Bar dataKey="wasteCount" fill="var(--color-wasteCount)" name="Daily Waste" />
-                </BarChart>
               </ChartContainer>
             </CardContent>
           </Card>

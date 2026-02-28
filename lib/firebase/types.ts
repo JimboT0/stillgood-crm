@@ -301,3 +301,14 @@ export type StoreOpsView = Omit<
   Store,
   | "groupId"
 >;
+
+export interface Comment {
+  id: string;
+  text: string;
+  createdBy: string;
+  createdByName: string;
+  createdAt: Date;
+  updatedAt: Date;
+  reportType: string; // e.g., "store_changes", "regional_report"
+  reportId?: string; // Optional reference to specific report
+}

@@ -44,7 +44,8 @@ import {
   BriefcaseBusiness,
   FerrisWheelIcon,
   SmileIcon,
-  TrendingUp
+  TrendingUp,
+  BarChart3
 } from "lucide-react"
 import { useDashboardData } from "@/components/dashboard/dashboard-provider"
 import { signOut } from "firebase/auth"
@@ -178,6 +179,18 @@ const navigationItems = [
     title: "Store Health",
     url: "/storeHealth",
     icon: TrendingUp,
+    roles: ["superadmin", "operations", "salesperson", "media", "Magos"],
+  },
+  {
+    title: "Reports",
+    url: "/reports",
+    icon: BarChart3,
+    roles: ["superadmin"],
+  },
+  {
+    title: "Store Notes",
+    url: "/store-notes",
+    icon: MessageCircle,
     roles: ["superadmin", "operations"],
   },
 ]
